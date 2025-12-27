@@ -1,45 +1,92 @@
-# BN Inmobiliaria - Setup Guide
+# Inmobiliaria Manzanillo - Setup Guide
 
-This document provides instructions for setting up and using the BN Inmobiliaria real estate website.
+This document provides instructions for setting up and using the Inmobiliaria Manzanillo real estate marketplace.
 
 ## Overview
 
-BN Inmobiliaria is a modern, responsive real estate website built for showcasing properties in Manzanillo, Colima, Mexico. The site features:
+Inmobiliaria Manzanillo is a secure, multi-tenant real estate marketplace platform built for agents and brokers in Manzanillo, Colima, Mexico. The platform features:
 
+- **Invitation-only signups** - Secure agent onboarding via admin-generated links
+- **Subscription model** - 199 MXN/month with configurable trial periods
+- **AI Credits system** - 50 free credits/month + unlimited paid top-ups
 - Beautiful sea-inspired design with blues, whites, and sand colors
 - Fully responsive layout optimized for mobile and desktop
-- Public property catalog with advanced filtering
-- Detailed property pages with image galleries, maps, and contact forms
-- Secure admin panel for managing properties
-- Automatic carousel of featured properties on the homepage
-- **NEW**: Comprehensive SEO optimization with structured data
-- **NEW**: Real-time property updates via Supabase subscriptions
-- **NEW**: Dynamic sitemap and API endpoints
+- Secure multi-tenant property management
+- Real-time property updates via Supabase subscriptions
+- Stripe integration for payments and subscriptions
 
 ## Technology Stack
 
 - **Frontend**: React + TypeScript + Vite
 - **Styling**: Tailwind CSS
-- **Backend**: Supabase (Database, Authentication, Storage)
+- **Backend**: Supabase (Database, Authentication, Storage, RLS)
+- **Payments**: Stripe (Subscriptions, One-time payments)
 - **Hosting**: Vercel (Serverless Functions)
 - **Icons**: Lucide React
+- **Validation**: Zod + React Hook Form
 - **SEO**: JSON-LD Structured Data (Schema.org)
 
 ## Initial Setup
 
-### 1. Create Admin User
+### 1. Environment Variables
 
-To access the admin panel, you need to create an admin user in Supabase:
+Copy `.env.example` to `.env.local` and configure:
+
+```bash
+# Supabase
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Stripe (set STRIPE_MODE to 'live' for production)
+STRIPE_MODE=test
+VITE_STRIPE_TEST_PUBLISHABLE_KEY=pk_test_...
+STRIPE_TEST_SECRET_KEY=sk_test_...
+STRIPE_TEST_WEBHOOK_SECRET=whsec_...
+```
+
+### 2. Database Migrations
+
+Run all migrations in the `supabase/migrations` folder in order:
+
+1. Go to your Supabase project dashboard
+2. Navigate to **SQL Editor**
+3. Run each migration file in chronological order
+4. The marketplace foundation migration creates:
+   - `profiles` - User profile data
+   - `invitation_tokens` - Signup invitation links
+   - `subscriptions` - User subscriptions
+   - `credits` - AI credit balances
+   - `credit_transactions` - Credit usage history
+   - `audit_logs` - Security audit trail
+
+### 3. Create Admin User
+
+To access the admin panel:
 
 1. Go to your Supabase project dashboard
 2. Navigate to **Authentication** → **Users**
 3. Click **Add user** → **Create new user**
 4. Enter an email and password for the admin
 5. Save the user
+6. Add the user to the `user_roles` table with role `admin`
 
 The admin can then log in at `/login` or by clicking the "Admin" button in the header.
 
-### 2. Add Sample Data (Optional)
+### 4. Configure Stripe Webhooks
+
+For payment processing to work correctly:
+
+1. Go to your Stripe Dashboard → Developers → Webhooks
+2. Add an endpoint: `https://your-domain.com/api/stripe-webhook`
+3. Select events to listen for:
+   - `checkout.session.completed`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.payment_failed`
+4. Copy the webhook signing secret to `STRIPE_TEST_WEBHOOK_SECRET` (or live equivalent)
+
+### 5. Add Sample Data (Optional)
 
 To populate the database with sample properties:
 
@@ -50,12 +97,36 @@ To populate the database with sample properties:
 
 This will create 6 sample properties with realistic data and images.
 
+## Platform Workflow
+
+### Invitation-Only Signups
+
+1. Admin logs in and goes to Admin → Invitations tab
+2. Click "Nueva invitación" to create an invitation link
+3. Optionally pre-fill email and set trial days (default: 14)
+4. Copy the generated link and share with the agent
+5. Agent uses the link to sign up at `/signup?token=...`
+6. Agent account is created with the configured trial period
+
+### Subscription Management
+
+- Users can view subscription status in Dashboard → Suscripción
+- Subscribe or manage subscription via Stripe Checkout/Portal
+- Subscription status syncs automatically via webhooks
+- When subscription expires/fails, user properties are hidden from public
+
+### AI Credits
+
+- Every user gets 50 free credits reset monthly
+- Additional credits can be purchased in packages
+- Credits are deducted when using AI tools (coming soon)
+
 ## Using the Website
 
 ### Public Pages
 
 #### Home Page (`/`)
-- Hero section with description of BN Inmobiliaria
+- Hero section with description of Inmobiliaria Manzanillo
 - Three benefit cards highlighting key features
 - Automatic carousel of featured properties
 - Grid of featured properties below the carousel

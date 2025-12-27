@@ -1,5 +1,6 @@
-import { Home, Building2, LogIn, LogOut } from 'lucide-react';
+import { Home, Building2, LogIn, LogOut, Globe } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
   onNavigate: (path: string) => void;
@@ -8,10 +9,16 @@ interface HeaderProps {
 
 export function Header({ onNavigate, currentPath }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const { t, i18n } = useTranslation();
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'es' ? 'en' : 'es';
+    i18n.changeLanguage(newLang);
+  };
 
   const navItems = [
-    { path: '/', label: 'Inicio', icon: Home },
-    { path: '/propiedades', label: 'Propiedades', icon: Building2 },
+    { path: '/', label: t('nav.home'), icon: Home },
+    { path: '/propiedades', label: t('nav.properties'), icon: Building2 },
   ];
 
   return (
@@ -67,20 +74,29 @@ export function Header({ onNavigate, currentPath }: HeaderProps) {
                   className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-red-500 hover:bg-opacity-30 transition-all"
                 >
                   <LogOut className="h-5 w-5" />
-                  <span className="font-medium">Salir</span>
+                  <span className="font-medium">{t('nav.logout')}</span>
                 </button>
               </>
             ) : (
               <button
                 onClick={() => onNavigate('/login')}
                 className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all"
-                aria-label="Ir a login"
-                title="Iniciar sesión"
+                aria-label={t('nav.login')}
+                title={t('nav.login')}
               >
                 <LogIn className="h-5 w-5 text-white" />
-                <span className="sr-only">Iniciar sesión</span>
+                <span className="sr-only">{t('nav.login')}</span>
               </button>
             )}
+            {/* Language Toggle */}
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-all"
+              title={i18n.language === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+            >
+              <Globe className="h-5 w-5" />
+              <span className="sr-only">{i18n.language.toUpperCase()}</span>
+            </button>
           </nav>
 
           <button
@@ -131,7 +147,7 @@ export function Header({ onNavigate, currentPath }: HeaderProps) {
                 className="w-full flex items-center space-x-2 px-4 py-3 rounded-lg hover:bg-red-500 hover:bg-opacity-30 transition-all"
               >
                 <LogOut className="h-5 w-5" />
-                <span className="font-medium">Salir</span>
+                <span className="font-medium">{t('nav.logout')}</span>
               </button>
             </>
           ) : (
@@ -143,9 +159,17 @@ export function Header({ onNavigate, currentPath }: HeaderProps) {
               className="w-full flex items-center space-x-2 px-4 py-3 rounded-lg hover:bg-blue-400 hover:bg-opacity-30 transition-all"
             >
               <LogIn className="h-5 w-5" />
-              <span className="font-medium">Iniciar sesión</span>
+              <span className="font-medium">{t('nav.login')}</span>
             </button>
           )}
+          {/* Mobile Language Toggle */}
+          <button
+            onClick={toggleLanguage}
+            className="w-full flex items-center space-x-2 px-4 py-3 rounded-lg hover:bg-blue-400 hover:bg-opacity-30 transition-all"
+          >
+            <Globe className="h-5 w-5" />
+            <span className="font-medium">{i18n.language === 'es' ? 'English' : 'Español'}</span>
+          </button>
         </div>
       </div>
     </header>

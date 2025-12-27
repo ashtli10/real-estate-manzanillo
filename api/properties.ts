@@ -4,6 +4,12 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { 
+  setSecureCORSHeaders,
+  createErrorResponse,
+  checkRateLimit,
+  getClientIP
+} from './lib/security';
 
 // Environment variables for Supabase
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
@@ -14,8 +20,9 @@ interface RequestHandler {
 }
 
 const handler: RequestHandler = async (req, res) => {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Set secure CORS headers
+  // Note: For public read-only API, we allow more origins but still set proper headers
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
@@ -28,6 +35,15 @@ const handler: RequestHandler = async (req, res) => {
 
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  // Rate limiting: 100 requests per minute per IP (generous for public API)
+  const clientIP = getClientIP(req);
+  const rateLimit = checkRateLimit(`properties:${clientIP}`, 100, 60000);
+  if (!rateLimit.allowed) {
+    res.setHeader('Retry-After', Math.ceil(rateLimit.resetIn / 1000).toString());
+    res.status(429).json({ error: 'Too many requests. Please try again later.' });
     return;
   }
 

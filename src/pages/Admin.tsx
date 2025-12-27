@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Plus, RefreshCw, LogOut, Home, Building2 } from 'lucide-react';
+import { Plus, RefreshCw, LogOut, Home, Building2, Users, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../integrations/supabase/client';
 import type { Property, PropertyInsert } from '../types/property';
 import { PropertyTable } from '../components/admin/PropertyTable';
 import { PropertyForm } from '../components/admin/PropertyForm';
 import { DeleteConfirmModal } from '../components/admin/DeleteConfirmModal';
+import { InvitationManagement } from '../components/admin/InvitationManagement';
 import { transformProperty } from '../lib/propertyTransform';
+
+type AdminTab = 'properties' | 'invitations';
 
 interface AdminProps {
   onNavigate: (path: string) => void;
@@ -21,6 +24,7 @@ export function Admin({ onNavigate }: AdminProps) {
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<AdminTab>('properties');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -279,52 +283,87 @@ export function Admin({ onNavigate }: AdminProps) {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
-        {/* Actions Bar */}
-        <div className="bg-card rounded-xl shadow-soft p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold text-foreground">
-              Propiedades ({properties.length})
-            </h2>
-            <button
-              onClick={loadProperties}
-              disabled={loading}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-              title="Refrescar"
-            >
-              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+        {/* Tab Navigation */}
+        <div className="bg-card rounded-xl shadow-soft p-2 mb-6 flex gap-2">
           <button
-            onClick={() => {
-              setEditingProperty(null);
-              setShowForm(true);
-            }}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold shadow-lg hover:opacity-90 transition-all flex items-center gap-2"
+            onClick={() => setActiveTab('properties')}
+            className={`flex-1 sm:flex-none px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+              activeTab === 'properties'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted'
+            }`}
           >
-            <Plus className="h-5 w-5" />
-            Nueva propiedad
+            <Building2 className="h-5 w-5" />
+            Propiedades
+          </button>
+          <button
+            onClick={() => setActiveTab('invitations')}
+            className={`flex-1 sm:flex-none px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+              activeTab === 'invitations'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            <Users className="h-5 w-5" />
+            Invitaciones
           </button>
         </div>
 
-        {/* Properties Table */}
-        <div className="bg-card rounded-xl shadow-soft overflow-hidden">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-              <p className="mt-4 text-muted-foreground">Cargando propiedades...</p>
+        {/* Tab Content */}
+        {activeTab === 'properties' && (
+          <>
+            {/* Actions Bar */}
+            <div className="bg-card rounded-xl shadow-soft p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-semibold text-foreground">
+                  Propiedades ({properties.length})
+                </h2>
+                <button
+                  onClick={loadProperties}
+                  disabled={loading}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                  title="Refrescar"
+                >
+                  <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingProperty(null);
+                  setShowForm(true);
+                }}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold shadow-lg hover:opacity-90 transition-all flex items-center gap-2"
+              >
+                <Plus className="h-5 w-5" />
+                Nueva propiedad
+              </button>
             </div>
-          ) : (
-            <PropertyTable
-              properties={properties}
-              onEdit={handleEdit}
-              onDelete={setDeletingProperty}
-              onTogglePublish={handleTogglePublish}
-              onToggleFeatured={handleToggleFeatured}
-              onMoveUp={handleMoveUp}
-              onMoveDown={handleMoveDown}
-            />
-          )}
-        </div>
+
+            {/* Properties Table */}
+            <div className="bg-card rounded-xl shadow-soft overflow-hidden">
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="mt-4 text-muted-foreground">Cargando propiedades...</p>
+                </div>
+              ) : (
+                <PropertyTable
+                  properties={properties}
+                  onEdit={handleEdit}
+                  onDelete={setDeletingProperty}
+                  onTogglePublish={handleTogglePublish}
+                  onToggleFeatured={handleToggleFeatured}
+                  onMoveUp={handleMoveUp}
+                  onMoveDown={handleMoveDown}
+                />
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'invitations' && (
+          <InvitationManagement />
+        )}
       </div>
 
       {/* Property Form Modal */}

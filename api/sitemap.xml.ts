@@ -9,6 +9,18 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 const SITE_URL = 'https://www.bninmobiliaria.com';
 
+// Escape XML special characters to prevent injection
+function escapeXml(str: string): string {
+  const xmlEntities: Record<string, string> = {
+    '<': '&lt;',
+    '>': '&gt;',
+    '&': '&amp;',
+    "'": '&apos;',
+    '"': '&quot;',
+  };
+  return str.replace(/[<>&'"]/g, (char) => xmlEntities[char] || char);
+}
+
 interface RequestHandler {
   (req: any, res: any): Promise<void>;
 }
@@ -50,7 +62,7 @@ const handler: RequestHandler = async (req, res) => {
         priority: '0.9'
       },
       ...(properties || []).map(property => ({
-        loc: `${SITE_URL}/propiedad/${property.slug}`,
+        loc: `${SITE_URL}/propiedad/${escapeXml(property.slug || '')}`,
         lastmod: property.updated_at?.split('T')[0] || today,
         changefreq: 'weekly',
         priority: '0.8'

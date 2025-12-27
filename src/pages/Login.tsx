@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { z } from 'zod';
+
+// Login validation schema
+const loginSchema = z.object({
+  email: z.string()
+    .min(1, 'El correo es requerido')
+    .email('Ingresa un correo válido'),
+  password: z.string()
+    .min(1, 'La contraseña es requerida'),
+});
 
 interface LoginProps {
   onNavigate: (path: string) => void;
@@ -11,18 +21,58 @@ export function Login({ onNavigate }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+
+    // Check if locked out due to too many attempts
+    if (lockedUntil && Date.now() < lockedUntil) {
+      const secondsLeft = Math.ceil((lockedUntil - Date.now()) / 1000);
+      setError(`Demasiados intentos. Intenta de nuevo en ${secondsLeft} segundos.`);
+      return;
+    }
+
+    // Validate form
+    const result = loginSchema.safeParse({ email, password });
+    if (!result.success) {
+      const errors: { email?: string; password?: string } = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0] === 'email') errors.email = err.message;
+        if (err.path[0] === 'password') errors.password = err.message;
+      });
+      setFieldErrors(errors);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await signIn(email, password);
-      onNavigate('/admin');
-    } catch (err) {
-      setError('Credenciales inválidas. Por favor verifica tu correo y contraseña.');
+      const { error: signInError } = await signIn(email, password);
+      if (signInError) {
+        // Track failed attempts for rate limiting
+        const newAttempts = attempts + 1;
+        setAttempts(newAttempts);
+        
+        if (newAttempts >= 5) {
+          // Lock for 30 seconds after 5 failed attempts
+          setLockedUntil(Date.now() + 30000);
+          setError('Demasiados intentos fallidos. Espera 30 segundos antes de intentar de nuevo.');
+        } else {
+          setError('Credenciales inválidas. Por favor verifica tu correo y contraseña.');
+        }
+      } else {
+        // Success - reset attempts and navigate
+        setAttempts(0);
+        onNavigate('/dashboard');
+      }
+    } catch {
+      setError('Error de conexión. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -59,10 +109,15 @@ export function Login({ onNavigate }: LoginProps) {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    fieldErrors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="admin@bninmobiliaria.com"
                 />
               </div>
+              {fieldErrors.email && (
+                <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -76,10 +131,15 @@ export function Login({ onNavigate }: LoginProps) {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    fieldErrors.password ? 'border-red-500' : 'border-gray-300'
+                  }`}
                   placeholder="••••••••"
                 />
               </div>
+              {fieldErrors.password && (
+                <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>
+              )}
             </div>
 
             <button
