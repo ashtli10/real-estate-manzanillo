@@ -1,0 +1,1 @@
+UPDATE properties SET is_published = true WHERE id = '3f98d177-c203-4041-8acc-8de33b6cb17d';

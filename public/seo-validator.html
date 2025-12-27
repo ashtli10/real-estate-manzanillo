@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Validator - BN Inmobiliaria</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0891b2;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #0891b2;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .check-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+        }
+        .success { color: #10b981; }
+        .warning { color: #f59e0b; }
+        .error { color: #ef4444; }
+        pre {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            background: #0891b2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0e7490;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .result.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .result.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 SEO Validator - BN Inmobiliaria</h1>
+        
+        <div class="section">
+            <h2>Meta Tags Validation</h2>
+            <div id="meta-results"></div>
+            <button onclick="validateMetaTags()">Check Meta Tags</button>
+        </div>
+
+        <div class="section">
+            <h2>Structured Data (JSON-LD)</h2>
+            <div id="structured-data-results"></div>
+            <button onclick="validateStructuredData()">Check Structured Data</button>
+        </div>
+
+        <div class="section">
+            <h2>SEO Best Practices</h2>
+            <div id="seo-checklist"></div>
+            <button onclick="runSEOChecklist()">Run SEO Checklist</button>
+        </div>
+
+        <div class="section">
+            <h2>External Validators</h2>
+            <p>Use these external tools to validate your SEO:</p>
+            <ul>
+                <li><a href="https://search.google.com/test/rich-results" target="_blank">Google Rich Results Test</a></li>
+                <li><a href="https://validator.schema.org/" target="_blank">Schema.org Validator</a></li>
+                <li><a href="https://search.google.com/test/mobile-friendly" target="_blank">Mobile-Friendly Test</a></li>
+                <li><a href="https://pagespeed.web.dev/" target="_blank">PageSpeed Insights</a></li>
+                <li><a href="https://www.xml-sitemaps.com/validate-xml-sitemap.html" target="_blank">Sitemap Validator</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function validateMetaTags() {
+            const results = document.getElementById('meta-results');
+            let html = '<div class="check-item">';
+            
+            const checks = [
+                { tag: 'title', name: 'Title Tag' },
+                { tag: 'meta[name="description"]', name: 'Meta Description' },
+                { tag: 'meta[name="keywords"]', name: 'Meta Keywords' },
+                { tag: 'meta[property="og:title"]', name: 'OG Title' },
+                { tag: 'meta[property="og:description"]', name: 'OG Description' },
+                { tag: 'meta[property="og:image"]', name: 'OG Image' },
+                { tag: 'meta[name="twitter:card"]', name: 'Twitter Card' },
+                { tag: 'link[rel="canonical"]', name: 'Canonical URL' },
+                { tag: 'meta[name="robots"]', name: 'Robots Meta' }
+            ];
+
+            checks.forEach(check => {
+                const element = document.querySelector(check.tag);
+                const exists = !!element;
+                const icon = exists ? '✅' : '❌';
+                const className = exists ? 'success' : 'error';
+                const content = element ? (element.content || element.href || element.textContent) : 'Not found';
+                
+                html += `
+                    <div class="check-item ${className}">
+                        <span class="check-icon">${icon}</span>
+                        <div>
+                            <strong>${check.name}:</strong> ${exists ? content.substring(0, 100) : 'Missing'}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            results.innerHTML = html;
+        }
+
+        function validateStructuredData() {
+            const results = document.getElementById('structured-data-results');
+            const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+            
+            if (scripts.length === 0) {
+                results.innerHTML = '<div class="result error">No structured data found!</div>';
+                return;
+            }
+
+            let html = `<div class="result success">Found ${scripts.length} structured data block(s)</div>`;
+            
+            scripts.forEach((script, index) => {
+                try {
+                    const data = JSON.parse(script.textContent);
+                    html += `<h3>Block ${index + 1}: ${data['@type']}</h3>`;
+                    html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } catch (e) {
+                    html += `<div class="result error">Invalid JSON in block ${index + 1}</div>`;
+                }
+            });
+
+            results.innerHTML = html;
+        }
+
+        function runSEOChecklist() {
+            const results = document.getElementById('seo-checklist');
+            let html = '';
+            
+            const checks = [
+                {
+                    name: 'Page has H1 tag',
+                    test: () => !!document.querySelector('h1'),
+                    tip: 'Every page should have exactly one H1 tag'
+                },
+                {
+                    name: 'Images have alt text',
+                    test: () => {
+                        const images = document.querySelectorAll('img');
+                        const imagesWithAlt = document.querySelectorAll('img[alt]');
+                        return images.length === imagesWithAlt.length;
+                    },
+                    tip: 'All images should have descriptive alt text'
+                },
+                {
+                    name: 'Links are descriptive',
+                    test: () => {
+                        const links = document.querySelectorAll('a');
+                        let descriptive = true;
+                        links.forEach(link => {
+                            const text = link.textContent.trim().toLowerCase();
+                            if (['click here', 'read more', 'here'].includes(text)) {
+                                descriptive = false;
+                            }
+                        });
+                        return descriptive;
+                    },
+                    tip: 'Avoid generic link text like "click here"'
+                },
+                {
+                    name: 'Heading hierarchy is proper',
+                    test: () => {
+                        const h1 = document.querySelectorAll('h1').length;
+                        return h1 <= 1;
+                    },
+                    tip: 'Should have exactly one H1 per page'
+                },
+                {
+                    name: 'Page language is set',
+                    test: () => !!document.documentElement.lang,
+                    tip: 'HTML tag should have lang attribute'
+                },
+                {
+                    name: 'Viewport meta tag exists',
+                    test: () => !!document.querySelector('meta[name="viewport"]'),
+                    tip: 'Required for mobile-friendly pages'
+                }
+            ];
+
+            checks.forEach(check => {
+                const passed = check.test();
+                const icon = passed ? '✅' : '⚠️';
+                const className = passed ? 'success' : 'warning';
+                
+                html += `
+                    <div class="check-item ${className}">
+                        <span class="check-icon">${icon}</span>
+                        <div>
+                            <strong>${check.name}</strong><br>
+                            <small>${check.tip}</small>
+                        </div>
+                    </div>
+                `;
+            });
+
+            results.innerHTML = html;
+        }
+
+        // Run validation on load
+        window.addEventListener('load', () => {
+            validateMetaTags();
+            runSEOChecklist();
+        });
+    </script>
+</body>
+</html>
