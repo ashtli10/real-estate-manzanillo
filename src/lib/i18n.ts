@@ -20,6 +20,7 @@ const es = {
       create: 'Crear',
       search: 'Buscar',
       filter: 'Filtrar',
+      filters: 'Filtros',
       all: 'Todos',
       yes: 'Sí',
       no: 'No',
@@ -32,6 +33,16 @@ const es = {
       copied: '¡Copiado!',
       error: 'Error',
       success: 'Éxito',
+      or: 'o',
+      from: 'desde',
+      to: 'hasta',
+      of: 'de',
+      showing: 'Mostrando',
+      property: 'propiedad',
+      properties: 'propiedades',
+      viewDetails: 'Ver detalles',
+      viewAll: 'Ver todas las propiedades',
+      contact: 'Contactar',
     },
     
     // Navigation
@@ -61,6 +72,96 @@ const es = {
       tokenUsed: 'Este enlace ya fue utilizado',
     },
     
+    // Home page
+    home: {
+      heroTitle: 'Encuentra tu hogar ideal en Manzanillo',
+      heroSubtitle: 'Especialistas en bienes raíces con más de 10 años de experiencia. Propiedades cerca de las mejores playas, plazas comerciales y restaurantes de Manzanillo, Colima.',
+      exploreProperties: 'Explorar propiedades',
+      searchPlaceholder: '¿Qué tipo de propiedad buscas?',
+      searchButton: 'Buscar',
+      forSale: 'En Venta',
+      forRent: 'En Renta',
+      both: 'Ambos',
+      location: 'Ubicación',
+      allLocations: 'Todas las ubicaciones',
+      strategicLocation: 'Ubicación estratégica',
+      strategicLocationDesc: 'En Av. Manzanillo, a metros del Blvd. Costero. Acceso fácil a playas, comercios y servicios.',
+      trustAndSecurity: 'Confianza y seguridad',
+      trustAndSecurityDesc: 'Más de 10 años de experiencia respaldando cada transacción con profesionalismo y transparencia.',
+      smartInvestment: 'Inversión inteligente',
+      smartInvestmentDesc: 'Oportunidades de inversión en una de las zonas más atractivas de la costa del Pacífico.',
+      featuredProperties: 'Propiedades destacadas',
+      featuredPropertiesDesc: 'Descubre las mejores opciones disponibles en Manzanillo',
+      noFeaturedProperties: 'No hay propiedades destacadas disponibles en este momento.',
+      whatsappMessage: 'Hola, quiero asesoría para encontrar la mejor propiedad en Manzanillo.',
+      // About Us section
+      aboutUsTitle: '¿Por qué elegirnos?',
+      aboutUsSubtitle: 'Somos un marketplace de bienes raíces que conecta a compradores, vendedores e inversionistas con las mejores propiedades en Manzanillo.',
+      aboutUsDesc: 'Nuestra plataforma reúne a los mejores agentes inmobiliarios y propietarios verificados para ofrecerte una experiencia segura y transparente. Ya sea que busques tu casa soñada, un departamento en renta, o una oportunidad de inversión, estamos aquí para ayudarte.',
+      marketplaceFeature1: 'Propiedades verificadas',
+      marketplaceFeature1Desc: 'Cada propiedad es revisada para garantizar información precisa.',
+      marketplaceFeature2: 'Múltiples agentes',
+      marketplaceFeature2Desc: 'Acceso a propiedades de diversos agentes y propietarios.',
+      marketplaceFeature3: 'Atención personalizada',
+      marketplaceFeature3Desc: 'Contacto directo por WhatsApp para resolver todas tus dudas.',
+    },
+    
+    // Properties page
+    propertiesPage: {
+      searchPlaceholder: 'Buscar por título, ubicación o descripción...',
+      propertyType: 'Tipo de propiedad',
+      priceRange: 'Rango de precio',
+      upTo: 'Hasta',
+      moreThan: 'Más de',
+      loadingProperties: 'Cargando propiedades...',
+      noPropertiesFound: 'No se encontraron propiedades',
+      adjustFilters: 'Intenta ajustar los filtros de búsqueda',
+      whatsappMessage: 'Hola, estoy viendo sus propiedades en Manzanillo y quiero ayuda para elegir la mejor opción.',
+    },
+    
+    // Property detail page
+    propertyDetail: {
+      featured: 'Destacada',
+      forSale: 'En Venta',
+      forRent: 'En Renta',
+      viewPhotos: 'Ver fotos',
+      photos: 'fotos',
+      description: 'Descripción',
+      features: 'Características',
+      amenities: 'Amenidades',
+      bonuses: 'Bonificaciones',
+      location: 'Ubicación',
+      owner: 'Propietario',
+      contactOwner: 'Contactar al propietario',
+      contactViaWhatsApp: 'Contactar por WhatsApp',
+      contactNow: 'Contactar ahora',
+      yearsOld: '{{years}} años',
+      level: 'piso',
+      levels: 'pisos',
+      notAvailable: 'No disponible',
+      propertySummary: 'Resumen de la propiedad',
+      whatsappMessage: 'Hola, me interesa la propiedad "{{title}}" con precio de {{price}}. ¿Podemos hablar?',
+      // Detail page specific
+      loadingProperty: 'Cargando propiedad...',
+      propertyNotFound: 'Propiedad no encontrada',
+      backToProperties: 'Volver a propiedades',
+      sale: 'Venta',
+      monthlyRent: 'Renta mensual',
+      specialFeatures: 'Características especiales',
+      propertyDetails: 'Detalles de la propiedad',
+      type: 'Tipo',
+      talkToUs: 'Habla con nosotros',
+      talkToUsDesc: 'Escríbenos por WhatsApp para resolver dudas o agendar una visita personalizada.',
+      quickResponse: 'Respuesta rápida',
+      quickResponseDesc: 'Atendemos mensajes y coordinamos recorridos.',
+      writeOnWhatsApp: 'Escribir por WhatsApp',
+      thumbnail: 'Miniatura',
+      videoThumbnail: 'Miniatura de video',
+      image: 'Imagen',
+      priceOnRequest: 'Precio a consultar',
+      scheduleVisit: '¿Podemos agendar una visita?',
+    },
+    
     // Dashboard
     dashboard: {
       title: '¡Hola{{name}}!',
@@ -71,10 +172,14 @@ const es = {
       subscription: 'Suscripción',
       profile: 'Mi Perfil',
       adminPanel: 'Panel Admin',
+      adminProperties: 'Propiedades (Admin)',
       noProperties: 'No tienes propiedades aún',
       publishFirst: 'Publicar mi primera propiedad',
       recentActivity: 'Actividad reciente',
       noActivity: 'Aún no hay actividad',
+      saving: 'Guardando...',
+      profileUpdated: 'Perfil actualizado correctamente',
+      profileUpdateError: 'Error al actualizar el perfil',
     },
     
     // Credits
@@ -124,7 +229,7 @@ const es = {
       },
     },
     
-    // Properties
+    // Properties (shared)
     property: {
       title: 'Propiedades',
       search: 'Buscar propiedades...',
@@ -132,8 +237,12 @@ const es = {
       price: 'Precio',
       bedrooms: 'Recámaras',
       bathrooms: 'Baños',
+      halfBathrooms: 'Medios baños',
       size: 'Tamaño',
+      sizeTotal: 'Tamaño del terreno',
+      sizeConstruction: 'Tamaño de construcción',
       parking: 'Estacionamiento',
+      parkingSpaces: 'Espacios de estacionamiento',
       nearBeach: 'Cerca de la playa',
       forSale: 'En Venta',
       forRent: 'En Renta',
@@ -146,6 +255,9 @@ const es = {
       addProperty: 'Agregar propiedad',
       editProperty: 'Editar propiedad',
       deleteProperty: 'Eliminar propiedad',
+      age: 'Antigüedad',
+      levels: 'Niveles',
+      floor: 'Piso',
       types: {
         casa: 'Casa',
         departamento: 'Departamento',
@@ -180,6 +292,8 @@ const es = {
       language: 'Idioma preferido',
       editProfile: 'Editar perfil',
       saveChanges: 'Guardar cambios',
+      spanish: 'Español',
+      english: 'Inglés',
     },
     
     // Errors
@@ -191,6 +305,22 @@ const es = {
       generic: 'Ocurrió un error. Intenta de nuevo.',
       notFound: 'No encontrado',
       unauthorized: 'No autorizado',
+    },
+    
+    // Footer
+    footer: {
+      description: 'Tu socio de confianza en bienes raíces en Manzanillo, Colima.',
+      quickLinks: 'Enlaces rápidos',
+      contact: 'Contacto',
+      followUs: 'Síguenos',
+      allRightsReserved: 'Todos los derechos reservados.',
+      address: 'Manzanillo, Colima, México',
+    },
+    
+    // Header
+    header: {
+      menu: 'Menú',
+      language: 'Idioma',
     },
   },
 };
@@ -208,6 +338,7 @@ const en = {
       create: 'Create',
       search: 'Search',
       filter: 'Filter',
+      filters: 'Filters',
       all: 'All',
       yes: 'Yes',
       no: 'No',
@@ -220,6 +351,16 @@ const en = {
       copied: 'Copied!',
       error: 'Error',
       success: 'Success',
+      or: 'or',
+      from: 'from',
+      to: 'to',
+      of: 'of',
+      showing: 'Showing',
+      property: 'property',
+      properties: 'properties',
+      viewDetails: 'View details',
+      viewAll: 'View all properties',
+      contact: 'Contact',
     },
     
     // Navigation
@@ -249,6 +390,96 @@ const en = {
       tokenUsed: 'This link has already been used',
     },
     
+    // Home page
+    home: {
+      heroTitle: 'Find your ideal home in Manzanillo',
+      heroSubtitle: 'Real estate specialists with over 10 years of experience. Properties near the best beaches, shopping centers, and restaurants in Manzanillo, Colima.',
+      exploreProperties: 'Explore properties',
+      searchPlaceholder: 'What type of property are you looking for?',
+      searchButton: 'Search',
+      forSale: 'For Sale',
+      forRent: 'For Rent',
+      both: 'Both',
+      location: 'Location',
+      allLocations: 'All locations',
+      strategicLocation: 'Strategic location',
+      strategicLocationDesc: 'On Av. Manzanillo, meters from Blvd. Costero. Easy access to beaches, shops, and services.',
+      trustAndSecurity: 'Trust and security',
+      trustAndSecurityDesc: 'Over 10 years of experience backing every transaction with professionalism and transparency.',
+      smartInvestment: 'Smart investment',
+      smartInvestmentDesc: 'Investment opportunities in one of the most attractive areas of the Pacific coast.',
+      featuredProperties: 'Featured properties',
+      featuredPropertiesDesc: 'Discover the best options available in Manzanillo',
+      noFeaturedProperties: 'No featured properties available at this time.',
+      whatsappMessage: 'Hello, I want advice to find the best property in Manzanillo.',
+      // About Us section
+      aboutUsTitle: 'Why choose us?',
+      aboutUsSubtitle: 'We are a real estate marketplace connecting buyers, sellers, and investors with the best properties in Manzanillo.',
+      aboutUsDesc: 'Our platform brings together the best real estate agents and verified owners to offer you a safe and transparent experience. Whether you are looking for your dream home, a rental apartment, or an investment opportunity, we are here to help.',
+      marketplaceFeature1: 'Verified properties',
+      marketplaceFeature1Desc: 'Each property is reviewed to ensure accurate information.',
+      marketplaceFeature2: 'Multiple agents',
+      marketplaceFeature2Desc: 'Access to properties from various agents and owners.',
+      marketplaceFeature3: 'Personalized attention',
+      marketplaceFeature3Desc: 'Direct WhatsApp contact to answer all your questions.',
+    },
+    
+    // Properties page
+    propertiesPage: {
+      searchPlaceholder: 'Search by title, location, or description...',
+      propertyType: 'Property type',
+      priceRange: 'Price range',
+      upTo: 'Up to',
+      moreThan: 'More than',
+      loadingProperties: 'Loading properties...',
+      noPropertiesFound: 'No properties found',
+      adjustFilters: 'Try adjusting the search filters',
+      whatsappMessage: 'Hello, I am viewing your properties in Manzanillo and want help choosing the best option.',
+    },
+    
+    // Property detail page
+    propertyDetail: {
+      featured: 'Featured',
+      forSale: 'For Sale',
+      forRent: 'For Rent',
+      viewPhotos: 'View photos',
+      photos: 'photos',
+      description: 'Description',
+      features: 'Features',
+      amenities: 'Amenities',
+      bonuses: 'Bonuses',
+      location: 'Location',
+      owner: 'Owner',
+      contactOwner: 'Contact owner',
+      contactViaWhatsApp: 'Contact via WhatsApp',
+      contactNow: 'Contact now',
+      yearsOld: '{{years}} years old',
+      level: 'floor',
+      levels: 'floors',
+      notAvailable: 'Not available',
+      propertySummary: 'Property summary',
+      whatsappMessage: 'Hello, I am interested in the property "{{title}}" with a price of {{price}}. Can we talk?',
+      // Detail page specific
+      loadingProperty: 'Loading property...',
+      propertyNotFound: 'Property not found',
+      backToProperties: 'Back to properties',
+      sale: 'Sale',
+      monthlyRent: 'Monthly rent',
+      specialFeatures: 'Special features',
+      propertyDetails: 'Property details',
+      type: 'Type',
+      talkToUs: 'Talk to us',
+      talkToUsDesc: 'Write to us on WhatsApp to answer questions or schedule a personalized visit.',
+      quickResponse: 'Quick response',
+      quickResponseDesc: 'We respond to messages and coordinate tours.',
+      writeOnWhatsApp: 'Write on WhatsApp',
+      thumbnail: 'Thumbnail',
+      videoThumbnail: 'Video thumbnail',
+      image: 'Image',
+      priceOnRequest: 'Price on request',
+      scheduleVisit: 'Can we schedule a visit?',
+    },
+    
     // Dashboard
     dashboard: {
       title: 'Hello{{name}}!',
@@ -259,10 +490,14 @@ const en = {
       subscription: 'Subscription',
       profile: 'My Profile',
       adminPanel: 'Admin Panel',
+      adminProperties: 'Properties (Admin)',
       noProperties: "You don't have any properties yet",
       publishFirst: 'Publish my first property',
       recentActivity: 'Recent activity',
       noActivity: 'No activity yet',
+      saving: 'Saving...',
+      profileUpdated: 'Profile updated successfully',
+      profileUpdateError: 'Error updating profile',
     },
     
     // Credits
@@ -312,7 +547,7 @@ const en = {
       },
     },
     
-    // Properties
+    // Properties (shared)
     property: {
       title: 'Properties',
       search: 'Search properties...',
@@ -320,8 +555,12 @@ const en = {
       price: 'Price',
       bedrooms: 'Bedrooms',
       bathrooms: 'Bathrooms',
+      halfBathrooms: 'Half bathrooms',
       size: 'Size',
+      sizeTotal: 'Total lot size',
+      sizeConstruction: 'Construction size',
       parking: 'Parking',
+      parkingSpaces: 'Parking spaces',
       nearBeach: 'Near beach',
       forSale: 'For Sale',
       forRent: 'For Rent',
@@ -334,6 +573,9 @@ const en = {
       addProperty: 'Add property',
       editProperty: 'Edit property',
       deleteProperty: 'Delete property',
+      age: 'Age',
+      levels: 'Levels',
+      floor: 'Floor',
       types: {
         casa: 'House',
         departamento: 'Apartment',
@@ -368,6 +610,8 @@ const en = {
       language: 'Preferred language',
       editProfile: 'Edit profile',
       saveChanges: 'Save changes',
+      spanish: 'Spanish',
+      english: 'English',
     },
     
     // Errors
@@ -379,6 +623,22 @@ const en = {
       generic: 'An error occurred. Please try again.',
       notFound: 'Not found',
       unauthorized: 'Unauthorized',
+    },
+    
+    // Footer
+    footer: {
+      description: 'Your trusted real estate partner in Manzanillo, Colima.',
+      quickLinks: 'Quick links',
+      contact: 'Contact',
+      followUs: 'Follow us',
+      allRightsReserved: 'All rights reserved.',
+      address: 'Manzanillo, Colima, Mexico',
+    },
+    
+    // Header
+    header: {
+      menu: 'Menu',
+      language: 'Language',
     },
   },
 };

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Lightbox from 'yet-another-react-lightbox';
 import LightboxVideo from 'yet-another-react-lightbox/plugins/video';
 import 'yet-another-react-lightbox/styles.css';
@@ -342,6 +343,7 @@ interface PropertyDetailProps {
 }
 
 export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessage }: PropertyDetailProps) {
+  const { t, i18n } = useTranslation();
   const [property, setProperty] = useState<Property | null>(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -406,17 +408,24 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
     const priceParts: string[] = [];
 
     if (currentProperty.is_for_sale) {
-      priceParts.push(`Venta ${formatPrice(currentProperty.price, currentProperty.currency)}`);
+      const saleLabel = i18n.language === 'en' ? 'Sale' : 'Venta';
+      priceParts.push(`${saleLabel} ${formatPrice(currentProperty.price, currentProperty.currency)}`);
     }
 
     if (currentProperty.is_for_rent) {
-      priceParts.push(`Renta ${formatPrice(currentProperty.rent_price, currentProperty.rent_currency)}`);
+      const rentLabel = i18n.language === 'en' ? 'Rent' : 'Renta';
+      priceParts.push(`${rentLabel} ${formatPrice(currentProperty.rent_price, currentProperty.rent_currency)}`);
     }
 
-    const priceText = priceParts.length > 0 ? priceParts.join(' | ') : 'Precio a consultar';
-    const typeLabel = propertyTypeLabels[currentProperty.property_type] || 'propiedad';
+    const priceText = priceParts.length > 0 ? priceParts.join(' | ') : t('propertyDetail.priceOnRequest');
+    const typeLabel = propertyTypeLabels[currentProperty.property_type] || (i18n.language === 'en' ? 'property' : 'propiedad');
 
-    return `Hola, me interesa la ${typeLabel} "${currentProperty.title}" en ${location}. ${priceText}. ¿Podemos agendar una visita?`;
+    return t('propertyDetail.whatsappMessage', {
+      type: typeLabel,
+      title: currentProperty.title,
+      location,
+      price: priceText
+    });
   };
 
   useEffect(() => {
@@ -430,7 +439,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Cargando propiedad...</p>
+          <p className="mt-4 text-gray-600">{t('propertyDetail.loadingProperty')}</p>
         </div>
       </div>
     );
@@ -444,12 +453,12 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <HomeIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Propiedad no encontrada</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('propertyDetail.propertyNotFound')}</h2>
           <button
             onClick={() => onNavigate('/propiedades')}
             className="text-blue-600 hover:text-blue-700 font-medium"
           >
-            Volver a propiedades
+            {t('propertyDetail.backToProperties')}
           </button>
         </div>
       </div>
@@ -474,7 +483,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb 
           items={[
-            { label: 'Propiedades', path: '/propiedades' },
+            { label: t('nav.properties'), path: '/propiedades' },
             { label: property.title }
           ]} 
           onNavigate={onNavigate}
@@ -485,7 +494,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
           className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
         >
           <ChevronLeft className="h-5 w-5" />
-          <span>Volver a propiedades</span>
+          <span>{t('propertyDetail.backToProperties')}</span>
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -606,13 +615,13 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               <div className="flex flex-wrap items-center gap-3 mb-6">
                 {property.is_for_sale && (
                   <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-lg border border-blue-200">
-                    <p className="text-xs uppercase font-semibold">Venta</p>
+                    <p className="text-xs uppercase font-semibold">{t('propertyDetail.forSale')}</p>
                     <p className="text-3xl font-bold">{formatPrice(property.price, property.currency)}</p>
                   </div>
                 )}
                 {property.is_for_rent && (
                   <div className="bg-emerald-50 text-emerald-700 px-4 py-3 rounded-lg border border-emerald-200">
-                    <p className="text-xs uppercase font-semibold">Renta mensual</p>
+                    <p className="text-xs uppercase font-semibold">{t('propertyDetail.monthlyRent')}</p>
                     <p className="text-3xl font-bold">{formatPrice(property.rent_price, property.rent_currency)}</p>
                   </div>
                 )}
@@ -655,7 +664,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-3 flex items-center">
                     <Tag className="h-6 w-6 mr-2 text-cyan-500" />
-                    Características especiales
+                    {t('propertyDetail.specialFeatures')}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {property.custom_bonuses.map((bonus: string, index: number) => (
@@ -671,7 +680,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               )}
 
               <div className="prose max-w-none">
-                <h3 className="text-xl font-bold text-gray-800 mb-3">Descripción</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-3">{t('propertyDetail.description')}</h3>
                 <ReactMarkdown
                   className="prose max-w-none text-gray-700 leading-relaxed prose-headings:text-gray-800 prose-strong:text-gray-800 prose-a:text-blue-600 hover:prose-a:text-blue-700 whitespace-pre-wrap"
                   remarkPlugins={[remarkGfm, remarkBreaks]}
@@ -687,7 +696,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Detalles de la propiedad</h3>
+              <h3 className="text-2xl font-bold text-gray-800 mb-6">{t('propertyDetail.propertyDetails')}</h3>
               
               {/* Property Type - Always shown */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -696,7 +705,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                     <HomeIcon className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 font-medium">Tipo</p>
+                    <p className="text-sm text-gray-500 font-medium">{t('propertyDetail.type')}</p>
                     <p className="font-bold text-gray-800 text-lg">{propertyTypeLabels[property.property_type]}</p>
                   </div>
                 </div>

@@ -38,6 +38,9 @@ interface AuthContextType {
   signUp: (email: string, password: string, invitationToken: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<{ error: Error | null }>;
   
+  // Profile actions
+  updateProfile: (data: { fullName?: string; phone?: string; companyName?: string; languagePreference?: 'es' | 'en' }) => Promise<boolean>;
+  
   // Data refresh
   refreshProfile: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -362,6 +365,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProfile = async (data: { 
+    fullName?: string; 
+    phone?: string; 
+    companyName?: string; 
+    languagePreference?: 'es' | 'en' 
+  }): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: data.fullName,
+          phone: data.phone,
+          company_name: data.companyName,
+          language_preference: data.languagePreference,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Error updating profile:', error);
+        return false;
+      }
+
+      // Refresh the profile to get updated data
+      await refreshProfile();
+      return true;
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      return false;
+    }
+  };
+
   // =============================================================================
   // CONTEXT VALUE
   // =============================================================================
@@ -378,6 +415,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
+    updateProfile,
     refreshProfile,
     refreshSubscription,
     refreshCredits,

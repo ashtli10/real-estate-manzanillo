@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, SlidersHorizontal, Home as HomeIcon } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import type { Property } from '../types/property';
-import { propertyTypeLabels } from '../types/property';
 import { PropertyCard } from '../components/PropertyCard';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { transformProperty } from '../lib/propertyTransform';
@@ -14,6 +14,7 @@ interface PropertiesProps {
 }
 
 export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesProps) {
+  const { t, i18n } = useTranslation();
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,11 +32,12 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
   }, []);
 
   useEffect(() => {
-    onUpdateWhatsappMessage('Hola, estoy viendo sus propiedades en Manzanillo y quiero ayuda para elegir la mejor opción.');
-  }, [onUpdateWhatsappMessage]);
+    onUpdateWhatsappMessage(t('propertiesPage.whatsappMessage'));
+  }, [onUpdateWhatsappMessage, t]);
 
   useEffect(() => {
     applyFilters();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [properties, filters]);
 
   const loadProperties = async () => {
@@ -90,11 +92,16 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
     setFilteredProperties(filtered);
   };
 
+  // Get translated property types
+  const getPropertyTypeLabel = (type: string) => {
+    return t(`property.types.${type}`, type);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-10">
         <Breadcrumb 
-          items={[{ label: 'Propiedades' }]} 
+          items={[{ label: t('nav.properties') }]} 
           onNavigate={onNavigate}
         />
         
@@ -105,7 +112,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Buscar por título, ubicación o descripción..."
+                  placeholder={t('propertiesPage.searchPlaceholder')}
                   value={filters.search}
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -117,7 +124,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
               className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <SlidersHorizontal className="h-5 w-5" />
-              <span>Filtros</span>
+              <span>{t('common.filters')}</span>
             </button>
           </div>
 
@@ -125,34 +132,36 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de propiedad
+                  {t('propertiesPage.propertyType')}
                 </label>
                 <select
                   value={filters.propertyType}
                   onChange={(e) => setFilters({ ...filters, propertyType: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="all">Todos</option>
-                  {Object.entries(propertyTypeLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
+                  <option value="all">{t('common.all')}</option>
+                  <option value="casa">{getPropertyTypeLabel('casa')}</option>
+                  <option value="departamento">{getPropertyTypeLabel('departamento')}</option>
+                  <option value="terreno">{getPropertyTypeLabel('terreno')}</option>
+                  <option value="comercial">{getPropertyTypeLabel('comercial')}</option>
+                  <option value="bodega">{getPropertyTypeLabel('bodega')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rango de precio
+                  {t('propertiesPage.priceRange')}
                 </label>
                 <select
                   value={filters.priceRange}
                   onChange={(e) => setFilters({ ...filters, priceRange: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="all">Todos</option>
-                  <option value="0-1000000">Hasta $1,000,000</option>
+                  <option value="all">{t('common.all')}</option>
+                  <option value="0-1000000">{t('propertiesPage.upTo')} $1,000,000</option>
                   <option value="1000000-3000000">$1,000,000 - $3,000,000</option>
                   <option value="3000000-5000000">$3,000,000 - $5,000,000</option>
-                  <option value="5000000+">Más de $5,000,000</option>
+                  <option value="5000000+">{t('propertiesPage.moreThan')} $5,000,000</option>
                 </select>
               </div>
             </div>
@@ -162,14 +171,14 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            <p className="mt-4 text-gray-600">Cargando propiedades...</p>
+            <p className="mt-4 text-gray-600">{t('propertiesPage.loadingProperties')}</p>
           </div>
         ) : filteredProperties.length > 0 ? (
           <>
             <div className="mb-6">
               <p className="text-gray-600">
-                Mostrando <span className="font-semibold">{filteredProperties.length}</span>{' '}
-                {filteredProperties.length === 1 ? 'propiedad' : 'propiedades'}
+                {t('common.showing')} <span className="font-semibold">{filteredProperties.length}</span>{' '}
+                {filteredProperties.length === 1 ? t('common.property') : t('common.properties')}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -185,8 +194,8 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
         ) : (
           <div className="text-center py-12 bg-white rounded-xl shadow-lg">
             <HomeIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 text-lg mb-2">No se encontraron propiedades</p>
-            <p className="text-gray-500">Intenta ajustar los filtros de búsqueda</p>
+            <p className="text-gray-600 text-lg mb-2">{t('propertiesPage.noPropertiesFound')}</p>
+            <p className="text-gray-500">{t('propertiesPage.adjustFilters')}</p>
           </div>
         )}
       </div>

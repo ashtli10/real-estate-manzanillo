@@ -1,4 +1,5 @@
 import { Bed, Bath, Square, MapPin, Car } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Property } from '../types/property';
 import { formatPrice } from '../types/property';
 
@@ -8,6 +9,8 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
+  const { t, i18n } = useTranslation();
+  const isSpanish = i18n.language === 'es';
   const mainImage = property.images[0] || 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg?auto=compress&cs=tinysrgb&w=800';
 
   const getNumberCharacteristic = (key: string) => {
@@ -35,12 +38,12 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
         <div className="absolute top-3 left-3 flex flex-wrap gap-2">
           {property.is_for_sale && (
             <span className="bg-white/90 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full shadow">
-              En venta
+              {t('property.forSale')}
             </span>
           )}
           {property.is_for_rent && (
             <span className="bg-white/90 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full shadow">
-              En renta
+              {t('property.forRent')}
             </span>
           )}
         </div>
@@ -48,13 +51,13 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
         <div className="absolute bottom-3 left-3 space-y-2">
           {property.is_for_sale && (
             <div className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
-              <p className="text-xs uppercase tracking-wide">Venta</p>
+              <p className="text-xs uppercase tracking-wide">{isSpanish ? 'Venta' : 'Sale'}</p>
               <p className="text-lg font-bold">{formatPrice(property.price, property.currency)}</p>
             </div>
           )}
           {property.is_for_rent && (
             <div className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg">
-              <p className="text-xs uppercase tracking-wide">Renta</p>
+              <p className="text-xs uppercase tracking-wide">{isSpanish ? 'Renta' : 'Rent'}</p>
               <p className="text-lg font-bold">{formatPrice(property.rent_price, property.rent_currency)}</p>
             </div>
           )}
@@ -76,13 +79,13 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
           {bedrooms && bedrooms > 0 && (
             <div className="flex items-center space-x-2 text-gray-700">
               <Bed className="h-5 w-5 text-blue-500" />
-              <span className="text-sm font-medium">{bedrooms} recámaras</span>
+              <span className="text-sm font-medium">{bedrooms} {t('property.bedrooms').toLowerCase()}</span>
             </div>
           )}
           {bathrooms && bathrooms > 0 && (
             <div className="flex items-center space-x-2 text-gray-700">
               <Bath className="h-5 w-5 text-blue-500" />
-              <span className="text-sm font-medium">{bathrooms} baños</span>
+              <span className="text-sm font-medium">{bathrooms} {t('property.bathrooms').toLowerCase()}</span>
             </div>
           )}
           {sizeTotal && sizeTotal > 0 && (
@@ -94,7 +97,7 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
           {parking && parking > 0 && (
             <div className="flex items-center space-x-2 text-gray-700">
               <Car className="h-5 w-5 text-blue-500" />
-              <span className="text-sm font-medium">{parking} estacionamientos</span>
+              <span className="text-sm font-medium">{parking} {t('property.parking').toLowerCase()}</span>
             </div>
           )}
         </div>
@@ -111,14 +114,14 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
             ))}
             {property.custom_bonuses.length > 2 && (
               <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                +{property.custom_bonuses.length - 2} más
+                +{property.custom_bonuses.length - 2} {isSpanish ? 'más' : 'more'}
               </span>
             )}
           </div>
         )}
 
         <button className="mt-4 w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-cyan-600 transition-all shadow-md">
-          Ver detalles
+          {t('common.viewDetails')}
         </button>
       </div>
     </div>

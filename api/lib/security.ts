@@ -5,8 +5,9 @@
 
 // Allowed origins for CORS - update with your production domains
 const ALLOWED_ORIGINS = [
-  'https://www.bninmobiliaria.com',
-  'https://bninmobiliaria.com',
+  // Production domains
+  'https://www.manzanillo-real-estate.com',
+  'https://manzanillo-real-estate.com',
   'https://real-estate-manzanillo.vercel.app',
   // Development
   'http://localhost:5173',

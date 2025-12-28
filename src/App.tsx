@@ -8,7 +8,6 @@ import { Home } from './pages/Home';
 import { Properties } from './pages/Properties';
 import { PropertyDetail } from './pages/PropertyDetail';
 import { Login } from './pages/Login';
-import { Admin } from './pages/Admin';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { FloatingWhatsappButton } from './components/FloatingWhatsappButton';
@@ -92,14 +91,6 @@ function AppContent() {
       return {
         component: <Dashboard onNavigate={navigate} />,
         protection: 'auth',
-      };
-    }
-
-    // Admin panel - requires admin role
-    if (route === '/admin') {
-      return {
-        component: <Admin onNavigate={navigate} />,
-        protection: 'admin',
       };
     }
 

@@ -1,6 +1,10 @@
 import { Phone, Mail, Facebook } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export function Footer() {
+  const { t, i18n } = useTranslation();
+  const isSpanish = i18n.language === 'es';
+  
   return (
     <footer className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white">
       <div className="container mx-auto px-4 py-12">
@@ -15,20 +19,24 @@ export function Footer() {
               />
               <div>
                 <h3 className="text-xl font-bold text-cyan-300">BN Inmobiliaria</h3>
-                <p className="text-sm text-gray-400 italic">La tranquilidad de acertar</p>
+                <p className="text-sm text-gray-400 italic">
+                  {isSpanish ? 'La tranquilidad de acertar' : 'The peace of mind of getting it right'}
+                </p>
               </div>
             </div>
             <p className="text-gray-300 leading-relaxed">
-              Especialistas en bienes raíces en Manzanillo, Colima. Encuentra tu hogar ideal cerca de las playas, plazas comerciales y restaurantes.
+              {t('footer.description')}
             </p>
           </div>
 
           <div>
-            <h3 className="text-xl font-bold mb-4 text-cyan-300">Contacto</h3>
+            <h3 className="text-xl font-bold mb-4 text-cyan-300">{t('footer.contact')}</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Phone className="h-5 w-5 text-cyan-400 flex-shrink-0" />
-                <p className="text-gray-300">Contáctanos para más información</p>
+                <p className="text-gray-300">
+                  {isSpanish ? 'Contáctanos para más información' : 'Contact us for more information'}
+                </p>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-cyan-400 flex-shrink-0" />
@@ -38,7 +46,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-xl font-bold mb-4 text-cyan-300">Síguenos</h3>
+            <h3 className="text-xl font-bold mb-4 text-cyan-300">{t('footer.followUs')}</h3>
             <a
               href="https://www.facebook.com/p/BN-inmobiliaria-100063636817835/"
               target="_blank"
@@ -52,8 +60,8 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-600 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} BN Inmobiliaria. Todos los derechos reservados.</p>
-          <p className="mt-2 text-sm">Manzanillo, Colima - Tu hogar ideal te espera</p>
+          <p>&copy; {new Date().getFullYear()} BN Inmobiliaria. {t('footer.allRightsReserved')}</p>
+          <p className="mt-2 text-sm">{t('footer.address')} - {isSpanish ? 'Tu hogar ideal te espera' : 'Your ideal home awaits'}</p>
         </div>
       </div>
     </footer>

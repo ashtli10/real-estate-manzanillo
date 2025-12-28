@@ -59,15 +59,15 @@ export function Header({ onNavigate, currentPath }: HeaderProps) {
             {user ? (
               <>
                 <button
-                  onClick={() => onNavigate('/admin')}
+                  onClick={() => onNavigate('/dashboard')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
-                    currentPath.startsWith('/admin')
+                    currentPath.startsWith('/dashboard')
                       ? 'bg-white text-blue-600 shadow-md'
                       : 'hover:bg-blue-400 hover:bg-opacity-30'
                   }`}
                 >
                   <Building2 className="h-5 w-5" />
-                  <span className="font-medium">Admin</span>
+                  <span className="font-medium">{t('nav.dashboard')}</span>
                 </button>
                 <button
                   onClick={signOut}
@@ -134,13 +134,13 @@ export function Header({ onNavigate, currentPath }: HeaderProps) {
             <>
               <button
                 onClick={() => {
-                  onNavigate('/admin');
+                  onNavigate('/dashboard');
                   document.getElementById('mobile-menu')?.classList.add('hidden');
                 }}
                 className="w-full flex items-center space-x-2 px-4 py-3 rounded-lg hover:bg-blue-400 hover:bg-opacity-30 transition-all"
               >
                 <Building2 className="h-5 w-5" />
-                <span className="font-medium">Admin</span>
+                <span className="font-medium">{t('nav.dashboard')}</span>
               </button>
               <button
                 onClick={signOut}

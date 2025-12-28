@@ -3,6 +3,7 @@
  */
 
 import { ChevronRight, Home } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface BreadcrumbItem {
   label: string;
@@ -15,6 +16,8 @@ interface BreadcrumbProps {
 }
 
 export function Breadcrumb({ items, onNavigate }: BreadcrumbProps) {
+  const { t } = useTranslation();
+  
   return (
     <nav aria-label="Breadcrumb" className="mb-4">
       <ol className="flex items-center space-x-2 text-sm">
@@ -22,7 +25,7 @@ export function Breadcrumb({ items, onNavigate }: BreadcrumbProps) {
           <button
             onClick={() => onNavigate('/')}
             className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-            aria-label="Ir a inicio"
+            aria-label={t('nav.home')}
           >
             <Home className="h-4 w-4" />
           </button>

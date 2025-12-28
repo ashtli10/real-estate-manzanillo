@@ -1,10 +1,12 @@
 /**
  * User Dashboard Page
  * Main hub for authenticated users to manage their account, properties, and credits
+ * Admin users see additional tabs for invitations and all properties management
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { 
   LayoutDashboard, 
   Building2, 
@@ -12,7 +14,6 @@ import {
   Coins, 
   User, 
   Settings,
-  ChevronRight,
   TrendingUp,
   Eye,
   Plus,
@@ -23,7 +24,10 @@ import {
   Loader2,
   ExternalLink,
   CheckCircle,
-  XCircle
+  XCircle,
+  Users,
+  RefreshCw,
+  Save
 } from 'lucide-react';
 import {
   createSubscriptionCheckout,
@@ -41,24 +45,54 @@ import { UserPropertyList } from '../components/user/UserPropertyList';
 import { UserPropertyForm } from '../components/user/UserPropertyForm';
 import { useUserProperties } from '../hooks/useUserProperties';
 import type { UserProperty, CreatePropertyInput } from '../types/userProperty';
+// Admin components
+import { PropertyTable } from '../components/admin/PropertyTable';
+import { PropertyForm } from '../components/admin/PropertyForm';
+import { DeleteConfirmModal } from '../components/admin/DeleteConfirmModal';
+import { InvitationManagement } from '../components/admin/InvitationManagement';
+import { transformProperty } from '../lib/propertyTransform';
+import { supabase } from '../integrations/supabase/client';
+import type { Property, PropertyInsert } from '../types/property';
 
 interface DashboardProps {
   onNavigate: (path: string) => void;
 }
 
-type DashboardTab = 'overview' | 'properties' | 'ai-tools' | 'credits' | 'subscription' | 'profile';
+// Tab types - includes admin-only tabs
+type DashboardTab = 'overview' | 'properties' | 'ai-tools' | 'credits' | 'subscription' | 'profile' | 'admin-properties' | 'invitations';
 
-export function Dashboard({ onNavigate }: DashboardProps) {
-  const { user, profile, subscription, credits, isAdmin, hasActiveSubscription, refreshSubscription, refreshCredits } = useAuth();
+export function Dashboard({ onNavigate: _onNavigate }: DashboardProps) {
+  void _onNavigate; // Available for future navigation features
+  const { t } = useTranslation();
+  const { user, profile, subscription, credits, isAdmin, hasActiveSubscription, refreshSubscription, refreshCredits, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Property management state
+  // Property management state (for regular users)
   const [showPropertyForm, setShowPropertyForm] = useState(false);
   const [editingProperty, setEditingProperty] = useState<UserProperty | null>(null);
   const [propertyFormLoading, setPropertyFormLoading] = useState(false);
+  
+  // Admin property management state
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [adminPropertiesLoading, setAdminPropertiesLoading] = useState(false);
+  const [showAdminPropertyForm, setShowAdminPropertyForm] = useState(false);
+  const [editingAdminProperty, setEditingAdminProperty] = useState<Property | null>(null);
+  const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
+  const [adminSaving, setAdminSaving] = useState(false);
+  const [adminDeleting, setAdminDeleting] = useState(false);
+  
+  // Profile editing state
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    fullName: '',
+    phone: '',
+    companyName: '',
+    languagePreference: 'es',
+  });
+  const [profileSaving, setProfileSaving] = useState(false);
   
   // User properties hook
   const {
@@ -95,10 +129,49 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     // Check for tab in URL
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
-    if (tab && ['overview', 'properties', 'ai-tools', 'credits', 'subscription', 'profile'].includes(tab)) {
+    if (tab && ['overview', 'properties', 'ai-tools', 'credits', 'subscription', 'profile', 'admin-properties', 'invitations'].includes(tab)) {
       setActiveTab(tab as DashboardTab);
     }
   }, [refreshSubscription, refreshCredits]);
+
+  // Initialize profile form when profile loads
+  useEffect(() => {
+    if (profile) {
+      setProfileForm({
+        fullName: profile.fullName || '',
+        phone: profile.phone || '',
+        companyName: profile.companyName || '',
+        languagePreference: profile.languagePreference || 'es',
+      });
+    }
+  }, [profile]);
+
+  // Load all properties for admin
+  const loadAllProperties = useCallback(async () => {
+    if (!isAdmin) return;
+    setAdminPropertiesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      setAllProperties((data || []).map(transformProperty));
+    } catch (error) {
+      console.error('Error loading all properties:', error);
+      setErrorMessage(t('errors.generic'));
+    } finally {
+      setAdminPropertiesLoading(false);
+    }
+  }, [isAdmin, t]);
+
+  // Load admin properties when switching to admin tab
+  useEffect(() => {
+    if (isAdmin && activeTab === 'admin-properties') {
+      loadAllProperties();
+    }
+  }, [isAdmin, activeTab, loadAllProperties]);
 
   // Clear messages after timeout
   useEffect(() => {
@@ -234,6 +307,139 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     }
   };
 
+  // === ADMIN PROPERTY HANDLERS ===
+  const handleAdminSaveProperty = async (data: PropertyInsert) => {
+    setAdminSaving(true);
+    try {
+      const maxOrder = allProperties.reduce((max, property) => Math.max(max, property.display_order || 0), 0);
+      const display_order = editingAdminProperty ? data.display_order : maxOrder + 1;
+
+      const dbData = {
+        ...data,
+        display_order,
+        characteristics: JSON.stringify(data.characteristics),
+      };
+
+      if (editingAdminProperty) {
+        const { error } = await supabase
+          .from('properties')
+          .update({
+            ...dbData,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', editingAdminProperty.id);
+
+        if (error) throw error;
+        setSuccessMessage(t('common.success') + ' - Propiedad actualizada');
+      } else {
+        const { error } = await supabase
+          .from('properties')
+          .insert([dbData]);
+
+        if (error) throw error;
+        setSuccessMessage(t('common.success') + ' - Propiedad creada');
+      }
+
+      await loadAllProperties();
+      setShowAdminPropertyForm(false);
+      setEditingAdminProperty(null);
+    } catch (error) {
+      console.error('Error saving property:', error);
+      setErrorMessage(t('errors.generic'));
+    } finally {
+      setAdminSaving(false);
+    }
+  };
+
+  const handleAdminDeleteProperty = async () => {
+    if (!deletingProperty) return;
+    setAdminDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', deletingProperty.id);
+
+      if (error) throw error;
+      setSuccessMessage('Propiedad eliminada');
+      await loadAllProperties();
+      setDeletingProperty(null);
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      setErrorMessage(t('errors.generic'));
+    } finally {
+      setAdminDeleting(false);
+    }
+  };
+
+  const handleTogglePublish = async (property: Property) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ is_published: !property.is_published })
+        .eq('id', property.id);
+
+      if (error) throw error;
+      await loadAllProperties();
+    } catch (error) {
+      console.error('Error toggling publish:', error);
+    }
+  };
+
+  const handleToggleFeatured = async (property: Property) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ is_featured: !property.is_featured })
+        .eq('id', property.id);
+
+      if (error) throw error;
+      await loadAllProperties();
+    } catch (error) {
+      console.error('Error toggling featured:', error);
+    }
+  };
+
+  const swapOrder = async (property: Property, direction: 'up' | 'down') => {
+    const currentIndex = allProperties.findIndex((p) => p.id === property.id);
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= allProperties.length) return;
+
+    const targetProperty = allProperties[targetIndex];
+    try {
+      await Promise.all([
+        supabase.from('properties').update({ display_order: targetProperty.display_order }).eq('id', property.id),
+        supabase.from('properties').update({ display_order: property.display_order }).eq('id', targetProperty.id),
+      ]);
+      await loadAllProperties();
+    } catch (error) {
+      console.error('Error reordering:', error);
+    }
+  };
+
+  // === PROFILE HANDLERS ===
+  const handleSaveProfile = async () => {
+    setProfileSaving(true);
+    try {
+      const success = await updateProfile({
+        fullName: profileForm.fullName,
+        phone: profileForm.phone,
+        companyName: profileForm.companyName,
+        languagePreference: profileForm.languagePreference as 'es' | 'en',
+      });
+      if (success) {
+        setSuccessMessage(t('common.success') + ' - Perfil actualizado');
+        setIsEditingProfile(false);
+      } else {
+        setErrorMessage(t('errors.generic'));
+      }
+    } catch {
+      setErrorMessage(t('errors.generic'));
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
   // Subscription status display
   const getSubscriptionStatus = () => {
     if (isAdmin) {
@@ -257,15 +463,21 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const subStatus = getSubscriptionStatus();
   const StatusIcon = 'icon' in subStatus ? subStatus.icon : Calendar;
 
-  // Sidebar navigation items
-  const navItems = [
-    { id: 'overview' as const, label: 'Resumen', icon: LayoutDashboard },
-    { id: 'properties' as const, label: 'Mis Propiedades', icon: Building2 },
-    { id: 'ai-tools' as const, label: 'Herramientas IA', icon: Sparkles },
-    { id: 'credits' as const, label: 'Créditos IA', icon: Coins },
-    { id: 'subscription' as const, label: 'Suscripción', icon: CreditCard },
-    { id: 'profile' as const, label: 'Mi Perfil', icon: User },
+  // Sidebar navigation items - base items for all users
+  const navItems: Array<{ id: DashboardTab; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean }> = [
+    { id: 'overview', label: t('dashboard.overview'), icon: LayoutDashboard },
+    { id: 'properties', label: t('dashboard.myProperties'), icon: Building2 },
+    { id: 'ai-tools', label: t('credits.title'), icon: Sparkles },
+    { id: 'credits', label: t('dashboard.credits'), icon: Coins },
+    { id: 'subscription', label: t('dashboard.subscription'), icon: CreditCard },
+    { id: 'profile', label: t('dashboard.profile'), icon: User },
+    // Admin-only tabs
+    { id: 'admin-properties', label: t('admin.properties'), icon: Settings, adminOnly: true },
+    { id: 'invitations', label: t('admin.invitations'), icon: Users, adminOnly: true },
   ];
+
+  // Filter nav items based on admin status
+  const visibleNavItems = navItems.filter(item => !item.adminOnly || isAdmin);
 
   // Total credits available
   const totalCredits = (credits?.balance ?? 0) + (credits?.freeCreditsRemaining ?? 0);
@@ -321,32 +533,21 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           {/* Sidebar */}
           <aside className="lg:w-64 flex-shrink-0">
             <nav className="bg-white rounded-xl shadow-sm p-2 space-y-1">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
                     activeTab === item.id
-                      ? 'bg-sky-50 text-sky-700'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? item.adminOnly ? 'bg-purple-50 text-purple-700' : 'bg-sky-50 text-sky-700'
+                      : item.adminOnly ? 'text-purple-600 hover:bg-purple-50' : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
                   <item.icon className="h-5 w-5" />
                   <span className="font-medium">{item.label}</span>
+                  {item.adminOnly && <Crown className="h-4 w-4 ml-auto" />}
                 </button>
               ))}
-              
-              {/* Admin link */}
-              {isAdmin && (
-                <button
-                  onClick={() => onNavigate('/admin')}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-purple-600 hover:bg-purple-50 transition-colors"
-                >
-                  <Settings className="h-5 w-5" />
-                  <span className="font-medium">Panel Admin</span>
-                  <ChevronRight className="h-4 w-4 ml-auto" />
-                </button>
-              )}
             </nav>
           </aside>
 
@@ -731,7 +932,17 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
             {activeTab === 'profile' && (
               <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Mi Perfil</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">{t('profile.title')}</h2>
+                  {!isEditingProfile && (
+                    <button
+                      onClick={() => setIsEditingProfile(true)}
+                      className="text-sky-600 hover:text-sky-700 font-medium"
+                    >
+                      {t('profile.editProfile')}
+                    </button>
+                  )}
+                </div>
                 
                 <div className="space-y-6">
                   {/* Avatar */}
@@ -749,53 +960,197 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900">
-                        {profile?.fullName || 'Sin nombre'}
+                        {profile?.fullName || t('profile.fullName')}
                       </h3>
                       <p className="text-gray-500">{user?.email}</p>
                     </div>
                   </div>
 
-                  {/* Profile fields */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
-                        Nombre completo
-                      </label>
-                      <p className="text-gray-900">{profile?.fullName || '—'}</p>
+                  {/* Profile fields - editable or read-only */}
+                  {isEditingProfile ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('profile.fullName')}
+                        </label>
+                        <input
+                          type="text"
+                          value={profileForm.fullName}
+                          onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('profile.phone')}
+                        </label>
+                        <input
+                          type="tel"
+                          value={profileForm.phone}
+                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                          placeholder="+52 314 123 4567"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('profile.company')}
+                        </label>
+                        <input
+                          type="text"
+                          value={profileForm.companyName}
+                          onChange={(e) => setProfileForm({ ...profileForm, companyName: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {t('profile.language')}
+                        </label>
+                        <select
+                          value={profileForm.languagePreference}
+                          onChange={(e) => setProfileForm({ ...profileForm, languagePreference: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                        >
+                          <option value="es">Español</option>
+                          <option value="en">English</option>
+                        </select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
-                        Teléfono / WhatsApp
-                      </label>
-                      <p className="text-gray-900">{profile?.phone || '—'}</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          {t('profile.fullName')}
+                        </label>
+                        <p className="text-gray-900">{profile?.fullName || '—'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          {t('profile.phone')}
+                        </label>
+                        <p className="text-gray-900">{profile?.phone || '—'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          {t('profile.company')}
+                        </label>
+                        <p className="text-gray-900">{profile?.companyName || '—'}</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-500 mb-1">
+                          {t('profile.language')}
+                        </label>
+                        <p className="text-gray-900">
+                          {profile?.languagePreference === 'en' ? 'English' : 'Español'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
-                        Empresa / Inmobiliaria
-                      </label>
-                      <p className="text-gray-900">{profile?.companyName || '—'}</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">
-                        Idioma preferido
-                      </label>
-                      <p className="text-gray-900">
-                        {profile?.languagePreference === 'en' ? 'English' : 'Español'}
-                      </p>
-                    </div>
-                  </div>
+                  )}
 
-                  <button className="bg-sky-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-sky-700 transition-colors">
-                    Editar perfil
-                  </button>
+                  {/* Action buttons */}
+                  {isEditingProfile ? (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleSaveProfile}
+                        disabled={profileSaving}
+                        className="bg-sky-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-sky-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {profileSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                        {t('profile.saveChanges')}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingProfile(false);
+                          // Reset form to current profile values
+                          if (profile) {
+                            setProfileForm({
+                              fullName: profile.fullName || '',
+                              phone: profile.phone || '',
+                              companyName: profile.companyName || '',
+                              languagePreference: profile.languagePreference || 'es',
+                            });
+                          }
+                        }}
+                        className="px-6 py-3 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                      >
+                        {t('common.cancel')}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditingProfile(true)}
+                      className="bg-sky-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-sky-700 transition-colors"
+                    >
+                      {t('profile.editProfile')}
+                    </button>
+                  )}
                 </div>
               </div>
+            )}
+
+            {/* Admin: All Properties Management */}
+            {activeTab === 'admin-properties' && isAdmin && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      {t('admin.properties')} ({allProperties.length})
+                    </h2>
+                    <button
+                      onClick={loadAllProperties}
+                      disabled={adminPropertiesLoading}
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Refrescar"
+                    >
+                      <RefreshCw className={`h-5 w-5 ${adminPropertiesLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingAdminProperty(null);
+                      setShowAdminPropertyForm(true);
+                    }}
+                    className="px-6 py-3 bg-sky-600 text-white rounded-lg font-semibold hover:bg-sky-700 transition-colors flex items-center gap-2"
+                  >
+                    <Plus className="h-5 w-5" />
+                    Nueva propiedad
+                  </button>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                  {adminPropertiesLoading ? (
+                    <div className="text-center py-12">
+                      <Loader2 className="h-10 w-10 animate-spin text-sky-600 mx-auto" />
+                      <p className="mt-4 text-gray-500">{t('common.loading')}</p>
+                    </div>
+                  ) : (
+                    <PropertyTable
+                      properties={allProperties}
+                      onEdit={(property) => {
+                        setEditingAdminProperty(property);
+                        setShowAdminPropertyForm(true);
+                      }}
+                      onDelete={setDeletingProperty}
+                      onTogglePublish={handleTogglePublish}
+                      onToggleFeatured={handleToggleFeatured}
+                      onMoveUp={(property) => swapOrder(property, 'up')}
+                      onMoveDown={(property) => swapOrder(property, 'down')}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Admin: Invitations */}
+            {activeTab === 'invitations' && isAdmin && (
+              <InvitationManagement />
             )}
           </main>
         </div>
       </div>
 
-      {/* Property Form Modal */}
+      {/* Property Form Modal (User) */}
       {showPropertyForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-2xl">
@@ -814,6 +1169,30 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             />
           </div>
         </div>
+      )}
+
+      {/* Admin Property Form Modal */}
+      {showAdminPropertyForm && isAdmin && (
+        <PropertyForm
+          property={editingAdminProperty}
+          onSave={handleAdminSaveProperty}
+          onCancel={() => {
+            setShowAdminPropertyForm(false);
+            setEditingAdminProperty(null);
+          }}
+          loading={adminSaving}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingProperty && (
+        <DeleteConfirmModal
+          title={t('property.deleteProperty')}
+          message={`¿Estás seguro de que deseas eliminar "${deletingProperty.title}"? Esta acción no se puede deshacer.`}
+          onConfirm={handleAdminDeleteProperty}
+          onCancel={() => setDeletingProperty(null)}
+          loading={adminDeleting}
+        />
       )}
     </div>
   );

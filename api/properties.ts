@@ -13,7 +13,7 @@ import {
 
 // Environment variables for Supabase
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 
 interface RequestHandler {
   (req: any, res: any): Promise<void>;
