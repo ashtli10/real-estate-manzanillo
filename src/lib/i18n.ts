@@ -140,7 +140,7 @@ const es = {
       levels: 'pisos',
       notAvailable: 'No disponible',
       propertySummary: 'Resumen de la propiedad',
-      whatsappMessage: 'Hola, me interesa la propiedad "{{title}}" con precio de {{price}}. ¿Podemos hablar?',
+      whatsappMessage: 'Hola, me interesa la {{type}} "{{title}}" ubicada en {{location}} con precio de {{price}}. ¿Podemos hablar?',
       // Detail page specific
       loadingProperty: 'Cargando propiedad...',
       propertyNotFound: 'Propiedad no encontrada',
