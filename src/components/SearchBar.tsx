@@ -1,7 +1,6 @@
 import { Search, X, Building2, ChevronDown } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LocationAutocomplete } from './LocationAutocomplete';
 
 interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
@@ -27,29 +26,16 @@ const propertyTypes = [
 
 export function SearchBar({ onSearch, variant = 'hero', initialFilters }: SearchBarProps) {
   const { t } = useTranslation();
-  const [isExpanded, setIsExpanded] = useState(false);
   const [filters, setFilters] = useState<SearchFilters>({
     query: initialFilters?.query || '',
     propertyType: initialFilters?.propertyType || 'all',
     listingType: initialFilters?.listingType || 'all',
     location: initialFilters?.location || 'all',
   });
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsExpanded(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     onSearch(filters);
-    setIsExpanded(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -60,7 +46,7 @@ export function SearchBar({ onSearch, variant = 'hero', initialFilters }: Search
 
   if (variant === 'hero') {
     return (
-      <div ref={containerRef} className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-4xl mx-auto">
         <div className="bg-white rounded-2xl shadow-2xl p-2 md:p-3">
           {/* Main Search Row */}
           <div className="flex flex-col md:flex-row gap-2 md:gap-0">
@@ -73,7 +59,6 @@ export function SearchBar({ onSearch, variant = 'hero', initialFilters }: Search
                 value={filters.query}
                 onChange={(e) => setFilters({ ...filters, query: e.target.value })}
                 onKeyDown={handleKeyDown}
-                onFocus={() => setIsExpanded(true)}
                 className="w-full pl-12 pr-4 py-4 text-gray-800 placeholder-gray-400 border-0 focus:ring-0 focus:outline-none text-lg rounded-xl"
               />
             </div>
@@ -148,24 +133,6 @@ export function SearchBar({ onSearch, variant = 'hero', initialFilters }: Search
               <span className="md:hidden lg:inline">{t('common.search')}</span>
             </button>
           </div>
-
-          {/* Expanded Filters */}
-          {isExpanded && (
-            <div className="border-t border-gray-100 mt-3 pt-4 animate-in slide-in-from-top-2">
-              <div className="flex flex-wrap gap-3">
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-sm font-medium text-gray-600 mb-1.5">
-                    {t('properties.filters.location')}
-                  </label>
-                  <LocationAutocomplete
-                    value={filters.location}
-                    onChange={(value) => setFilters({ ...filters, location: value })}
-                    variant="filter"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );
