@@ -1,6 +1,7 @@
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LocationAutocomplete } from './LocationAutocomplete';
 
 export interface PropertyFilters {
   propertyType: string;
@@ -30,17 +31,6 @@ const propertyTypes = [
   { value: 'terreno', labelKey: 'propertyTypes.terreno' },
   { value: 'local', labelKey: 'propertyTypes.local' },
   { value: 'oficina', labelKey: 'propertyTypes.oficina' },
-];
-
-const neighborhoods = [
-  { value: 'all', labelKey: 'neighborhoods.all' },
-  { value: 'santiago', labelKey: 'neighborhoods.santiago' },
-  { value: 'salahua', labelKey: 'neighborhoods.salahua' },
-  { value: 'miramar', labelKey: 'neighborhoods.miramar' },
-  { value: 'playa_azul', labelKey: 'neighborhoods.playa_azul' },
-  { value: 'vida_del_mar', labelKey: 'neighborhoods.vida_del_mar' },
-  { value: 'peninsula', labelKey: 'neighborhoods.peninsula' },
-  { value: 'centro', labelKey: 'neighborhoods.centro' },
 ];
 
 const priceRanges = {
@@ -314,21 +304,11 @@ export function AdvancedFilters({ filters, onChange, onClose, isOpen, propertyCo
           </button>
           {expandedSections.location && (
             <div className="mt-3">
-              <div className="flex flex-wrap gap-2">
-                {neighborhoods.map((n) => (
-                  <button
-                    key={n.value}
-                    onClick={() => handleChange('location', n.value)}
-                    className={`py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                      localFilters.location === n.value
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {t(n.labelKey)}
-                  </button>
-                ))}
-              </div>
+              <LocationAutocomplete
+                value={localFilters.location}
+                onChange={(value) => handleChange('location', value)}
+                variant="filter"
+              />
             </div>
           )}
         </div>

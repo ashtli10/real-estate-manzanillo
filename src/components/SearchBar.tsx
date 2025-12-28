@@ -1,6 +1,7 @@
-import { Search, X, Building2, MapPin, ChevronDown } from 'lucide-react';
+import { Search, X, Building2, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LocationAutocomplete } from './LocationAutocomplete';
 
 interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
@@ -22,17 +23,6 @@ const propertyTypes = [
   { value: 'terreno', labelKey: 'propertyTypes.terreno' },
   { value: 'local', labelKey: 'propertyTypes.local' },
   { value: 'oficina', labelKey: 'propertyTypes.oficina' },
-];
-
-const neighborhoods = [
-  { value: 'all', labelKey: 'neighborhoods.all' },
-  { value: 'santiago', labelKey: 'neighborhoods.santiago' },
-  { value: 'salahua', labelKey: 'neighborhoods.salahua' },
-  { value: 'miramar', labelKey: 'neighborhoods.miramar' },
-  { value: 'playa_azul', labelKey: 'neighborhoods.playa_azul' },
-  { value: 'vida_del_mar', labelKey: 'neighborhoods.vida_del_mar' },
-  { value: 'peninsula', labelKey: 'neighborhoods.peninsula' },
-  { value: 'centro', labelKey: 'neighborhoods.centro' },
 ];
 
 export function SearchBar({ onSearch, variant = 'hero', initialFilters }: SearchBarProps) {
@@ -167,21 +157,11 @@ export function SearchBar({ onSearch, variant = 'hero', initialFilters }: Search
                   <label className="block text-sm font-medium text-gray-600 mb-1.5">
                     {t('properties.filters.location')}
                   </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <select
-                      value={filters.location}
-                      onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                      className="w-full appearance-none pl-10 pr-8 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      {neighborhoods.map((n) => (
-                        <option key={n.value} value={n.value}>
-                          {t(n.labelKey)}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                  </div>
+                  <LocationAutocomplete
+                    value={filters.location}
+                    onChange={(value) => setFilters({ ...filters, location: value })}
+                    variant="filter"
+                  />
                 </div>
               </div>
             </div>

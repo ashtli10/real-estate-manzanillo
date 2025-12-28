@@ -23,6 +23,10 @@ export const en = {
     language: 'Language',
     english: 'English',
     spanish: 'Spanish',
+    forSale: 'For Sale',
+    forRent: 'For Rent',
+    allLocations: 'All locations',
+    searchLocation: 'Search location...',
   },
 
   // Navigation
@@ -169,29 +173,20 @@ export const en = {
     memberSince: 'Member since',
   },
 
-  // Filters
-  neighborhoods: {
-    all: 'All Neighborhoods',
-    santiago: 'Santiago',
-    salahua: 'Salagua',
-    miramar: 'Miramar',
-    playa_azul: 'Playa Azul',
-    vida_del_mar: 'Vida del Mar',
-    peninsula: 'Península',
-    centro: 'Downtown',
-    other: 'Other',
-  },
-
   // Footer
   footer: {
     about: 'About',
     aboutText: 'Real Estate Manzanillo is a marketplace connecting buyers and renters with trusted local real estate agents.',
+    description: 'Your trusted platform to find properties in Manzanillo. We connect buyers and renters with the best local real estate agents.',
     quickLinks: 'Quick Links',
+    neighborhoods: 'Neighborhoods',
     contact: 'Contact',
     followUs: 'Follow Us',
     allRights: 'All rights reserved',
     terms: 'Terms of Service',
     privacy: 'Privacy Policy',
+    madeWith: 'Made with',
+    inManzanillo: 'in Manzanillo',
   },
 
   // WhatsApp

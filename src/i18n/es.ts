@@ -23,6 +23,10 @@ export const es = {
     language: 'Idioma',
     english: 'Inglés',
     spanish: 'Español',
+    forSale: 'En Venta',
+    forRent: 'En Renta',
+    allLocations: 'Todas las ubicaciones',
+    searchLocation: 'Buscar ubicación...',
   },
 
   // Navigation
@@ -169,29 +173,20 @@ export const es = {
     memberSince: 'Miembro desde',
   },
 
-  // Filters
-  neighborhoods: {
-    all: 'Todas las Colonias',
-    santiago: 'Santiago',
-    salahua: 'Salagua',
-    miramar: 'Miramar',
-    playa_azul: 'Playa Azul',
-    vida_del_mar: 'Vida del Mar',
-    peninsula: 'Península',
-    centro: 'Centro',
-    other: 'Otra',
-  },
-
   // Footer
   footer: {
     about: 'Nosotros',
     aboutText: 'Inmobiliaria Manzanillo es un mercado que conecta compradores e inquilinos con agentes inmobiliarios locales de confianza.',
+    description: 'Tu plataforma de confianza para encontrar propiedades en Manzanillo. Conectamos compradores e inquilinos con los mejores agentes inmobiliarios locales.',
     quickLinks: 'Enlaces Rápidos',
+    neighborhoods: 'Colonias',
     contact: 'Contacto',
     followUs: 'Síguenos',
     allRights: 'Todos los derechos reservados',
     terms: 'Términos de Servicio',
     privacy: 'Política de Privacidad',
+    madeWith: 'Hecho con',
+    inManzanillo: 'en Manzanillo',
   },
 
   // WhatsApp
