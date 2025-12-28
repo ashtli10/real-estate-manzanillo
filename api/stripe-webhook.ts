@@ -14,7 +14,9 @@ const STRIPE_WEBHOOK_SECRET = STRIPE_MODE === 'live'
   ? process.env.STRIPE_LIVE_WEBHOOK_SECRET
   : process.env.STRIPE_TEST_WEBHOOK_SECRET;
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+// Note: In Vercel, use SUPABASE_URL (not VITE_ prefixed)
+// Falls back to VITE_ version for backward compatibility
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 interface RequestHandler {

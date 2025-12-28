@@ -292,6 +292,7 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
                       <button
                         key={index}
                         onClick={() => setCurrentSlide(index)}
+                        aria-label={`Go to slide ${index + 1}`}
                         className={`w-3 h-3 rounded-full transition-all ${
                           index === currentSlide ? 'bg-white w-8' : 'bg-white bg-opacity-50'
                         }`}

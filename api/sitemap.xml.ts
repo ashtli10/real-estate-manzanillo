@@ -5,8 +5,10 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
+// Note: In Vercel, use SUPABASE_URL and SUPABASE_ANON_KEY (not VITE_ prefixed)
+// Falls back to VITE_ versions for backward compatibility
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 const SITE_URL = 'https://www.bninmobiliaria.com';
 
 // Escape XML special characters to prevent injection

@@ -18,7 +18,9 @@ const STRIPE_SECRET_KEY = STRIPE_MODE === 'live'
   ? process.env.STRIPE_LIVE_SECRET_KEY 
   : process.env.STRIPE_TEST_SECRET_KEY;
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+// Note: In Vercel, use SUPABASE_URL (not VITE_ prefixed)
+// Falls back to VITE_ version for backward compatibility
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 interface RequestHandler {

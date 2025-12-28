@@ -1188,7 +1188,9 @@ export function Dashboard({ onNavigate: _onNavigate }: DashboardProps) {
       {deletingProperty && (
         <DeleteConfirmModal
           title={t('property.deleteProperty')}
-          message={`¿Estás seguro de que deseas eliminar "${deletingProperty.title}"? Esta acción no se puede deshacer.`}
+          message={t('common.delete') === 'Delete' 
+            ? `Are you sure you want to delete "${deletingProperty.title}"? This action cannot be undone.`
+            : `¿Estás seguro de que deseas eliminar "${deletingProperty.title}"? Esta acción no se puede deshacer.`}
           onConfirm={handleAdminDeleteProperty}
           onCancel={() => setDeletingProperty(null)}
           loading={adminDeleting}

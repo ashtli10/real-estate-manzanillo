@@ -12,8 +12,10 @@ import {
 } from './lib/security';
 
 // Environment variables for Supabase
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+// Note: In Vercel, use SUPABASE_URL and SUPABASE_ANON_KEY (not VITE_ prefixed)
+// Falls back to VITE_ versions for backward compatibility
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 interface RequestHandler {
   (req: any, res: any): Promise<void>;
