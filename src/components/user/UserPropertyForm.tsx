@@ -1,6 +1,7 @@
 /**
  * User Property Form
  * Form for creating and editing user properties
+ * Enhanced with AI prefill, image/video uploads, and Google Maps integration
  */
 
 import { useState, useEffect } from 'react';
@@ -19,7 +20,8 @@ import {
   Calendar,
   Tag,
   Image as ImageIcon,
-  Sparkles
+  Sparkles,
+  Video as VideoIcon
 } from 'lucide-react';
 import type { 
   UserProperty, 
@@ -33,6 +35,9 @@ import {
   LISTING_TYPE_LABELS,
   PROPERTY_STATUS_CONFIG
 } from '../../types/userProperty';
+import { ImageUpload } from '../admin/ImageUpload';
+import { VideoUpload } from '../admin/VideoUpload';
+import { GoogleMapsInput } from '../admin/GoogleMapsInput';
 
 interface UserPropertyFormProps {
   property?: UserProperty;
@@ -154,7 +159,7 @@ export function UserPropertyForm({
     { id: 'basic' as const, label: 'Información básica', icon: Home },
     { id: 'details' as const, label: 'Detalles', icon: Bed },
     { id: 'location' as const, label: 'Ubicación', icon: MapPin },
-    { id: 'media' as const, label: 'Fotos', icon: ImageIcon },
+    { id: 'media' as const, label: 'Multimedia', icon: ImageIcon },
   ];
 
   return (
@@ -446,20 +451,25 @@ export function UserPropertyForm({
 
         {activeTab === 'location' && (
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Dirección
-              </label>
-              <input
-                type="text"
-                value={formData.address || ''}
-                onChange={(e) => handleChange('address', e.target.value)}
-                placeholder="Calle, número..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-              />
-            </div>
+            <GoogleMapsInput
+              address={formData.address || ''}
+              lat={formData.latitude || null}
+              lng={formData.longitude || null}
+              showMap={true}
+              onAddressChange={(value) => handleChange('address', value)}
+              onLocationChange={(lat, lng) => {
+                handleChange('latitude', lat || undefined);
+                handleChange('longitude', lng || undefined);
+              }}
+              onShowMapChange={() => {}}
+              onLocationDetailsChange={(details) => {
+                if (details.city) handleChange('city', details.city);
+                if (details.state) handleChange('state', details.state);
+                if (details.neighborhood) handleChange('neighborhood', details.neighborhood);
+              }}
+            />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Colonia / Fraccionamiento
@@ -509,72 +519,44 @@ export function UserPropertyForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Latitud
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.latitude || ''}
-                  onChange={(e) => handleChange('latitude', Number(e.target.value))}
-                  placeholder="19.0544"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Longitud
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.longitude || ''}
-                  onChange={(e) => handleChange('longitude', Number(e.target.value))}
-                  placeholder="-104.3145"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                />
-              </div>
-            </div>
-
             <p className="text-sm text-gray-500">
-              💡 Tip: Puedes obtener las coordenadas desde Google Maps haciendo clic derecho en la ubicación
+              💡 Tip: Usa el mapa para seleccionar la ubicación exacta de tu propiedad
             </p>
           </div>
         )}
 
         {activeTab === 'media' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
+            {/* Image Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                URLs de imágenes (una por línea)
-              </label>
-              <textarea
-                value={(formData.images || []).join('\n')}
-                onChange={(e) => handleChange('images', e.target.value.split('\n').map(s => s.trim()).filter(Boolean))}
-                rows={5}
-                placeholder="https://ejemplo.com/foto1.jpg&#10;https://ejemplo.com/foto2.jpg"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 font-mono text-sm"
+              <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Imágenes de la propiedad
+              </h4>
+              <ImageUpload
+                images={formData.images || []}
+                onChange={(images) => handleChange('images', images)}
+                maxImages={20}
               />
             </div>
 
+            {/* Video Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                URLs de videos (YouTube, Vimeo)
-              </label>
-              <textarea
-                value={(formData.videos || []).join('\n')}
-                onChange={(e) => handleChange('videos', e.target.value.split('\n').map(s => s.trim()).filter(Boolean))}
-                rows={3}
-                placeholder="https://youtube.com/watch?v=..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 font-mono text-sm"
+              <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <VideoIcon className="h-4 w-4" />
+                Videos de la propiedad
+              </h4>
+              <VideoUpload
+                videos={formData.videos || []}
+                onChange={(videos) => handleChange('videos', videos)}
+                maxVideos={5}
               />
             </div>
 
+            {/* Virtual Tour URL */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL de tour virtual
+                URL de tour virtual (opcional)
               </label>
               <input
                 type="url"
@@ -583,11 +565,10 @@ export function UserPropertyForm({
                 placeholder="https://mi360.io/tour/..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Puedes agregar un enlace a un tour virtual 360° de tu propiedad
+              </p>
             </div>
-
-            <p className="text-sm text-gray-500">
-              📷 Próximamente: Subir imágenes directamente
-            </p>
           </div>
         )}
       </form>
