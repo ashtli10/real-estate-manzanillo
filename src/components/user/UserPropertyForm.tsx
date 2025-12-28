@@ -461,7 +461,10 @@ export function UserPropertyForm({
                 handleChange('latitude', lat || undefined);
                 handleChange('longitude', lng || undefined);
               }}
-              onShowMapChange={() => {}}
+              onShowMapChange={() => {
+                // Map visibility is always shown in user form
+                // This handler is kept for GoogleMapsInput component compatibility
+              }}
               onLocationDetailsChange={(details) => {
                 if (details.city) handleChange('city', details.city);
                 if (details.state) handleChange('state', details.state);

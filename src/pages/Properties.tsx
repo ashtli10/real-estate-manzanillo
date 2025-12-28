@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, SlidersHorizontal, Home as HomeIcon } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
@@ -14,7 +14,7 @@ interface PropertiesProps {
 }
 
 export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,11 +35,6 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
     onUpdateWhatsappMessage(t('propertiesPage.whatsappMessage'));
   }, [onUpdateWhatsappMessage, t]);
 
-  useEffect(() => {
-    applyFilters();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [properties, filters]);
-
   const loadProperties = async () => {
     try {
       const { data, error } = await supabase
@@ -57,7 +52,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...properties];
 
     if (filters.search) {
@@ -90,7 +85,11 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
     }
 
     setFilteredProperties(filtered);
-  };
+  }, [properties, filters]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   // Get translated property types
   const getPropertyTypeLabel = (type: string) => {
