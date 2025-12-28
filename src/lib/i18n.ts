@@ -459,7 +459,7 @@ const en = {
       levels: 'floors',
       notAvailable: 'Not available',
       propertySummary: 'Property summary',
-      whatsappMessage: 'Hello, I am interested in the property "{{title}}" with a price of {{price}}. Can we talk?',
+      whatsappMessage: 'Hello, I am interested in the {{type}} "{{title}}" in {{location}} with a price of {{price}}. Can we talk?',
       // Detail page specific
       loadingProperty: 'Loading property...',
       propertyNotFound: 'Property not found',
