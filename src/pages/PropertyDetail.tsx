@@ -418,7 +418,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
     }
 
     const priceText = priceParts.length > 0 ? priceParts.join(' | ') : t('propertyDetail.priceOnRequest');
-    const typeLabel = propertyTypeLabels[currentProperty.property_type] || (i18n.language === 'en' ? 'property' : 'propiedad');
+    const typeLabel = t(`property.types.${currentProperty.property_type}`, currentProperty.property_type);
 
     return t('propertyDetail.whatsappMessage', {
       type: typeLabel,

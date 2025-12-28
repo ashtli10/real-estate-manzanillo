@@ -55,14 +55,13 @@ import { supabase } from '../integrations/supabase/client';
 import type { Property, PropertyInsert } from '../types/property';
 
 interface DashboardProps {
-  onNavigate: (path: string) => void;
+  onNavigate?: (path: string) => void; // Optional for future navigation features
 }
 
 // Tab types - includes admin-only tabs
 type DashboardTab = 'overview' | 'properties' | 'ai-tools' | 'credits' | 'subscription' | 'profile' | 'admin-properties' | 'invitations';
 
-export function Dashboard({ onNavigate: _onNavigate }: DashboardProps) {
-  void _onNavigate; // Available for future navigation features
+export function Dashboard({ onNavigate }: DashboardProps) {
   const { t } = useTranslation();
   const { user, profile, subscription, credits, isAdmin, hasActiveSubscription, refreshSubscription, refreshCredits, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
@@ -1188,9 +1187,7 @@ export function Dashboard({ onNavigate: _onNavigate }: DashboardProps) {
       {deletingProperty && (
         <DeleteConfirmModal
           title={t('property.deleteProperty')}
-          message={t('common.delete') === 'Delete' 
-            ? `Are you sure you want to delete "${deletingProperty.title}"? This action cannot be undone.`
-            : `¿Estás seguro de que deseas eliminar "${deletingProperty.title}"? Esta acción no se puede deshacer.`}
+          message={t('property.deleteConfirm', { title: deletingProperty.title })}
           onConfirm={handleAdminDeleteProperty}
           onCancel={() => setDeletingProperty(null)}
           loading={adminDeleting}
