@@ -1,0 +1,477 @@
+# 🏠 Real Estate Manzanillo - Complete Platform Plan
+
+> **Inmobiliaria Manzanillo** - A marketplace platform for real estate agents in Manzanillo
+
+---
+
+## 📊 Current Status
+
+### ✅ Already Set Up
+| Component | Status | Details |
+|-----------|--------|---------|
+| **Supabase** | ✅ Active | `https://vvvscafjvisaswpqhnvy.supabase.co` |
+| **Stripe** | ✅ Active | Account: ATcraft Cloud Services, Balance: 90.60 MXN |
+| **Database Tables** | ✅ Exists | `profiles`, `user_roles`, `invitation_tokens`, `subscriptions`, `credits`, `credit_transactions`, `audit_logs`, `properties` |
+| **Frontend** | ✅ Basic | React + Vite + Tailwind |
+| **SEO** | ✅ Implemented | Meta tags, Schema.org, sitemap |
+| **Real-time** | ✅ Working | Supabase WebSocket subscriptions |
+
+### 🔧 What Needs to Be Built
+The current system is a simple admin panel. You need a full marketplace platform.
+
+---
+
+## 🎯 Platform Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    REAL ESTATE MANZANILLO PLATFORM                      │
+│                    (Inmobiliaria Manzanillo)                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  👥 PUBLIC PAGES                    🔐 AGENT DASHBOARD                  │
+│  ├─ Landing Page (Search + About)   ├─ Subscription Management         │
+│  ├─ Properties (All Listings)       ├─ Property CRUD                   │
+│  ├─ Property Detail                 ├─ Credit Balance                  │
+│  └─ Agent Profile (domain.com/barbara) └─ AI Tools (Coming Soon)       │
+│                                                                         │
+│  👑 ADMIN PANEL                     💳 PAYMENTS                         │
+│  ├─ Invite Users                    ├─ Monthly Subscription (199 MXN)  │
+│  ├─ Manage Trials                   ├─ Credit Top-ups                  │
+│  ├─ View All Users                  └─ Stripe Webhooks                 │
+│  └─ Platform Analytics                                                  │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📋 PHASE 1: Core Platform Foundation
+
+### 1.1 Database Schema Updates
+```sql
+-- Add these fields to profiles table
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS:
+  - username TEXT UNIQUE  -- for domain.com/username
+  - bio TEXT
+  - whatsapp_number TEXT  -- for WhatsApp button
+  - phone_number TEXT     -- for call button  
+  - profile_image TEXT
+  - cover_image TEXT
+  - location TEXT
+  - is_visible BOOLEAN DEFAULT true
+  - onboarding_completed BOOLEAN DEFAULT false
+```
+
+**Priority:** 🔴 Critical  
+**Effort:** Small
+
+### 1.2 Public Pages
+
+#### 🏠 Landing Page (`/`)
+- Hero section with search bar
+- Property type filter (Casa, Departamento, Terreno, etc.)
+- Location filter (Colonias)
+- Sale/Rent toggle
+- Scroll down: About section, platform description
+- Featured properties carousel
+- "Eres agente? Únete" CTA
+
+#### 🏘️ Properties Page (`/properties`)
+- **Grid layout** of all public properties from all agents
+- Each card shows:
+  - Main image
+  - Price (Sale and/or Rent)
+  - Location
+  - Beds/Baths/Size
+  - Agent mini-profile (avatar + name)
+- **Advanced Filters:**
+  - 💰 Price range slider (separate for sale/rent)
+  - 🛏️ Bedrooms (0, 1, 2, 3, 4+)
+  - 🚿 Bathrooms (1, 2, 3+)
+  - 📍 Location/Colonia dropdown
+  - 🏷️ Property type
+  - 📐 Size range
+  - ⭐ Featured only
+  - 🏖️ Near beach
+- Sorting: Price ↑↓, Newest, Most viewed
+
+#### 🏡 Property Detail (`/property/:slug`)
+- Full image gallery (swipeable on mobile)
+- Video player (if videos exist)
+- All property details beautifully formatted
+- Map with location (if enabled)
+- Agent card with:
+  - Photo, Name, Company
+  - WhatsApp button → opens chat with agent's number
+  - Call button → opens phone dialer
+- Share buttons
+- Related properties
+
+#### 👤 Agent Profile (`/:username`)
+Example: `domain.com/barbara`
+- Agent cover image + avatar
+- Name, company, bio, location
+- Contact buttons (WhatsApp + Phone)
+- Grid of their properties
+- Filter by sale/rent
+
+**Priority:** 🔴 Critical  
+**Effort:** Large
+
+### 1.3 Mobile-First Design Requirements
+- ✅ All pages must be 100% responsive
+- ✅ Touch-friendly filter interactions
+- ✅ Swipeable image galleries
+- ✅ Floating WhatsApp button (varies by context)
+- ✅ Bottom navigation on mobile
+- ✅ No horizontal scroll bugs
+- ✅ Fast loading (lazy images)
+
+---
+
+## 📋 PHASE 2: User System & Onboarding
+
+### 2.1 Invitation System (Admin Creates Links)
+Admin can create invitation links with:
+- Optional email (pre-fill)
+- Trial days (0 = no trial, 7, 14, 30, etc.)
+- Expiration date
+
+```
+https://domain.com/invite/abc123
+```
+
+### 2.2 Onboarding Flow (New User)
+When user clicks invite link:
+
+```
+Step 1: Create Account
+├─ Email (may be pre-filled)
+├─ Password
+└─ Confirm Password
+
+Step 2: Personal Info
+├─ Full Name
+├─ Phone Number (for calls)
+├─ WhatsApp Number (with country code)
+└─ Profile Photo (optional)
+
+Step 3: Business Info
+├─ Company Name (optional)
+├─ Username (for profile URL)
+├─ Bio/Description
+└─ Location/Area
+
+Step 4: Subscription
+├─ IF trial: "You have X days free trial!"
+│   └─ Skip payment, start using
+└─ IF no trial: "Subscribe for $199 MXN/month"
+    └─ Stripe Checkout → then access
+
+Step 5: 🎉 Welcome to Dashboard!
+```
+
+### 2.3 User Roles
+| Role | Permissions |
+|------|------------|
+| **Admin** | Full access, invite users, manage platform |
+| **Agent** | Own properties, own profile, own dashboard |
+
+**Priority:** 🔴 Critical  
+**Effort:** Large
+
+---
+
+## 📋 PHASE 3: Subscription & Access Control
+
+### 3.1 Subscription Logic
+
+```javascript
+// Access Control Flow
+function canAccessDashboard(user) {
+  const sub = user.subscription;
+  
+  // Active subscription
+  if (sub.status === 'active') return true;
+  
+  // In trial period
+  if (sub.status === 'trialing' && sub.trial_ends_at > now) return true;
+  
+  // Grace period for past_due (give them time to fix payment)
+  if (sub.status === 'past_due') return true; // but show warning
+  
+  // No access
+  return false;
+}
+```
+
+### 3.2 Visibility Rules
+When subscription is **not active**:
+- ❌ Profile page returns 404 (or "Agent unavailable")
+- ❌ All properties hidden from public listings
+- ❌ Cannot access dashboard (redirect to payment)
+- ✅ Can still log in and see "Please renew subscription"
+
+### 3.3 Stripe Integration
+
+**Products to Create:**
+1. **Monthly Subscription** - 199 MXN/month
+2. **Credit Packs:**
+   - 20 credits - 20 MXN
+   - 50 credits - 50 MXN
+   - 100 credits - 100 MXN
+   - 650 credits - 500 MXN
+   - 1350 credits - 1000 MXN
+
+**Webhooks Needed:**
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+- `invoice.payment_succeeded`
+- `invoice.payment_failed`
+- `checkout.session.completed`
+
+**Priority:** 🔴 Critical  
+**Effort:** Medium
+
+---
+
+## 📋 PHASE 4: Agent Dashboard
+
+### 4.1 Dashboard Layout
+```
+┌─────────────────────────────────────────────────────────────┐
+│  🏠 Real Estate Manzanillo                    [ES/EN] [👤]  │
+├──────────────┬──────────────────────────────────────────────┤
+│              │                                              │
+│  📊 Overview │  Welcome, Barbara!                          │
+│  🏘️ Properties│                                              │
+│  👤 Profile  │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │
+│  💳 Billing  │  │ 5 Active │ │ 120 Views│ │ 8 Leads  │     │
+│  🎨 AI Tools │  │ Properties│ │ This Week│ │ This Mo  │     │
+│  ⚙️ Settings │  └──────────┘ └──────────┘ └──────────┘     │
+│              │                                              │
+│              │  ┌─────────────────────────────────────────┐ │
+│              │  │ 💰 Credits: 47  [+ Buy More]            │ │
+│              │  └─────────────────────────────────────────┘ │
+│              │                                              │
+│              │  🆕 AI Video Generator [COMING SOON]         │
+│              │  Create stunning property videos with AI!    │
+│              │  [Preview Video]                             │
+│              │                                              │
+└──────────────┴──────────────────────────────────────────────┘
+```
+
+### 4.2 Properties Management
+- List of own properties
+- Add/Edit/Delete
+- Toggle active/paused
+- View stats per property
+- Drag to reorder
+
+### 4.3 Profile Settings
+- Edit all profile fields
+- Preview profile page
+- Change username (with availability check)
+
+### 4.4 Billing
+- Current plan status
+- Next billing date
+- Credit balance
+- Purchase credits
+- Download invoices
+
+**Priority:** 🔴 Critical  
+**Effort:** Large
+
+---
+
+## 📋 PHASE 5: Credits & AI Tools
+
+### 5.1 Credit System
+
+**Monthly Refresh:**
+- 50 free credits included with subscription
+- Reset on billing cycle
+- Unused credits don't roll over
+
+**Top-up Options:**
+| Amount | Price |
+|--------|-------|
+| 20 credits | 20 MXN |
+| 50 credits | 50 MXN |
+| 100 credits | 100 MXN |
+| 650 credits | 500 MXN |
+| 1350 credits | 1000 MXN |
+
+### 5.2 AI Video Generator (Coming Soon)
+**User Flow:**
+1. Select property from your listings
+2. Generate 3 starting frames (5 credits)
+3. Regenerate until satisfied (5 credits each)
+4. Generate video from frames (3 frames, 3 videos, clipped togheter) (30 credits)
+5. Download 9:16 video (24 seconds)
+
+**UI Elements:**
+- "Coming Soon" badge
+- Preview video placeholder
+- Explanation of what it does
+- Credit cost breakdown
+
+**Priority:** 🟡 Medium  
+**Effort:** Medium (placeholder now, implement later)
+
+---
+
+## 📋 PHASE 6: Internationalization (i18n)
+
+### 6.1 Language Support
+- 🇺🇸 English (default)
+- 🇲🇽 Spanish
+
+### 6.2 Implementation
+- Language toggle in header (always visible)
+- Save preference in localStorage + profile
+- All text in translation files
+- URL structure: same URLs, content changes
+
+**Priority:** 🟡 Medium  
+**Effort:** Medium
+
+---
+
+## 📋 PHASE 7: SEO & Branding
+
+### 7.1 Branding
+- **Name:** Real Estate Manzanillo / Inmobiliaria Manzanillo
+- **Tagline:** "Your Real Estate Marketplace in Manzanillo"
+- **Colors:** Define primary/secondary/accent
+- **Logo:** Create/update
+
+### 7.2 SEO Enhancements
+- Already have: Meta tags, Schema.org, sitemap
+- Add: Agent profile Schema.org (Person/RealEstateAgent)
+- Add: Per-agent sitemaps
+- Add: Social share images per property
+
+**Priority:** 🟡 Medium  
+**Effort:** Small
+
+---
+
+## 🗓️ Implementation Order
+
+### Sprint 1 (Week 1-2): Foundation
+1. ✅ Database schema updates (profiles with username, whatsapp, etc.)
+2. ✅ Landing page with search
+3. ✅ Properties page with filters
+4. ✅ Agent profile pages (`/:username`)
+5. ✅ Mobile-first responsive design
+
+### Sprint 2 (Week 3-4): Users & Auth
+1. ✅ Invitation link system
+2. ✅ Onboarding flow
+3. ✅ Stripe subscription integration
+4. ✅ Access control middleware
+
+### Sprint 3 (Week 5-6): Dashboard
+1. ✅ Agent dashboard layout
+2. ✅ Property management UI
+3. ✅ Profile settings
+4. ✅ Billing page
+
+### Sprint 4 (Week 7): Polish
+1. ✅ Credit system UI
+2. ✅ AI tools placeholder
+3. ✅ Internationalization
+4. ✅ Testing & bug fixes
+
+---
+
+## 🔗 Technical Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React + Vite + TypeScript |
+| Styling | Tailwind CSS |
+| State | React Context + Hooks |
+| Backend | Supabase (Database, Auth, Storage, Realtime) |
+| Payments | Stripe (Subscriptions, Credits) |
+| Maps | Google Maps API |
+| Hosting | Vercel |
+| i18n | react-i18next |
+
+---
+
+## 💰 Stripe Products to Create
+
+Run these commands or create in dashboard:
+
+### 1. Monthly Subscription
+- **Name:** Suscripción Mensual
+- **Price:** 199 MXN / month
+- **Product ID:** Save for webhook handling
+
+### 2. Credit Packs (One-time payments)
+| Product | Price |
+|---------|-------|
+| 20 Créditos | 20 MXN |
+| 50 Créditos | 50 MXN |
+| 100 Créditos | 100 MXN |
+| 650 Créditos | 500 MXN |
+| 1350 Créditos | 1000 MXN |
+
+---
+
+## 📱 Key User Journeys
+
+### Journey 1: Property Seeker
+```
+Landing Page → Search/Filter → Properties List → Property Detail → WhatsApp Agent
+```
+
+### Journey 2: New Agent (With Trial)
+```
+Invitation Link → Create Account → Onboarding → Dashboard → Add Properties
+                                                     ↓
+                              (Trial ends) → Subscribe → Continue
+```
+
+### Journey 3: Existing Agent
+```
+Login → Dashboard → Manage Properties / View Stats / Buy Credits
+```
+
+### Journey 4: Subscription Lapse
+```
+Payment Fails → Properties Hidden → Login → "Renew" Prompt → Pay → Restored
+```
+
+---
+
+## ✅ Success Criteria
+
+- [ ] Users can sign up via invitation and complete onboarding
+- [ ] Subscription payment works (199 MXN/month)
+- [ ] Agent profiles accessible at `domain.com/username`
+- [ ] Properties display from all agents with advanced filters
+- [ ] WhatsApp button uses property owner's number
+- [ ] Mobile experience is flawless
+- [ ] Language toggle works (EN/ES)
+- [ ] Unpaid users have properties hidden
+- [ ] Credit balance visible and top-ups work
+- [ ] AI tools section shows "Coming Soon"
+
+---
+
+## 🚀 Next Steps
+
+1. **Approve this plan** - Any changes or additions?
+2. **Create Stripe products** - Monthly sub + credit packs
+3. **Update database schema** - Add new profile fields
+4. **Start Sprint 1** - Build landing + properties pages
+
+---
+
+*Last Updated: December 28, 2025*

@@ -1,7 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { buildWhatsappUrl } from '../lib/whatsapp';
 
 interface FloatingWhatsappButtonProps {
   message: string;
+  phone?: string;
 }
 
 const WhatsappIcon = () => (
@@ -16,8 +18,9 @@ const WhatsappIcon = () => (
   </svg>
 );
 
-export function FloatingWhatsappButton({ message }: FloatingWhatsappButtonProps) {
-  const whatsappUrl = buildWhatsappUrl(message);
+export function FloatingWhatsappButton({ message, phone }: FloatingWhatsappButtonProps) {
+  const { t } = useTranslation();
+  const whatsappUrl = buildWhatsappUrl(message, phone);
 
   return (
     <a
@@ -25,11 +28,11 @@ export function FloatingWhatsappButton({ message }: FloatingWhatsappButtonProps)
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-xl shadow-green-500/30 flex items-center justify-center transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300"
-      aria-label="Contáctanos por WhatsApp"
-      title="Escríbenos por WhatsApp"
+      aria-label={t('whatsapp.contactUs')}
+      title={t('whatsapp.writeUs')}
     >
       <WhatsappIcon />
-      <span className="sr-only">Abrir WhatsApp</span>
+      <span className="sr-only">{t('whatsapp.openWhatsapp')}</span>
     </a>
   );
 }

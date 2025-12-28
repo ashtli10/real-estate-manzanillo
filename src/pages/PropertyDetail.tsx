@@ -339,9 +339,10 @@ interface PropertyDetailProps {
   propertySlug: string;
   onNavigate: (path: string) => void;
   onUpdateWhatsappMessage: (message: string) => void;
+  onUpdateWhatsappNumber?: (number: string | undefined) => void;
 }
 
-export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessage }: PropertyDetailProps) {
+export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessage, onUpdateWhatsappNumber }: PropertyDetailProps) {
   const [property, setProperty] = useState<Property | null>(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [loading, setLoading] = useState(true);
