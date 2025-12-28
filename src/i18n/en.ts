@@ -27,6 +27,8 @@ export const en = {
     forRent: 'For Rent',
     allLocations: 'All locations',
     searchLocation: 'Search location...',
+    typeToSearch: 'Type to search for locations in Manzanillo',
+    locationSearchError: 'Could not load locations. Please try again.',
   },
 
   // Navigation

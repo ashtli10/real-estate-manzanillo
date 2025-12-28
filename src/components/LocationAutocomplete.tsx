@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { MapPin, X } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { MapPin, X, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface LocationAutocompleteProps {
@@ -10,39 +10,21 @@ interface LocationAutocompleteProps {
   variant?: 'default' | 'compact' | 'filter';
 }
 
-// Manzanillo colonias/neighborhoods - comprehensive list
-const MANZANILLO_COLONIAS = [
-  'Santiago',
-  'Salagua',
-  'Salahua',
-  'Las Brisas',
-  'Playa Azul',
-  'La Punta',
-  'Centro',
-  'Miramar',
-  'Península de Santiago',
-  'Club Santiago',
-  'Las Hadas',
-  'La Audiencia',
-  'Valle de las Garzas',
-  'Vida del Mar',
-  'El Naranjo',
-  'Tapeixtles',
-  'Nuevo Salagua',
-  'Mar de Plata',
-  'Olas Altas',
-  'La Joya',
-  'Bahía de Manzanillo',
-  'Campos',
-  'El Colomo',
-  'La Central',
-  'Las Joyas',
-  'Lomas del Mar',
-  'Playa de Oro',
-  'San Pedrito',
-  'Sector Deportivo',
-  'Sector Naval',
-];
+interface PlacePrediction {
+  placeId: string;
+  text: string;
+  mainText: string;
+  secondaryText: string;
+}
+
+// Manzanillo center coordinates
+const MANZANILLO_CENTER = {
+  latitude: 19.0503,
+  longitude: -104.3153,
+};
+
+// Radius in meters (~25km to cover Manzanillo and surrounding areas)
+const SEARCH_RADIUS = 25000;
 
 export function LocationAutocomplete({
   value,
@@ -54,8 +36,12 @@ export function LocationAutocomplete({
   const { t } = useTranslation();
   const [search, setSearch] = useState(value === 'all' ? '' : value);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync external value changes
   useEffect(() => {
@@ -67,14 +53,97 @@ export function LocationAutocomplete({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  // Filter colonias based on search input
-  const filteredColonias = useMemo(() => {
-    if (!search.trim()) return MANZANILLO_COLONIAS;
-    const query = search.toLowerCase();
-    return MANZANILLO_COLONIAS.filter((colonia) =>
-      colonia.toLowerCase().includes(query)
-    );
-  }, [search]);
+  // Fetch predictions from Google Places API
+  const fetchPredictions = useCallback(async (input: string) => {
+    if (!input.trim()) {
+      setPredictions([]);
+      return;
+    }
+
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      console.error('Google Maps API key not found');
+      setApiError(true);
+      return;
+    }
+
+    setIsLoading(true);
+    setApiError(false);
+
+    try {
+      // Use the Places API (New) Autocomplete endpoint
+      const response = await fetch(
+        'https://places.googleapis.com/v1/places:autocomplete',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': apiKey,
+          },
+          body: JSON.stringify({
+            input: input,
+            // Restrict to a circle around Manzanillo
+            locationRestriction: {
+              circle: {
+                center: {
+                  latitude: MANZANILLO_CENTER.latitude,
+                  longitude: MANZANILLO_CENTER.longitude,
+                },
+                radius: SEARCH_RADIUS,
+              },
+            },
+            // Filter for regions/neighborhoods
+            includedPrimaryTypes: ['(regions)'],
+            // Restrict to Mexico
+            includedRegionCodes: ['mx'],
+            // Language preference
+            languageCode: 'es',
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Places API request failed');
+      }
+
+      const data = await response.json();
+      
+      // Parse predictions from response
+      const parsedPredictions: PlacePrediction[] = (data.suggestions || [])
+        .filter((suggestion: { placePrediction?: unknown }) => suggestion.placePrediction)
+        .map((suggestion: { 
+          placePrediction: { 
+            placeId: string; 
+            text: { text: string }; 
+            structuredFormat?: { 
+              mainText?: { text: string }; 
+              secondaryText?: { text: string }; 
+            }; 
+          } 
+        }) => {
+          const pred = suggestion.placePrediction;
+          return {
+            placeId: pred.placeId,
+            text: pred.text?.text || '',
+            mainText: pred.structuredFormat?.mainText?.text || pred.text?.text || '',
+            secondaryText: pred.structuredFormat?.secondaryText?.text || '',
+          };
+        })
+        // Filter to only show results that include Manzanillo or Colima in the description
+        .filter((pred: PlacePrediction) => {
+          const fullText = `${pred.text} ${pred.secondaryText}`.toLowerCase();
+          return fullText.includes('manzanillo') || fullText.includes('colima');
+        });
+
+      setPredictions(parsedPredictions);
+    } catch (error) {
+      console.error('Error fetching place predictions:', error);
+      setApiError(true);
+      setPredictions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -97,16 +166,28 @@ export function LocationAutocomplete({
       // If cleared, reset to 'all'
       if (!newValue.trim()) {
         onChange('all');
+        setPredictions([]);
+        return;
       }
+
+      // Debounce API calls
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = setTimeout(() => {
+        fetchPredictions(newValue);
+      }, 300);
     },
-    [onChange]
+    [onChange, fetchPredictions]
   );
 
-  const handleSelectColonia = useCallback(
-    (colonia: string) => {
-      setSearch(colonia);
-      onChange(colonia);
+  const handleSelectPrediction = useCallback(
+    (prediction: PlacePrediction) => {
+      // Extract just the neighborhood/colonia name (mainText)
+      setSearch(prediction.mainText);
+      onChange(prediction.mainText);
       setShowDropdown(false);
+      setPredictions([]);
     },
     [onChange]
   );
@@ -115,23 +196,21 @@ export function LocationAutocomplete({
     setSearch('');
     onChange('all');
     setShowDropdown(false);
+    setPredictions([]);
     inputRef.current?.focus();
   }, [onChange]);
 
   const handleFocus = () => {
     setShowDropdown(true);
+    if (search.trim() && predictions.length === 0) {
+      fetchPredictions(search);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && search.trim()) {
-      // If there's an exact match or only one filtered result, select it
-      const exactMatch = MANZANILLO_COLONIAS.find(
-        (c) => c.toLowerCase() === search.toLowerCase()
-      );
-      if (exactMatch) {
-        handleSelectColonia(exactMatch);
-      } else if (filteredColonias.length === 1) {
-        handleSelectColonia(filteredColonias[0]);
+      if (predictions.length > 0) {
+        handleSelectPrediction(predictions[0]);
       } else {
         onChange(search.trim());
         setShowDropdown(false);
@@ -181,6 +260,7 @@ export function LocationAutocomplete({
               setSearch('');
               onChange('all');
               setShowDropdown(false);
+              setPredictions([]);
             }}
             className={`w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-100 ${
               value === 'all' ? 'bg-blue-50 text-blue-600' : ''
@@ -190,24 +270,51 @@ export function LocationAutocomplete({
             <span className="text-sm font-medium">{t('common.allLocations')}</span>
           </button>
 
-          {/* Colonias list */}
-          {filteredColonias.map((colonia) => (
+          {/* Loading state */}
+          {isLoading && (
+            <div className="px-4 py-3 flex items-center gap-2 text-sm text-gray-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>{t('common.loading')}</span>
+            </div>
+          )}
+
+          {/* API Error state */}
+          {apiError && !isLoading && (
+            <div className="px-4 py-3 text-sm text-amber-600">
+              {t('common.locationSearchError')}
+            </div>
+          )}
+
+          {/* Predictions list */}
+          {!isLoading && !apiError && predictions.map((prediction) => (
             <button
-              key={colonia}
-              onClick={() => handleSelectColonia(colonia)}
-              className={`w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-2 ${
-                value === colonia ? 'bg-blue-50 text-blue-600' : ''
+              key={prediction.placeId}
+              onClick={() => handleSelectPrediction(prediction)}
+              className={`w-full text-left px-4 py-3 hover:bg-gray-50 flex items-start gap-2 ${
+                value === prediction.mainText ? 'bg-blue-50 text-blue-600' : ''
               }`}
             >
-              <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
-              <span className="text-sm">{colonia}</span>
+              <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{prediction.mainText}</span>
+                {prediction.secondaryText && (
+                  <span className="text-xs text-gray-500">{prediction.secondaryText}</span>
+                )}
+              </div>
             </button>
           ))}
 
           {/* No results message */}
-          {filteredColonias.length === 0 && (
+          {!isLoading && !apiError && search.trim() && predictions.length === 0 && (
             <div className="px-4 py-3 text-sm text-gray-500">
               {t('properties.noResults')}
+            </div>
+          )}
+
+          {/* Hint when no search */}
+          {!isLoading && !apiError && !search.trim() && (
+            <div className="px-4 py-3 text-sm text-gray-500">
+              {t('common.typeToSearch')}
             </div>
           )}
         </div>

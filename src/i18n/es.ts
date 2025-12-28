@@ -27,6 +27,8 @@ export const es = {
     forRent: 'En Renta',
     allLocations: 'Todas las ubicaciones',
     searchLocation: 'Buscar ubicación...',
+    typeToSearch: 'Escribe para buscar ubicaciones en Manzanillo',
+    locationSearchError: 'No se pudieron cargar las ubicaciones. Intenta de nuevo.',
   },
 
   // Navigation
