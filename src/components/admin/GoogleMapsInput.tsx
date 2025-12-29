@@ -243,9 +243,11 @@ export function GoogleMapsInput({
     onLocationDetailsChange?.({ city: '', state: '', neighborhood: '' });
   };
 
-  const filteredFallback = SUGGESTED_LOCATIONS.filter((loc) =>
-    loc.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredFallback = search.trim()
+    ? SUGGESTED_LOCATIONS.filter((loc) =>
+        loc.name.toLowerCase().includes(search.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="space-y-4">
