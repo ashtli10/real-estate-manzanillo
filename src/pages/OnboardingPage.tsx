@@ -24,13 +24,15 @@ interface OnboardingPageProps {
   onNavigate: (path: string) => void;
 }
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 1.5 | 2 | 3 | 4 | 5;
 
 interface FormData {
   // Step 1 - Account
   email: string;
   password: string;
   confirmPassword: string;
+  // Step 1.5 - Email verification
+  otp: string;
   // Step 2 - Personal
   fullName: string;
   phoneNumber: string;
@@ -57,6 +59,7 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
     email: '',
     password: '',
     confirmPassword: '',
+    otp: '',
     fullName: '',
     phoneNumber: '',
     whatsappNumber: '',
@@ -174,7 +177,11 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
     if (step === 1) {
       const err = validateStep1();
       if (err) { setError(err); return; }
-      setStep(2);
+      // Sign up user and send OTP
+      await initiateSignup();
+    } else if (step === 1.5) {
+      // Verify OTP
+      await verifyEmail();
     } else if (step === 2) {
       const err = validateStep2();
       if (err) { setError(err); return; }
@@ -190,15 +197,21 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
   };
 
   const handleBack = () => {
-    if (step > 1) setStep((step - 1) as Step);
+    if (step > 1) {
+      if (step === 1.5) {
+        setStep(1);
+      } else {
+        setStep((step - 1) as Step);
+      }
+    }
   };
 
-  const completeRegistration = async () => {
+  const initiateSignup = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // 1. Create auth user
+      // Create auth user - this sends OTP email
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -206,17 +219,66 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
 
       if (signUpError) throw signUpError;
       if (!authData.user) throw new Error('No se pudo crear el usuario');
-      if (!authData.session) throw new Error('No se pudo establecer la sesión');
 
-      const userId = authData.user.id;
+      // Move to OTP verification step
+      setStep(1.5);
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      setError(err.message || 'Error al crear la cuenta');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // 2. Mark invitation as used
+  const verifyEmail = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (!formData.otp || formData.otp.length !== 6) {
+        throw new Error('Por favor ingresa el código de 6 dígitos');
+      }
+
+      // Verify OTP
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email: formData.email,
+        token: formData.otp,
+        type: 'signup',
+      });
+
+      if (verifyError) throw verifyError;
+      if (!data.session) throw new Error('No se pudo verificar el código');
+
+      // Success - move to step 2
+      setStep(2);
+    } catch (err: any) {
+      console.error('OTP verification error:', err);
+      setError(err.message || 'Código inválido o expirado');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completeRegistration = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Get current session (user already signed up and verified)
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+      if (!session || !session.user) throw new Error('No hay sesión activa');
+
+      const userId = session.user.id;
+
+      // 1. Mark invitation as used
       await supabase.rpc('use_invitation_token', {
         invite_token: token,
         user_uuid: userId,
       });
 
-      // 3. Update or create profile (trigger may have already created it)
+      // 2. Update or create profile (trigger may have already created it)
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -294,32 +356,37 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
   }
 
   // Step indicator
-  const StepIndicator = () => (
-    <div className="flex items-center justify-center gap-2 mb-8">
-      {[1, 2, 3, 4].map((s) => (
-        <div key={s} className="flex items-center">
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
-              s < step
-                ? 'bg-green-500 text-white'
-                : s === step
-                ? 'bg-primary text-white'
-                : 'bg-gray-200 text-gray-500'
-            }`}
-          >
-            {s < step ? <CheckCircle className="h-5 w-5" /> : s}
-          </div>
-          {s < 4 && (
+  const StepIndicator = () => {
+    // Map step 1.5 to display position 1 (same dot as step 1)
+    const displayStep = step === 1.5 ? 1 : step > 1.5 ? step - 0.5 : step;
+    
+    return (
+      <div className="flex items-center justify-center gap-2 mb-8">
+        {[1, 2, 3, 4].map((s) => (
+          <div key={s} className="flex items-center">
             <div
-              className={`w-8 h-1 ${
-                s < step ? 'bg-green-500' : 'bg-gray-200'
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+                s < displayStep
+                  ? 'bg-green-500 text-white'
+                  : s === Math.floor(displayStep)
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-200 text-gray-500'
               }`}
-            />
-          )}
-        </div>
-      ))}
-    </div>
-  );
+            >
+              {s < displayStep ? <CheckCircle className="h-5 w-5" /> : s}
+            </div>
+            {s < 4 && (
+              <div
+                className={`w-8 h-1 ${
+                  s < displayStep ? 'bg-green-500' : 'bg-gray-200'
+                }`}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   // Step 5 - Success
   if (step === 5) {
@@ -431,6 +498,46 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
                     placeholder="••••••••"
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 1.5: Email Verification */}
+        {step === 1.5 && (
+          <div>
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+                <Mail className="h-8 w-8 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                Verifica tu correo
+              </h2>
+              <p className="text-gray-600">
+                Hemos enviado un código de 6 dígitos a <br />
+                <span className="font-semibold">{formData.email}</span>
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                  Código de verificación
+                </label>
+                <input
+                  type="text"
+                  value={formData.otp}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    updateField('otp', value);
+                  }}
+                  className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="000000"
+                  maxLength={6}
+                />
+                <p className="text-sm text-gray-500 text-center mt-2">
+                  Revisa tu bandeja de entrada y spam
+                </p>
               </div>
             </div>
           </div>
@@ -684,13 +791,23 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
 
           <button
             onClick={handleNext}
-            disabled={loading || (step === 3 && !usernameAvailable)}
+            disabled={loading || (step === 3 && !usernameAvailable) || (step === 1.5 && formData.otp.length !== 6)}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition-all disabled:opacity-50"
           >
             {loading ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                Procesando...
+                {step === 1 ? 'Enviando código...' : step === 1.5 ? 'Verificando...' : 'Procesando...'}
+              </>
+            ) : step === 1 ? (
+              <>
+                Enviar código
+                <Mail className="h-5 w-5" />
+              </>
+            ) : step === 1.5 ? (
+              <>
+                Verificar código
+                <CheckCircle className="h-5 w-5" />
               </>
             ) : step === 4 ? (
               <>
