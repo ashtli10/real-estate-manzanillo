@@ -3,9 +3,6 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "bypassProtectionForPaths": [
-    "/api/stripe/webhook"
-  ],
   "rewrites": [
     {
       "source": "/sitemap.xml",
