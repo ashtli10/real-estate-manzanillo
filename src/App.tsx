@@ -9,16 +9,25 @@ import { PropertyDetail } from './pages/PropertyDetail';
 import { Login } from './pages/Login';
 import { Admin } from './pages/Admin';
 import { AgentProfile } from './pages/AgentProfile';
+import { InvitePage } from './pages/InvitePage';
+import { OnboardingPage } from './pages/OnboardingPage';
+import { Dashboard } from './pages/Dashboard';
 import { FloatingWhatsappButton } from './components/FloatingWhatsappButton';
 import { DEFAULT_WHATSAPP_MESSAGE } from './lib/whatsapp';
 
 // Reserved routes that should not be treated as agent usernames
-const RESERVED_ROUTES = ['/', '/propiedades', '/login', '/admin'];
+const RESERVED_ROUTES = ['/', '/propiedades', '/login', '/admin', '/dashboard', '/onboarding'];
 
 function AppContent() {
   const { route, navigate } = useRouter();
   const [whatsappMessage, setWhatsappMessage] = useState(DEFAULT_WHATSAPP_MESSAGE);
   const [whatsappNumber, setWhatsappNumber] = useState<string | undefined>(undefined);
+
+  // Get query params from window.location
+  const getQueryParam = (param: string): string | null => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(param);
+  };
 
   const renderPage = () => {
     if (route === '/' || route === '') {
@@ -41,6 +50,27 @@ function AppContent() {
       );
     }
 
+    // Invitation route
+    const inviteParams = getRouteParams(route, '/invite/:token');
+    if (inviteParams) {
+      return <InvitePage token={inviteParams.token} onNavigate={navigate} />;
+    }
+
+    // Onboarding route
+    if (route === '/onboarding') {
+      const token = getQueryParam('token');
+      if (token) {
+        return <OnboardingPage token={token} onNavigate={navigate} />;
+      }
+      navigate('/');
+      return null;
+    }
+
+    // Dashboard route
+    if (route === '/dashboard') {
+      return <Dashboard onNavigate={navigate} />;
+    }
+
     if (route === '/login') {
       return <Login onNavigate={navigate} />;
     }
@@ -52,7 +82,11 @@ function AppContent() {
     // Check for agent profile route (/:username)
     // Only match if it's not a reserved route and starts with /
     const cleanRoute = route.startsWith('/') ? route : `/${route}`;
-    if (!RESERVED_ROUTES.includes(cleanRoute) && !cleanRoute.startsWith('/propiedad/')) {
+    const isReserved = RESERVED_ROUTES.includes(cleanRoute) || 
+                       cleanRoute.startsWith('/propiedad/') || 
+                       cleanRoute.startsWith('/invite/');
+    
+    if (!isReserved) {
       const username = cleanRoute.slice(1); // Remove leading /
       if (username && !username.includes('/')) {
         return (
@@ -68,7 +102,9 @@ function AppContent() {
     return <Home onNavigate={navigate} onUpdateWhatsappMessage={setWhatsappMessage} />;
   };
 
-  const isLoginPage = route === '/login';
+  const isAuthPage = route === '/login' || route.startsWith('/invite/') || route === '/onboarding';
+  const isDashboardPage = route === '/dashboard';
+  const hideHeaderFooter = isAuthPage || isDashboardPage;
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
@@ -82,10 +118,10 @@ function AppContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isLoginPage && <Header onNavigate={navigate} currentPath={route} />}
+      {!hideHeaderFooter && <Header onNavigate={navigate} currentPath={route} />}
       <main className="flex-1">{renderPage()}</main>
-      {!isLoginPage && <Footer onNavigate={navigate} />}
-      <FloatingWhatsappButton message={whatsappMessage} phone={whatsappNumber} />
+      {!hideHeaderFooter && <Footer onNavigate={navigate} />}
+      {!isAuthPage && <FloatingWhatsappButton message={whatsappMessage} phone={whatsappNumber} />}
     </div>
   );
 }

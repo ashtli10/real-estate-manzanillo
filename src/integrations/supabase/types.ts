@@ -12,6 +12,210 @@ export type Database = {
   }
   public: {
     Tables: {
+      credits: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          user_id: string
+          balance: number
+          last_monthly_refresh: string | null
+          monthly_credits_used: number
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          balance?: number
+          last_monthly_refresh?: string | null
+          monthly_credits_used?: number
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          balance?: number
+          last_monthly_refresh?: string | null
+          monthly_credits_used?: number
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          id: string
+          created_at: string
+          user_id: string
+          amount: number
+          balance_after: number
+          transaction_type: string
+          reference_id: string | null
+          description: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          user_id: string
+          amount: number
+          balance_after: number
+          transaction_type: string
+          reference_id?: string | null
+          description?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          user_id?: string
+          amount?: number
+          balance_after?: number
+          transaction_type?: string
+          reference_id?: string | null
+          description?: string | null
+        }
+        Relationships: []
+      }
+      invitation_tokens: {
+        Row: {
+          id: string
+          created_at: string
+          token: string
+          email: string | null
+          trial_days: number
+          expires_at: string
+          used_at: string | null
+          used_by: string | null
+          created_by: string | null
+          notes: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          token?: string
+          email?: string | null
+          trial_days?: number
+          expires_at: string
+          used_at?: string | null
+          used_by?: string | null
+          created_by?: string | null
+          notes?: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          token?: string
+          email?: string | null
+          trial_days?: number
+          expires_at?: string
+          used_at?: string | null
+          used_by?: string | null
+          created_by?: string | null
+          notes?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          email: string
+          full_name: string
+          phone_number: string
+          whatsapp_number: string
+          username: string | null
+          company_name: string
+          bio: string
+          location: string
+          profile_image: string
+          cover_image: string
+          is_visible: boolean
+          onboarding_completed: boolean
+        }
+        Insert: {
+          id: string
+          created_at?: string
+          updated_at?: string
+          email: string
+          full_name?: string
+          phone_number?: string
+          whatsapp_number?: string
+          username?: string | null
+          company_name?: string
+          bio?: string
+          location?: string
+          profile_image?: string
+          cover_image?: string
+          is_visible?: boolean
+          onboarding_completed?: boolean
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          email?: string
+          full_name?: string
+          phone_number?: string
+          whatsapp_number?: string
+          username?: string | null
+          company_name?: string
+          bio?: string
+          location?: string
+          profile_image?: string
+          cover_image?: string
+          is_visible?: boolean
+          onboarding_completed?: boolean
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          user_id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          status: string
+          trial_starts_at: string | null
+          trial_ends_at: string | null
+          current_period_start: string | null
+          current_period_end: string | null
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          status?: string
+          trial_starts_at?: string | null
+          trial_ends_at?: string | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          status?: string
+          trial_starts_at?: string | null
+          trial_ends_at?: string | null
+          current_period_start?: string | null
+          current_period_end?: string | null
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           characteristics: Json | null
@@ -133,6 +337,18 @@ export type Database = {
     Functions: {
       has_role: {
         Args: { check_role: string; check_user_id: string }
+        Returns: boolean
+      }
+      has_active_subscription: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
+      validate_invitation_token: {
+        Args: { invite_token: string }
+        Returns: { is_valid: boolean; token_email: string | null; token_trial_days: number }[]
+      }
+      use_invitation_token: {
+        Args: { invite_token: string; user_uuid: string }
         Returns: boolean
       }
     }

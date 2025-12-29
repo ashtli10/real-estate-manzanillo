@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Plus, RefreshCw, LogOut, Home, Building2 } from 'lucide-react';
+import { Plus, RefreshCw, LogOut, Home, Building2, Users, Mail, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../integrations/supabase/client';
 import type { Property, PropertyInsert } from '../types/property';
+import type { InvitationToken } from '../types/user';
 import { PropertyTable } from '../components/admin/PropertyTable';
 import { PropertyForm } from '../components/admin/PropertyForm';
 import { DeleteConfirmModal } from '../components/admin/DeleteConfirmModal';
+import { CreateInvitationModal } from '../components/admin/CreateInvitationModal';
+import { InvitationTable } from '../components/admin/InvitationTable';
 import { transformProperty } from '../lib/propertyTransform';
+
+type AdminTab = 'properties' | 'invitations';
 
 interface AdminProps {
   onNavigate: (path: string) => void;
@@ -14,13 +19,22 @@ interface AdminProps {
 
 export function Admin({ onNavigate }: AdminProps) {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
+  const [activeTab, setActiveTab] = useState<AdminTab>('properties');
+  
+  // Properties state
   const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingProperties, setLoadingProperties] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  
+  // Invitations state
+  const [invitations, setInvitations] = useState<InvitationToken[]>([]);
+  const [loadingInvitations, setLoadingInvitations] = useState(true);
+  const [showCreateInvitation, setShowCreateInvitation] = useState(false);
+  const [creatingInvitation, setCreatingInvitation] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -31,11 +45,12 @@ export function Admin({ onNavigate }: AdminProps) {
   useEffect(() => {
     if (user && isAdmin) {
       loadProperties();
+      loadInvitations();
     }
   }, [user, isAdmin]);
 
   const loadProperties = async () => {
-    setLoading(true);
+    setLoadingProperties(true);
     try {
       const { data, error } = await supabase
         .from('properties')
@@ -47,7 +62,68 @@ export function Admin({ onNavigate }: AdminProps) {
     } catch (error) {
       console.error('Error loading properties:', error);
     } finally {
-      setLoading(false);
+      setLoadingProperties(false);
+    }
+  };
+
+  const loadInvitations = async () => {
+    setLoadingInvitations(true);
+    try {
+      const { data, error } = await supabase
+        .from('invitation_tokens')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setInvitations(data || []);
+    } catch (error) {
+      console.error('Error loading invitations:', error);
+    } finally {
+      setLoadingInvitations(false);
+    }
+  };
+
+  const handleCreateInvitation = async (data: {
+    email: string | null;
+    trial_days: number;
+    expires_at: string;
+    notes: string;
+  }) => {
+    setCreatingInvitation(true);
+    try {
+      const { error } = await supabase
+        .from('invitation_tokens')
+        .insert([{
+          email: data.email,
+          trial_days: data.trial_days,
+          expires_at: data.expires_at,
+          notes: data.notes,
+          created_by: user?.id,
+        }]);
+
+      if (error) throw error;
+      await loadInvitations();
+      setShowCreateInvitation(false);
+    } catch (error) {
+      console.error('Error creating invitation:', error);
+      alert('Error al crear la invitación. Por favor intenta de nuevo.');
+    } finally {
+      setCreatingInvitation(false);
+    }
+  };
+
+  const handleDeleteInvitation = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('invitation_tokens')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      await loadInvitations();
+    } catch (error) {
+      console.error('Error deleting invitation:', error);
+      alert('Error al eliminar la invitación. Por favor intenta de nuevo.');
     }
   };
 
@@ -255,7 +331,7 @@ export function Admin({ onNavigate }: AdminProps) {
             <div>
               <h1 className="text-3xl md:text-4xl font-bold">Panel de Administración</h1>
               <p className="text-primary-foreground/80 mt-1">
-                Gestiona las propiedades de BN Inmobiliaria
+                Gestiona la plataforma Inmobiliaria Manzanillo
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -278,54 +354,138 @@ export function Admin({ onNavigate }: AdminProps) {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="container mx-auto px-4 py-8">
-        {/* Actions Bar */}
-        <div className="bg-card rounded-xl shadow-soft p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold text-foreground">
-              Propiedades ({properties.length})
-            </h2>
+      {/* Tabs */}
+      <div className="border-b border-border bg-card">
+        <div className="container mx-auto px-4">
+          <div className="flex gap-1">
             <button
-              onClick={loadProperties}
-              disabled={loading}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-              title="Refrescar"
+              onClick={() => setActiveTab('properties')}
+              className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${
+                activeTab === 'properties'
+                  ? 'text-primary border-primary'
+                  : 'text-muted-foreground border-transparent hover:text-foreground'
+              }`}
             >
-              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+              <Building2 className="h-5 w-5" />
+              Propiedades
+            </button>
+            <button
+              onClick={() => setActiveTab('invitations')}
+              className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 border-b-2 -mb-px ${
+                activeTab === 'invitations'
+                  ? 'text-primary border-primary'
+                  : 'text-muted-foreground border-transparent hover:text-foreground'
+              }`}
+            >
+              <Mail className="h-5 w-5" />
+              Invitaciones
+              {invitations.filter(i => !i.used_at && new Date(i.expires_at) > new Date()).length > 0 && (
+                <span className="px-2 py-0.5 text-xs rounded-full bg-primary text-primary-foreground">
+                  {invitations.filter(i => !i.used_at && new Date(i.expires_at) > new Date()).length}
+                </span>
+              )}
             </button>
           </div>
-          <button
-            onClick={() => {
-              setEditingProperty(null);
-              setShowForm(true);
-            }}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold shadow-lg hover:opacity-90 transition-all flex items-center gap-2"
-          >
-            <Plus className="h-5 w-5" />
-            Nueva propiedad
-          </button>
         </div>
+      </div>
 
-        {/* Properties Table */}
-        <div className="bg-card rounded-xl shadow-soft overflow-hidden">
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-              <p className="mt-4 text-muted-foreground">Cargando propiedades...</p>
+      {/* Content */}
+      <div className="container mx-auto px-4 py-8">
+        {/* Properties Tab */}
+        {activeTab === 'properties' && (
+          <>
+            {/* Actions Bar */}
+            <div className="bg-card rounded-xl shadow-soft p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-semibold text-foreground">
+                  Propiedades ({properties.length})
+                </h2>
+                <button
+                  onClick={loadProperties}
+                  disabled={loadingProperties}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                  title="Refrescar"
+                >
+                  <RefreshCw className={`h-5 w-5 ${loadingProperties ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingProperty(null);
+                  setShowForm(true);
+                }}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold shadow-lg hover:opacity-90 transition-all flex items-center gap-2"
+              >
+                <Plus className="h-5 w-5" />
+                Nueva propiedad
+              </button>
             </div>
-          ) : (
-            <PropertyTable
-              properties={properties}
-              onEdit={handleEdit}
-              onDelete={setDeletingProperty}
-              onTogglePublish={handleTogglePublish}
-              onToggleFeatured={handleToggleFeatured}
-              onMoveUp={handleMoveUp}
-              onMoveDown={handleMoveDown}
-            />
-          )}
-        </div>
+
+            {/* Properties Table */}
+            <div className="bg-card rounded-xl shadow-soft overflow-hidden">
+              {loadingProperties ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="mt-4 text-muted-foreground">Cargando propiedades...</p>
+                </div>
+              ) : (
+                <PropertyTable
+                  properties={properties}
+                  onEdit={handleEdit}
+                  onDelete={setDeletingProperty}
+                  onTogglePublish={handleTogglePublish}
+                  onToggleFeatured={handleToggleFeatured}
+                  onMoveUp={handleMoveUp}
+                  onMoveDown={handleMoveDown}
+                />
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Invitations Tab */}
+        {activeTab === 'invitations' && (
+          <>
+            {/* Actions Bar */}
+            <div className="bg-card rounded-xl shadow-soft p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-semibold text-foreground">
+                  Invitaciones ({invitations.length})
+                </h2>
+                <button
+                  onClick={loadInvitations}
+                  disabled={loadingInvitations}
+                  className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                  title="Refrescar"
+                >
+                  <RefreshCw className={`h-5 w-5 ${loadingInvitations ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              <button
+                onClick={() => setShowCreateInvitation(true)}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold shadow-lg hover:opacity-90 transition-all flex items-center gap-2"
+              >
+                <Plus className="h-5 w-5" />
+                Nueva invitación
+              </button>
+            </div>
+
+            {/* Invitations Table */}
+            <div className="bg-card rounded-xl shadow-soft overflow-hidden">
+              {loadingInvitations ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                  <p className="mt-4 text-muted-foreground">Cargando invitaciones...</p>
+                </div>
+              ) : (
+                <InvitationTable
+                  invitations={invitations}
+                  onDelete={handleDeleteInvitation}
+                />
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Property Form Modal */}
@@ -349,6 +509,15 @@ export function Admin({ onNavigate }: AdminProps) {
           onConfirm={handleDelete}
           onCancel={() => setDeletingProperty(null)}
           loading={deleting}
+        />
+      )}
+
+      {/* Create Invitation Modal */}
+      {showCreateInvitation && (
+        <CreateInvitationModal
+          onClose={() => setShowCreateInvitation(false)}
+          onCreate={handleCreateInvitation}
+          loading={creatingInvitation}
         />
       )}
     </div>
