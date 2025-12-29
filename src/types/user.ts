@@ -4,47 +4,56 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   email: string;
-  full_name: string;
-  phone_number: string;
-  whatsapp_number: string;
+  full_name: string | null;
+  phone_number: string | null;
+  whatsapp_number: string | null;
   username: string | null;
-  company_name: string;
-  bio: string;
-  location: string;
-  profile_image: string;
-  cover_image: string;
-  is_visible: boolean;
-  onboarding_completed: boolean;
+  company_name: string | null;
+  bio: string | null;
+  location: string | null;
+  profile_image: string | null;
+  cover_image: string | null;
+  is_visible: boolean | null;
+  onboarding_completed: boolean | null;
+  stripe_customer_id: string | null;
+  language_preference: string | null;
+  email_verified: boolean | null;
 }
 
 export interface ProfileInsert {
   id: string;
   email: string;
-  full_name?: string;
-  phone_number?: string;
-  whatsapp_number?: string;
+  full_name?: string | null;
+  phone_number?: string | null;
+  whatsapp_number?: string | null;
   username?: string | null;
-  company_name?: string;
-  bio?: string;
-  location?: string;
-  profile_image?: string;
-  cover_image?: string;
-  is_visible?: boolean;
-  onboarding_completed?: boolean;
+  company_name?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  profile_image?: string | null;
+  cover_image?: string | null;
+  is_visible?: boolean | null;
+  onboarding_completed?: boolean | null;
+  stripe_customer_id?: string | null;
+  language_preference?: string | null;
+  email_verified?: boolean | null;
 }
 
 export interface ProfileUpdate {
-  full_name?: string;
-  phone_number?: string;
-  whatsapp_number?: string;
+  full_name?: string | null;
+  phone_number?: string | null;
+  whatsapp_number?: string | null;
   username?: string | null;
-  company_name?: string;
-  bio?: string;
-  location?: string;
-  profile_image?: string;
-  cover_image?: string;
-  is_visible?: boolean;
-  onboarding_completed?: boolean;
+  company_name?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  profile_image?: string | null;
+  cover_image?: string | null;
+  is_visible?: boolean | null;
+  onboarding_completed?: boolean | null;
+  stripe_customer_id?: string | null;
+  language_preference?: string | null;
+  email_verified?: boolean | null;
 }
 
 // Invitation token type
@@ -53,23 +62,26 @@ export interface InvitationToken {
   created_at: string;
   token: string;
   email: string | null;
-  trial_days: number;
+  trial_days: number | null;
   expires_at: string;
   used_at: string | null;
   used_by: string | null;
-  created_by: string | null;
-  notes: string;
+  created_by: string;
+  notes: string | null;
 }
 
 export interface InvitationTokenInsert {
   email?: string | null;
   trial_days?: number;
   expires_at: string;
-  notes?: string;
+  notes?: string | null;
+  created_by: string;
 }
 
 // Subscription type
-export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid';
+export type SubscriptionStatus = 'trialing' | 'active' | 'past_due' | 'canceled' | 'paused' | 'incomplete' | 'incomplete_expired' | 'none';
+
+export type PlanType = 'standard' | 'premium' | 'enterprise' | 'none';
 
 export interface Subscription {
   id: string;
@@ -78,19 +90,19 @@ export interface Subscription {
   user_id: string;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
-  status: SubscriptionStatus;
-  trial_starts_at: string | null;
+  status: SubscriptionStatus | null;
+  plan_type: PlanType | null;
   trial_ends_at: string | null;
   current_period_start: string | null;
   current_period_end: string | null;
-  cancel_at_period_end: boolean;
+  cancel_at_period_end: boolean | null;
   canceled_at: string | null;
 }
 
 export interface SubscriptionInsert {
   user_id: string;
-  status?: SubscriptionStatus;
-  trial_starts_at?: string | null;
+  status?: SubscriptionStatus | null;
+  plan_type?: PlanType | null;
   trial_ends_at?: string | null;
 }
 
@@ -101,22 +113,21 @@ export interface Credits {
   updated_at: string;
   user_id: string;
   balance: number;
-  last_monthly_refresh: string | null;
-  monthly_credits_used: number;
+  free_credits_remaining: number;
+  last_free_credit_reset: string | null;
 }
 
 // Credit transaction type
-export type CreditTransactionType = 'subscription_refresh' | 'purchase' | 'usage' | 'refund' | 'admin_adjustment';
+export type CreditTransactionType = 'purchased' | 'used' | 'free_monthly' | 'refund' | 'bonus';
 
 export interface CreditTransaction {
   id: string;
   created_at: string;
   user_id: string;
   amount: number;
-  balance_after: number;
-  transaction_type: CreditTransactionType;
-  reference_id: string | null;
+  type: CreditTransactionType;
   description: string | null;
+  metadata: Record<string, unknown> | null;
 }
 
 // User roles

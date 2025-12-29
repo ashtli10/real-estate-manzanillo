@@ -19,8 +19,8 @@ export type Database = {
           updated_at: string
           user_id: string
           balance: number
-          last_monthly_refresh: string | null
-          monthly_credits_used: number
+          free_credits_remaining: number
+          last_free_credit_reset: string | null
         }
         Insert: {
           id?: string
@@ -28,8 +28,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           balance?: number
-          last_monthly_refresh?: string | null
-          monthly_credits_used?: number
+          free_credits_remaining?: number
+          last_free_credit_reset?: string | null
         }
         Update: {
           id?: string
@@ -37,8 +37,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           balance?: number
-          last_monthly_refresh?: string | null
-          monthly_credits_used?: number
+          free_credits_remaining?: number
+          last_free_credit_reset?: string | null
         }
         Relationships: []
       }
@@ -48,30 +48,27 @@ export type Database = {
           created_at: string
           user_id: string
           amount: number
-          balance_after: number
-          transaction_type: string
-          reference_id: string | null
+          type: string
           description: string | null
+          metadata: Json | null
         }
         Insert: {
           id?: string
           created_at?: string
           user_id: string
           amount: number
-          balance_after: number
-          transaction_type: string
-          reference_id?: string | null
+          type: string
           description?: string | null
+          metadata?: Json | null
         }
         Update: {
           id?: string
           created_at?: string
           user_id?: string
           amount?: number
-          balance_after?: number
-          transaction_type?: string
-          reference_id?: string | null
+          type?: string
           description?: string | null
+          metadata?: Json | null
         }
         Relationships: []
       }
@@ -120,51 +117,60 @@ export type Database = {
           created_at: string
           updated_at: string
           email: string
-          full_name: string
-          phone_number: string
-          whatsapp_number: string
+          full_name: string | null
+          phone_number: string | null
+          whatsapp_number: string | null
           username: string | null
-          company_name: string
-          bio: string
-          location: string
-          profile_image: string
-          cover_image: string
-          is_visible: boolean
-          onboarding_completed: boolean
+          company_name: string | null
+          bio: string | null
+          location: string | null
+          profile_image: string | null
+          cover_image: string | null
+          is_visible: boolean | null
+          onboarding_completed: boolean | null
+          stripe_customer_id: string | null
+          language_preference: string | null
+          email_verified: boolean | null
         }
         Insert: {
           id: string
           created_at?: string
           updated_at?: string
           email: string
-          full_name?: string
-          phone_number?: string
-          whatsapp_number?: string
+          full_name?: string | null
+          phone_number?: string | null
+          whatsapp_number?: string | null
           username?: string | null
-          company_name?: string
-          bio?: string
-          location?: string
-          profile_image?: string
-          cover_image?: string
-          is_visible?: boolean
-          onboarding_completed?: boolean
+          company_name?: string | null
+          bio?: string | null
+          location?: string | null
+          profile_image?: string | null
+          cover_image?: string | null
+          is_visible?: boolean | null
+          onboarding_completed?: boolean | null
+          stripe_customer_id?: string | null
+          language_preference?: string | null
+          email_verified?: boolean | null
         }
         Update: {
           id?: string
           created_at?: string
           updated_at?: string
           email?: string
-          full_name?: string
-          phone_number?: string
-          whatsapp_number?: string
+          full_name?: string | null
+          phone_number?: string | null
+          whatsapp_number?: string | null
           username?: string | null
-          company_name?: string
-          bio?: string
-          location?: string
-          profile_image?: string
-          cover_image?: string
-          is_visible?: boolean
-          onboarding_completed?: boolean
+          company_name?: string | null
+          bio?: string | null
+          location?: string | null
+          profile_image?: string | null
+          cover_image?: string | null
+          is_visible?: boolean | null
+          onboarding_completed?: boolean | null
+          stripe_customer_id?: string | null
+          language_preference?: string | null
+          email_verified?: boolean | null
         }
         Relationships: []
       }
@@ -176,12 +182,12 @@ export type Database = {
           user_id: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
-          status: string
-          trial_starts_at: string | null
+          status: string | null
+          plan_type: string | null
           trial_ends_at: string | null
           current_period_start: string | null
           current_period_end: string | null
-          cancel_at_period_end: boolean
+          cancel_at_period_end: boolean | null
           canceled_at: string | null
         }
         Insert: {
@@ -191,12 +197,12 @@ export type Database = {
           user_id: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          status?: string
-          trial_starts_at?: string | null
+          status?: string | null
+          plan_type?: string | null
           trial_ends_at?: string | null
           current_period_start?: string | null
           current_period_end?: string | null
-          cancel_at_period_end?: boolean
+          cancel_at_period_end?: boolean | null
           canceled_at?: string | null
         }
         Update: {
@@ -206,12 +212,12 @@ export type Database = {
           user_id?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          status?: string
-          trial_starts_at?: string | null
+          status?: string | null
+          plan_type?: string | null
           trial_ends_at?: string | null
           current_period_start?: string | null
           current_period_end?: string | null
-          cancel_at_period_end?: boolean
+          cancel_at_period_end?: boolean | null
           canceled_at?: string | null
         }
         Relationships: []

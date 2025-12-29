@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InvitationTable } from './InvitationTable';
 import type { InvitationToken } from '../../types/user';
@@ -72,19 +72,23 @@ describe('InvitationTable', () => {
     vi.clearAllMocks();
   });
 
-  const renderTable = (invitations = mockInvitations, loading = false) => {
-    return render(
-      <InvitationTable
-        invitations={invitations}
-        onDelete={mockOnDelete}
-        loading={loading}
-      />
-    );
+  const renderTable = async (invitations = mockInvitations, loading = false) => {
+    let result;
+    await act(async () => {
+      result = render(
+        <InvitationTable
+          invitations={invitations}
+          onDelete={mockOnDelete}
+          loading={loading}
+        />
+      );
+    });
+    return result!;
   };
 
   describe('Rendering', () => {
-    it('renders table headers', () => {
-      renderTable();
+    it('renders table headers', async () => {
+      await renderTable();
       expect(screen.getByText('Email')).toBeInTheDocument();
       expect(screen.getByText('Prueba')).toBeInTheDocument();
       expect(screen.getByText('Estado')).toBeInTheDocument();
@@ -92,20 +96,20 @@ describe('InvitationTable', () => {
       expect(screen.getByText('Acciones')).toBeInTheDocument();
     });
 
-    it('renders all invitations', () => {
-      renderTable();
+    it('renders all invitations', async () => {
+      await renderTable();
       expect(screen.getByText('agent1@example.com')).toBeInTheDocument();
       expect(screen.getByText('used@example.com')).toBeInTheDocument();
       expect(screen.getByText('expired@example.com')).toBeInTheDocument();
     });
 
-    it('shows "Sin especificar" for invitations without email', () => {
-      renderTable();
+    it('shows "Sin especificar" for invitations without email', async () => {
+      await renderTable();
       expect(screen.getByText('Sin especificar')).toBeInTheDocument();
     });
 
-    it('displays trial days correctly', () => {
-      renderTable();
+    it('displays trial days correctly', async () => {
+      await renderTable();
       expect(screen.getByText('14 días')).toBeInTheDocument();
       expect(screen.getByText('7 días')).toBeInTheDocument();
       expect(screen.getByText('30 días')).toBeInTheDocument();
@@ -113,71 +117,73 @@ describe('InvitationTable', () => {
   });
 
   describe('Status Badges', () => {
-    it('shows "Activa" badge for active invitations', () => {
-      renderTable();
+    it('shows "Activa" badge for active invitations', async () => {
+      await renderTable();
       const activeBadges = screen.getAllByText('Activa');
       expect(activeBadges.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('shows "Usada" badge for used invitations', () => {
-      renderTable();
+    it('shows "Usada" badge for used invitations', async () => {
+      await renderTable();
       expect(screen.getByText('Usada')).toBeInTheDocument();
     });
 
-    it('shows "Expirada" badge for expired invitations', () => {
-      renderTable();
+    it('shows "Expirada" badge for expired invitations', async () => {
+      await renderTable();
       expect(screen.getByText('Expirada')).toBeInTheDocument();
     });
   });
 
   describe('Actions', () => {
-    it('renders copy button for active invitations', () => {
-      renderTable();
-      // Active invitations should have action buttons
+    it('renders copy button for active invitations', async () => {
+      await renderTable();
       const buttons = screen.getAllByRole('button');
       expect(buttons.length).toBeGreaterThan(0);
     });
 
     it('calls navigator.clipboard.writeText when copy button clicked', async () => {
-      renderTable();
+      await renderTable();
       
-      // Find the first copy button (for active invitation)
       const copyButtons = screen.getAllByRole('button');
       const copyButton = copyButtons.find(btn => btn.getAttribute('title') === 'Copiar enlace');
       
       if (copyButton) {
-        fireEvent.click(copyButton);
+        await act(async () => {
+          fireEvent.click(copyButton);
+        });
         expect(navigator.clipboard.writeText).toHaveBeenCalled();
       }
     });
 
-    it('opens link in new tab when open button clicked', () => {
-      renderTable();
+    it('opens link in new tab when open button clicked', async () => {
+      await renderTable();
       
-      // Find the open button
       const openButtons = screen.getAllByRole('button');
       const openButton = openButtons.find(btn => btn.getAttribute('title') === 'Abrir enlace');
       
       if (openButton) {
-        fireEvent.click(openButton);
+        await act(async () => {
+          fireEvent.click(openButton);
+        });
         expect(mockWindowOpen).toHaveBeenCalled();
       }
     });
 
-    it('calls onDelete when delete button clicked', () => {
-      renderTable();
+    it('calls onDelete when delete button clicked', async () => {
+      await renderTable();
       
-      // Find delete buttons
       const deleteButtons = screen.getAllByRole('button');
       const deleteButton = deleteButtons.find(btn => btn.getAttribute('title') === 'Eliminar');
       
       if (deleteButton) {
-        fireEvent.click(deleteButton);
+        await act(async () => {
+          fireEvent.click(deleteButton);
+        });
         expect(mockOnDelete).toHaveBeenCalled();
       }
     });
 
-    it('disables actions for used invitations', () => {
+    it('disables actions for used invitations', async () => {
       const usedInvitation: InvitationToken[] = [
         {
           id: '1',
@@ -193,43 +199,38 @@ describe('InvitationTable', () => {
         },
       ];
 
-      renderTable(usedInvitation);
+      await renderTable(usedInvitation);
       
-      // Used invitations should have limited or no action buttons
       const row = screen.getByText('used@example.com').closest('tr');
       expect(row).toBeInTheDocument();
     });
   });
 
   describe('Loading State', () => {
-    it('shows loading indicator when loading', () => {
-      renderTable([], true);
-      // Check for loading spinner or text
+    it('shows loading indicator when loading', async () => {
+      await renderTable([], true);
       expect(screen.getByText('Cargando...') || document.querySelector('.animate-spin')).toBeTruthy();
     });
   });
 
   describe('Empty State', () => {
-    it('shows empty message when no invitations', () => {
-      renderTable([]);
+    it('shows empty message when no invitations', async () => {
+      await renderTable([]);
       expect(screen.getByText('No hay invitaciones')).toBeInTheDocument();
     });
   });
 
   describe('Date Formatting', () => {
-    it('formats creation date correctly', () => {
-      renderTable();
-      // Check that dates are formatted (not raw ISO strings)
-      const datePattern = /\d{1,2}\/\d{1,2}\/\d{4}|\d{1,2} de [a-z]+ de \d{4}/i;
+    it('formats creation date correctly', async () => {
+      await renderTable();
       const tableContent = screen.getByRole('table').textContent;
-      // Just verify the table renders without checking specific date format
       expect(tableContent).toBeTruthy();
     });
   });
 
   describe('Notes Display', () => {
-    it('displays notes when present', () => {
-      renderTable();
+    it('displays notes when present', async () => {
+      await renderTable();
       expect(screen.getByText('VIP agent')).toBeInTheDocument();
       expect(screen.getByText('Early adopter')).toBeInTheDocument();
     });
@@ -237,15 +238,16 @@ describe('InvitationTable', () => {
 
   describe('URL Generation', () => {
     it('generates correct invite URL format', async () => {
-      renderTable();
+      await renderTable();
       
       const copyButtons = screen.getAllByRole('button');
       const copyButton = copyButtons.find(btn => btn.getAttribute('title') === 'Copiar enlace');
       
       if (copyButton) {
-        fireEvent.click(copyButton);
+        await act(async () => {
+          fireEvent.click(copyButton);
+        });
         
-        // Check that writeText was called with URL containing /invite/
         expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
           expect.stringContaining('/invite/')
         );

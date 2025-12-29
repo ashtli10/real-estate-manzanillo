@@ -117,7 +117,7 @@ export function InvitationTable({ invitations, onDelete, loading = false }: Invi
               <td className="px-4 py-3">
                 <span className="flex items-center gap-1 text-sm">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  {invitation.trial_days > 0 ? `${invitation.trial_days} días` : 'Sin prueba'}
+                  {(invitation.trial_days ?? 0) > 0 ? `${invitation.trial_days} días` : 'Sin prueba'}
                 </span>
               </td>
               <td className="px-4 py-3">

@@ -66,9 +66,12 @@ describe('OnboardingPage', () => {
   };
 
   describe('Token Validation', () => {
-    it('shows loading while validating token', () => {
+    it('shows loading while validating token', async () => {
       mockRpc.mockReturnValue(new Promise(() => {}));
-      renderPage();
+      
+      await act(async () => {
+        render(<OnboardingPage token="test" onNavigate={mockOnNavigate} />);
+      });
       
       const spinner = document.querySelector('.animate-spin');
       expect(spinner).toBeInTheDocument();
@@ -80,7 +83,7 @@ describe('OnboardingPage', () => {
         error: null,
       });
 
-      renderPage();
+      await renderPage();
       
       await waitFor(() => {
         expect(mockOnNavigate).toHaveBeenCalledWith('/');
@@ -88,7 +91,7 @@ describe('OnboardingPage', () => {
     });
 
     it('pre-fills email from token', async () => {
-      renderPage();
+      await renderPage();
       
       await waitFor(() => {
         const emailInput = screen.getByPlaceholderText(/email|correo/i);
@@ -99,7 +102,7 @@ describe('OnboardingPage', () => {
 
   describe('Step 1: Account', () => {
     it('shows account creation form on step 1', async () => {
-      renderPage();
+      await renderPage();
       
       await waitFor(() => {
         expect(screen.getByText(/cuenta|account/i)).toBeInTheDocument();
@@ -107,7 +110,7 @@ describe('OnboardingPage', () => {
     });
 
     it('has email input field', async () => {
-      renderPage();
+      await renderPage();
       
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/email|correo/i)).toBeInTheDocument();
@@ -115,7 +118,7 @@ describe('OnboardingPage', () => {
     });
 
     it('has password input field', async () => {
-      renderPage();
+      await renderPage();
       
       await waitFor(() => {
         const passwordInputs = screen.getAllByPlaceholderText(/contraseña|password/i);
@@ -124,7 +127,7 @@ describe('OnboardingPage', () => {
     });
 
     it('has confirm password field', async () => {
-      renderPage();
+      await renderPage();
       
       await waitFor(() => {
         const confirmInput = screen.getByPlaceholderText(/confirmar|confirm/i);
@@ -133,18 +136,24 @@ describe('OnboardingPage', () => {
     });
 
     it('shows password mismatch error', async () => {
-      renderPage();
+      await renderPage();
       
-      await waitFor(() => {
+      await waitFor(async () => {
         const passwordInputs = screen.getAllByPlaceholderText(/contraseña|password/i);
-        fireEvent.change(passwordInputs[0], { target: { value: 'password123' } });
+        await act(async () => {
+          fireEvent.change(passwordInputs[0], { target: { value: 'password123' } });
+        });
         
         const confirmInput = screen.getByPlaceholderText(/confirmar|confirm/i);
-        fireEvent.change(confirmInput, { target: { value: 'different' } });
+        await act(async () => {
+          fireEvent.change(confirmInput, { target: { value: 'different' } });
+        });
       });
 
       const nextButton = screen.getByRole('button', { name: /siguiente|continuar|next/i });
-      fireEvent.click(nextButton);
+      await act(async () => {
+        fireEvent.click(nextButton);
+      });
 
       await waitFor(() => {
         expect(screen.getByText(/no coinciden|don't match/i)).toBeInTheDocument();
@@ -154,23 +163,29 @@ describe('OnboardingPage', () => {
 
   describe('Step 2: Personal Info', () => {
     const goToStep2 = async () => {
-      await waitFor(() => {
+      await act(async () => {
         const emailInput = screen.getByPlaceholderText(/email|correo/i);
         fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
       });
 
       const passwordInputs = screen.getAllByPlaceholderText(/contraseña|password/i);
-      fireEvent.change(passwordInputs[0], { target: { value: 'password123' } });
+      await act(async () => {
+        fireEvent.change(passwordInputs[0], { target: { value: 'password123' } });
+      });
 
       const confirmInput = screen.getByPlaceholderText(/confirmar|confirm/i);
-      fireEvent.change(confirmInput, { target: { value: 'password123' } });
+      await act(async () => {
+        fireEvent.change(confirmInput, { target: { value: 'password123' } });
+      });
 
       const nextButton = screen.getByRole('button', { name: /siguiente|continuar|next/i });
-      fireEvent.click(nextButton);
+      await act(async () => {
+        fireEvent.click(nextButton);
+      });
     };
 
     it('shows personal info form on step 2', async () => {
-      renderPage();
+      await renderPage();
       await goToStep2();
 
       await waitFor(() => {
@@ -179,7 +194,7 @@ describe('OnboardingPage', () => {
     });
 
     it('has full name input', async () => {
-      renderPage();
+      await renderPage();
       await goToStep2();
 
       await waitFor(() => {
@@ -188,7 +203,7 @@ describe('OnboardingPage', () => {
     });
 
     it('has phone number input', async () => {
-      renderPage();
+      await renderPage();
       await goToStep2();
 
       await waitFor(() => {
@@ -197,7 +212,7 @@ describe('OnboardingPage', () => {
     });
 
     it('has WhatsApp number input', async () => {
-      renderPage();
+      await renderPage();
       await goToStep2();
 
       await waitFor(() => {
@@ -209,34 +224,50 @@ describe('OnboardingPage', () => {
   describe('Step 3: Business Info', () => {
     const goToStep3 = async () => {
       // Step 1
-      await waitFor(() => {
+      await act(async () => {
         const emailInput = screen.getByPlaceholderText(/email|correo/i);
         fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
       });
 
       const passwordInputs = screen.getAllByPlaceholderText(/contraseña|password/i);
-      fireEvent.change(passwordInputs[0], { target: { value: 'password123' } });
+      await act(async () => {
+        fireEvent.change(passwordInputs[0], { target: { value: 'password123' } });
+      });
 
       const confirmInput = screen.getByPlaceholderText(/confirmar|confirm/i);
-      fireEvent.change(confirmInput, { target: { value: 'password123' } });
+      await act(async () => {
+        fireEvent.change(confirmInput, { target: { value: 'password123' } });
+      });
 
       let nextButton = screen.getByRole('button', { name: /siguiente|continuar|next/i });
-      fireEvent.click(nextButton);
+      await act(async () => {
+        fireEvent.click(nextButton);
+      });
 
       // Step 2
       await waitFor(() => {
+        expect(screen.getByPlaceholderText(/nombre completo|full name/i)).toBeInTheDocument();
+      });
+
+      await act(async () => {
         const nameInput = screen.getByPlaceholderText(/nombre completo|full name/i);
         fireEvent.change(nameInput, { target: { value: 'John Doe' } });
       });
 
       const phoneInput = screen.getByPlaceholderText(/teléfono|phone/i);
-      fireEvent.change(phoneInput, { target: { value: '3141234567' } });
+      await act(async () => {
+        fireEvent.change(phoneInput, { target: { value: '3141234567' } });
+      });
 
       const whatsappInput = screen.getByPlaceholderText(/whatsapp/i);
-      fireEvent.change(whatsappInput, { target: { value: '5213141234567' } });
+      await act(async () => {
+        fireEvent.change(whatsappInput, { target: { value: '5213141234567' } });
+      });
 
       nextButton = screen.getByRole('button', { name: /siguiente|continuar|next/i });
-      fireEvent.click(nextButton);
+      await act(async () => {
+        fireEvent.click(nextButton);
+      });
     };
 
     it('shows business info form on step 3', async () => {
