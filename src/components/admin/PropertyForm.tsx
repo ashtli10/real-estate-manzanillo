@@ -191,6 +191,11 @@ export function PropertyForm({ property, onSave, onCancel, loading = false }: Pr
       return;
     }
 
+    if (!formData.images || formData.images.length === 0) {
+      alert('Debes subir al menos una imagen de la propiedad');
+      return;
+    }
+
     await onSave(formData);
   };
 
@@ -515,7 +520,12 @@ export function PropertyForm({ property, onSave, onCancel, loading = false }: Pr
 
             {/* Images */}
             <section>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Imágenes</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-4">
+                Imágenes *
+                <span className="ml-2 text-sm font-normal text-muted-foreground">
+                  (Requerido: al menos una imagen)
+                </span>
+              </h3>
               <ImageUpload
                 images={formData.images}
                 onChange={(images) => updateField('images', images)}

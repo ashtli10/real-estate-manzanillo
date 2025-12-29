@@ -117,13 +117,13 @@ export function PropertyTable({
                 <button
                   onClick={() => onTogglePublish(property)}
                   className={`p-2 rounded-lg transition-colors ${
-                    property.is_published
+                    property.status === 'active'
                       ? 'bg-green-100 text-green-600 hover:bg-green-200'
                       : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                   }`}
-                  title={property.is_published ? 'Publicado' : 'No publicado'}
+                  title={property.status === 'active' ? 'Publicado' : 'No publicado'}
                 >
-                  {property.is_published ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  {property.status === 'active' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                 </button>
               </td>
               <td className="px-4 py-3 text-center">

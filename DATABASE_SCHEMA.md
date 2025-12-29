@@ -7,7 +7,7 @@
 
 ## 📊 Database Overview
 
-The platform uses **11 tables** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
+The platform uses **10 tables + 1 storage bucket** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
 
 ### Tables Summary
 
@@ -23,6 +23,7 @@ The platform uses **11 tables** with comprehensive Row Level Security (RLS) poli
 | **properties** | 1 | ✅ | Property listings with full details |
 | **property_views** | 0 | ✅ | Analytics: Property view tracking |
 | **property_leads** | 0 | ✅ | Analytics: WhatsApp/Phone/Email leads |
+| **storage.objects** | - | ✅ | Property images (properties bucket) |
 
 ---
 
@@ -40,6 +41,7 @@ The platform uses **11 tables** with comprehensive Row Level Security (RLS) poli
 - **audit_logs**: 2 policies (admin-only)
 - **property_views**: 3 policies
 - **property_leads**: 3 policies
+- **storage.objects (properties bucket)**: 4 policies (INSERT, UPDATE, DELETE, SELECT)
 
 ### Key Security Features
 
@@ -48,6 +50,7 @@ The platform uses **11 tables** with comprehensive Row Level Security (RLS) poli
 3. **Self-Service with Limits**: Users can manage their own data but cannot access others'
 4. **Audit Trail**: Credit transactions and audit logs are append-only
 5. **Public Analytics**: Anonymous users can trigger view/lead tracking
+6. **Secure File Storage**: Only authenticated users can upload/modify images, public read access
 
 ---
 
@@ -325,6 +328,22 @@ Analytics: Track WhatsApp/Phone/Email contact attempts.
 
 ---
 
+### 11. **storage.objects (properties bucket)**
+File storage for property images with RLS protection.
+
+**Bucket Configuration:**
+- `bucket_id`: 'properties'
+- `public`: true (for serving images via CDN)
+- Files stored at: `properties/{timestamp}-{random}.{ext}`
+
+**RLS Policies:**
+- ✅ **INSERT** - Authenticated users can upload to properties bucket
+- ✅ **UPDATE** - Authenticated users can update images in properties bucket
+- ✅ **DELETE** - Authenticated users can delete images in properties bucket
+- ✅ **SELECT** - Public read access (anyone can view property images)
+
+---
+
 
 
 ## 🔧 Helper Functions
@@ -580,4 +599,5 @@ SELECT deduct_credits(
 
 **Last Updated:** December 29, 2025  
 **Database Version:** PostgreSQL 14.1 (Supabase)  
-**Status:** ✅ Production Ready
+**Status:** ✅ Production Ready  
+**Total RLS Policies:** 45 (41 table policies + 4 storage policies)

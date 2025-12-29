@@ -34,7 +34,7 @@ The complete database for **Real Estate Manzanillo** has been built with strict 
 
 ## 🔒 Security Implementation
 
-### RLS Policies: **41 Total**
+### RLS Policies: **45 Total**
 
 | Table | Policies | Security Model |
 |-------|----------|----------------|
@@ -48,6 +48,7 @@ The complete database for **Real Estate Manzanillo** has been built with strict 
 | audit_logs | 2 | Admin view, system insert |
 | property_views | 3 | Public insert, owner view |
 | property_leads | 3 | Public insert, owner view |
+| storage.objects | 4 | Auth upload/update/delete, public read |
 
 ### 🌟 Key Security Features
 
@@ -58,6 +59,11 @@ The complete database for **Real Estate Manzanillo** has been built with strict 
 
 2. **Admin Separation**
    - Invitation management (admin-only)
+
+3. **Secure File Storage** ⭐
+   - Only authenticated users can upload property images
+   - Public read access for CDN serving
+   - Full CRUD control for authenticated users
    - Subscription updates (admin-only, for webhooks)
    - Audit logs (admin view-only)
 
