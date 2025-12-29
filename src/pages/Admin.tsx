@@ -91,9 +91,13 @@ export function Admin({ onNavigate }: AdminProps) {
   }) => {
     setCreatingInvitation(true);
     try {
+      // Generate a unique token for the invitation
+      const token = crypto.randomUUID();
+      
       const { error } = await supabase
         .from('invitation_tokens')
         .insert([{
+          token,
           email: data.email,
           trial_days: data.trial_days,
           expires_at: data.expires_at,
