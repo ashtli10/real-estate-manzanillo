@@ -30,7 +30,7 @@ export function VideoUpload({ videos, onChange, maxVideos = 5 }: VideoUploadProp
     const filePath = `properties/videos/${fileName}`;
 
     const { error } = await supabase.storage
-      .from('property-images')
+      .from('properties')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
@@ -43,7 +43,7 @@ export function VideoUpload({ videos, onChange, maxVideos = 5 }: VideoUploadProp
     }
 
     const { data: urlData } = supabase.storage
-      .from('property-images')
+      .from('properties')
       .getPublicUrl(filePath);
 
     return urlData.publicUrl;

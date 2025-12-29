@@ -31,7 +31,7 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
     const filePath = `properties/${fileName}`;
 
     const { error } = await supabase.storage
-      .from('property-images')
+      .from('properties')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false,
@@ -45,7 +45,7 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('property-images')
+      .from('properties')
       .getPublicUrl(filePath);
 
     return urlData.publicUrl;
