@@ -92,15 +92,19 @@ async function handleSubscriptionEvent(
   // Access raw subscription data with type assertion for period timestamps
   const rawSub = subscription as unknown as {
     trial_end: number | null;
-    current_period_start: number;
-    current_period_end: number;
+    current_period_start: number | null;
+    current_period_end: number | null;
     canceled_at: number | null;
   };
   const trialEndsAt = rawSub.trial_end 
     ? new Date(rawSub.trial_end * 1000).toISOString() 
     : null;
-  const currentPeriodStart = new Date(rawSub.current_period_start * 1000).toISOString();
-  const currentPeriodEnd = new Date(rawSub.current_period_end * 1000).toISOString();
+  const currentPeriodStart = rawSub.current_period_start 
+    ? new Date(rawSub.current_period_start * 1000).toISOString() 
+    : new Date().toISOString();
+  const currentPeriodEnd = rawSub.current_period_end 
+    ? new Date(rawSub.current_period_end * 1000).toISOString() 
+    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // Default to 30 days from now
   const canceledAt = subscription.canceled_at 
     ? new Date(subscription.canceled_at * 1000).toISOString() 
     : null;
