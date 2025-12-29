@@ -94,14 +94,20 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       
       if (profileData) setProfile(profileData as Profile);
 
-      // Load subscription
-      const { data: subData } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (subData) setSubscription(subData as Subscription);
+      // Load subscription (with error handling)
+      try {
+        const { data: subData, error: subError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (!subError && subData) {
+          setSubscription(subData as Subscription);
+        }
+      } catch (err) {
+        console.warn('Could not load subscription:', err);
+      }
 
       // Load credits
       const { data: creditsData } = await supabase

@@ -20,7 +20,7 @@ export function Login({ onNavigate }: LoginProps) {
 
     try {
       await signIn(email, password);
-      onNavigate('/admin');
+      onNavigate('/dashboard');
     } catch (err) {
       setError('Credenciales inválidas. Por favor verifica tu correo y contraseña.');
     } finally {

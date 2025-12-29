@@ -51,13 +51,20 @@ export function CharacteristicInput({ characteristics, onChange }: Characteristi
 
   // Get translated label for a characteristic key
   const getTranslatedLabel = (key: string) => {
-    // Use translation if available, fallback to definition label
-    return t(`characteristics.${key}`, { defaultValue: CHARACTERISTIC_DEFINITIONS.find(d => d.key === key)?.label || key });
+    // Try to get translation, fallback to definition label if key not found in translations
+    const translated = t(`characteristics.${key}`);
+    // If translation returns the key itself (not found), use the original label
+    return translated.startsWith('characteristics.') 
+      ? CHARACTERISTIC_DEFINITIONS.find(d => d.key === key)?.label || key
+      : translated;
   };
 
   // Get translated category label
   const getTranslatedCategory = (category: CharacteristicCategory) => {
-    return t(`characteristicCategories.${category}`, { defaultValue: CHARACTERISTIC_CATEGORY_LABELS[category].label });
+    const translated = t(`characteristicCategories.${category}`);
+    return translated.startsWith('characteristicCategories.') 
+      ? CHARACTERISTIC_CATEGORY_LABELS[category].label 
+      : translated;
   };
 
   // Filter characteristics based on search (search in both Spanish and translated labels)

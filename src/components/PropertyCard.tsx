@@ -78,13 +78,13 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
           {bedrooms && bedrooms > 0 && (
             <div className="flex items-center space-x-2 text-gray-700">
               <Bed className="h-5 w-5 text-blue-500" />
-              <span className="text-sm font-medium">{bedrooms} {t('characteristics.bedrooms', { defaultValue: 'recámaras' })}</span>
+              <span className="text-sm font-medium">{bedrooms} {t('characteristics.bedrooms')}</span>
             </div>
           )}
           {bathrooms && bathrooms > 0 && (
             <div className="flex items-center space-x-2 text-gray-700">
               <Bath className="h-5 w-5 text-blue-500" />
-              <span className="text-sm font-medium">{bathrooms} {t('characteristics.bathrooms', { defaultValue: 'baños' })}</span>
+              <span className="text-sm font-medium">{bathrooms} {t('characteristics.bathrooms')}</span>
             </div>
           )}
           {sizeTotal && sizeTotal > 0 && (
@@ -96,7 +96,7 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
           {parking && parking > 0 && (
             <div className="flex items-center space-x-2 text-gray-700">
               <Car className="h-5 w-5 text-blue-500" />
-              <span className="text-sm font-medium">{parking} {t('characteristics.parking_spaces', { defaultValue: 'estacionamientos' })}</span>
+              <span className="text-sm font-medium">{parking} {t('characteristics.parking_spaces')}</span>
             </div>
           )}
         </div>

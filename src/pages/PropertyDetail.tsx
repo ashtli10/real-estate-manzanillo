@@ -740,7 +740,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                         <div key={char.key} className={`${colors.bg} rounded-lg p-4 text-center`}>
                           <IconComponent className={`h-8 w-8 ${colors.icon} mx-auto mb-2`} />
                           <p className="text-2xl font-bold text-gray-800">{displayValue}{displayUnit && <span className="text-lg"> {displayUnit}</span>}</p>
-                          <p className="text-sm text-gray-600">{t(`characteristics.${char.key}`, { defaultValue: char.label })}</p>
+                          <p className="text-sm text-gray-600">{t(`characteristics.${char.key}`)}</p>
                         </div>
                       );
                     })}
@@ -836,7 +836,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                           {/* Category Header */}
                           <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
                             <CategoryIcon className="h-5 w-5 text-gray-500" />
-                            <h4 className="font-semibold text-gray-700">{t(`characteristicCategories.${category}`, { defaultValue: categoryInfo.label })}</h4>
+                            <h4 className="font-semibold text-gray-700">{t(`characteristicCategories.${category}`)}</h4>
                             <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                               {chars.length}
                             </span>
@@ -860,7 +860,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                                       <IconComponent className={`h-4 w-4 ${colors.icon}`} />
                                     </div>
                                     <span className={`font-medium text-sm ${colors.text} flex-1`}>
-                                      {t(`characteristics.${char.key}`, { defaultValue: char.label })}
+                                      {t(`characteristics.${char.key}`)}
                                     </span>
                                     {char.type === 'number' && (
                                       <span className={`px-2 py-0.5 text-sm font-bold rounded-full bg-white shadow-sm ${colors.text}`}>
@@ -887,7 +887,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className={`font-medium text-sm ${colors.text}`}>
-                                          {t(`characteristics.${char.key}`, { defaultValue: char.label })}
+                                          {t(`characteristics.${char.key}`)}
                                         </span>
                                         {char.type === 'number' && (
                                           <span className={`px-2 py-0.5 text-xs font-bold rounded-full bg-white shadow-sm ${colors.text}`}>

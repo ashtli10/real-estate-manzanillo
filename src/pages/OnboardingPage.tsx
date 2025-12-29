@@ -307,30 +307,42 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
 
       if (roleError) throw roleError;
 
-      // 5. Create or update subscription
-      const now = new Date();
-      const trialEnd = new Date(now);
-      trialEnd.setDate(trialEnd.getDate() + trialDays);
+      // 5. Create or update subscription (with error handling)
+      try {
+        const now = new Date();
+        const trialEnd = new Date(now);
+        trialEnd.setDate(trialEnd.getDate() + trialDays);
 
-      const { error: subError } = await supabase
-        .from('subscriptions')
-        .upsert({
-          user_id: userId,
-          status: trialDays > 0 ? 'trialing' : 'active',
-          trial_ends_at: trialDays > 0 ? trialEnd.toISOString() : null,
-        }, { onConflict: 'user_id' });
+        const { error: subError } = await supabase
+          .from('subscriptions')
+          .upsert({
+            user_id: userId,
+            status: trialDays > 0 ? 'trialing' : 'active',
+            trial_ends_at: trialDays > 0 ? trialEnd.toISOString() : null,
+          }, { onConflict: 'user_id' });
 
-      if (subError) throw subError;
+        if (subError) {
+          console.warn('Could not create subscription (table may not exist):', subError.message);
+        }
+      } catch (err) {
+        console.warn('Subscription creation skipped:', err);
+      }
 
-      // 6. Create or update initial credits
-      const { error: creditsError } = await supabase
-        .from('credits')
-        .upsert({
-          user_id: userId,
-          balance: 50, // Initial credits from subscription
-        }, { onConflict: 'user_id' });
+      // 6. Create or update initial credits (with error handling)
+      try {
+        const { error: creditsError } = await supabase
+          .from('credits')
+          .upsert({
+            user_id: userId,
+            balance: 50, // Initial credits from subscription
+          }, { onConflict: 'user_id' });
 
-      if (creditsError) throw creditsError;
+        if (creditsError) {
+          console.warn('Could not create credits (table may not exist):', creditsError.message);
+        }
+      } catch (err) {
+        console.warn('Credits creation skipped:', err);
+      }
 
       // Success!
       setStep(5);

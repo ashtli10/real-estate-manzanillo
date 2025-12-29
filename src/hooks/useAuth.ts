@@ -88,15 +88,21 @@ export function useAuth() {
         setProfile(profileData as Profile);
       }
 
-      // Load subscription
-      const { data: subData } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      // Load subscription (with error handling for missing table)
+      try {
+        const { data: subData, error: subError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-      if (subData) {
-        setSubscription(subData as Subscription);
+        if (subError) {
+          console.warn('Subscriptions table error (may not exist yet):', subError.message);
+        } else if (subData) {
+          setSubscription(subData as Subscription);
+        }
+      } catch (subErr) {
+        console.warn('Could not load subscription:', subErr);
       }
     } catch (err) {
       console.error('Error loading user data:', err);
