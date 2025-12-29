@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, X, Check, ChevronDown, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { 
   CHARACTERISTIC_DEFINITIONS, 
   CHARACTERISTIC_CATEGORY_LABELS,
@@ -40,6 +41,7 @@ const CATEGORY_EMOJIS: Record<CharacteristicCategory, string> = {
 };
 
 export function CharacteristicInput({ characteristics, onChange }: CharacteristicInputProps) {
+  const { t } = useTranslation();
   const [showSelector, setShowSelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
@@ -47,11 +49,25 @@ export function CharacteristicInput({ characteristics, onChange }: Characteristi
   // Get characteristics that are already added
   const addedKeys = new Set(characteristics.map(c => c.key));
 
-  // Filter characteristics based on search
-  const filteredDefinitions = CHARACTERISTIC_DEFINITIONS.filter(def => 
-    !addedKeys.has(def.key) && 
-    def.label.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Get translated label for a characteristic key
+  const getTranslatedLabel = (key: string) => {
+    // Use translation if available, fallback to definition label
+    return t(`characteristics.${key}`, { defaultValue: CHARACTERISTIC_DEFINITIONS.find(d => d.key === key)?.label || key });
+  };
+
+  // Get translated category label
+  const getTranslatedCategory = (category: CharacteristicCategory) => {
+    return t(`characteristicCategories.${category}`, { defaultValue: CHARACTERISTIC_CATEGORY_LABELS[category].label });
+  };
+
+  // Filter characteristics based on search (search in both Spanish and translated labels)
+  const filteredDefinitions = CHARACTERISTIC_DEFINITIONS.filter(def => {
+    if (addedKeys.has(def.key)) return false;
+    const translatedLabel = getTranslatedLabel(def.key).toLowerCase();
+    const originalLabel = def.label.toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return translatedLabel.includes(query) || originalLabel.includes(query);
+  });
 
   // Group filtered by category using the category property from definitions
   const groupedFiltered: Partial<Record<CharacteristicCategory, CharacteristicDefinition[]>> = {};
@@ -71,7 +87,7 @@ export function CharacteristicInput({ characteristics, onChange }: Characteristi
     const newChar: PropertyCharacteristic = {
       id: generateId(),
       key: def.key,
-      label: def.label,
+      label: getTranslatedLabel(def.key), // Use translated label
       type: def.type,
       value: def.type === 'boolean' ? true : 1,
       description: '',
@@ -119,7 +135,7 @@ export function CharacteristicInput({ characteristics, onChange }: Characteristi
                   {/* Category Header */}
                   <div className="bg-gray-50 px-4 py-2 flex items-center gap-2 border-b border-gray-200">
                     <span className="text-lg">{emoji}</span>
-                    <span className="font-semibold text-gray-700">{categoryInfo.label}</span>
+                    <span className="font-semibold text-gray-700">{getTranslatedCategory(category)}</span>
                     <span className="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">
                       {categoryChars.length}
                     </span>
@@ -137,7 +153,7 @@ export function CharacteristicInput({ characteristics, onChange }: Characteristi
                             <div className="flex-1">
                               {/* Header with label */}
                               <div className="flex items-center gap-2 mb-2">
-                                <span className="font-medium text-gray-800">{char.label}</span>
+                                <span className="font-medium text-gray-800">{getTranslatedLabel(char.key)}</span>
                                 {char.type === 'boolean' && (
                                   <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">
                                     ✓ Incluido
@@ -250,7 +266,7 @@ export function CharacteristicInput({ characteristics, onChange }: Characteristi
                   >
                     <span className="font-medium text-gray-700">
                       <span className="mr-2">{emoji}</span>
-                      {categoryInfo.label}
+                      {getTranslatedCategory(category)}
                     </span>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
@@ -273,7 +289,7 @@ export function CharacteristicInput({ characteristics, onChange }: Characteristi
                             <Check className="h-4 w-4 opacity-0 group-hover:opacity-100 text-green-600 transition-opacity" />
                           </div>
                           <div className="flex-1">
-                            <span className="text-sm text-gray-700">{def.label}</span>
+                            <span className="text-sm text-gray-700">{getTranslatedLabel(def.key)}</span>
                             <span className={`ml-2 text-xs px-1.5 py-0.5 rounded ${def.type === 'boolean' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
                               {def.type === 'boolean' ? 'Sí/No' : 'Cantidad'}
                             </span>
