@@ -215,10 +215,10 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
         user_uuid: userId,
       });
 
-      // 3. Create profile
+      // 3. Update or create profile (trigger may have already created it)
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert([{
+        .upsert({
           id: userId,
           email: formData.email,
           full_name: formData.fullName,
@@ -230,43 +230,43 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
           location: formData.location,
           onboarding_completed: true,
           is_visible: true,
-        }]);
+        }, { onConflict: 'id' });
 
       if (profileError) throw profileError;
 
       // 4. Add agent role
       const { error: roleError } = await supabase
         .from('user_roles')
-        .insert([{
+        .upsert({
           user_id: userId,
           role: 'agent',
-        }]);
+        }, { onConflict: 'user_id,role', ignoreDuplicates: true });
 
       if (roleError) throw roleError;
 
-      // 5. Create subscription
+      // 5. Create or update subscription
       const now = new Date();
       const trialEnd = new Date(now);
       trialEnd.setDate(trialEnd.getDate() + trialDays);
 
       const { error: subError } = await supabase
         .from('subscriptions')
-        .insert([{
+        .upsert({
           user_id: userId,
           status: trialDays > 0 ? 'trialing' : 'active',
           trial_starts_at: trialDays > 0 ? now.toISOString() : null,
           trial_ends_at: trialDays > 0 ? trialEnd.toISOString() : null,
-        }]);
+        }, { onConflict: 'user_id' });
 
       if (subError) throw subError;
 
-      // 6. Create initial credits
+      // 6. Create or update initial credits
       const { error: creditsError } = await supabase
         .from('credits')
-        .insert([{
+        .upsert({
           user_id: userId,
           balance: 50, // Initial credits from subscription
-        }]);
+        }, { onConflict: 'user_id' });
 
       if (creditsError) throw creditsError;
 
