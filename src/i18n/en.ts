@@ -104,7 +104,6 @@ export const en = {
       bathrooms: 'Bathrooms',
       location: 'Location',
       size: 'Size (m²)',
-      nearBeach: 'Near beach',
       featured: 'Featured only',
       all: 'All',
       forSale: 'For Sale',

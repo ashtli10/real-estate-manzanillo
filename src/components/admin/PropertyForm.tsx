@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Loader2, Sparkles } from 'lucide-react';
-import type { Property, PropertyInsert, PropertyType } from '../../types/property';
-import { generateSlug, propertyTypeLabels, CHARACTERISTIC_DEFINITIONS } from '../../types/property';
+import type { Property, PropertyInsert, PropertyType, PropertyStatus } from '../../types/property';
+import { generateSlug, propertyTypeLabels, propertyStatusLabels, CHARACTERISTIC_DEFINITIONS } from '../../types/property';
 import { ImageUpload } from './ImageUpload';
 import { VideoUpload } from './VideoUpload';
 import { TagInput } from './TagInput';
@@ -101,7 +101,7 @@ export function PropertyForm({ property, onSave, onCancel, loading = false }: Pr
     images: [],
     videos: [],
     is_featured: false,
-    is_published: false,
+    status: 'draft',
     display_order: 0,
     show_map: true,
     characteristics: [],
@@ -145,7 +145,7 @@ export function PropertyForm({ property, onSave, onCancel, loading = false }: Pr
         images: property.images,
         videos: property.videos || [],
         is_featured: property.is_featured,
-        is_published: property.is_published,
+        status: property.status,
         display_order: property.display_order,
         show_map: property.show_map ?? true,
         characteristics: property.characteristics || [],
@@ -547,29 +547,38 @@ export function PropertyForm({ property, onSave, onCancel, loading = false }: Pr
               />
             </section>
 
-            {/* Flags - Removed "Cerca de la playa" */}
+            {/* Status and Options */}
             <section>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Opciones</h3>
-              <div className="flex flex-wrap gap-6">
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_published}
-                    onChange={(e) => updateField('is_published', e.target.checked)}
-                    className="w-5 h-5 text-primary rounded border-input focus:ring-ring"
-                  />
-                  <span className="text-foreground">Publicado</span>
-                </label>
+              <h3 className="text-lg font-semibold text-foreground mb-4">Estado y opciones</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Estado de la propiedad
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => updateField('status', e.target.value as PropertyStatus)}
+                    className="input-field"
+                  >
+                    {Object.entries(propertyStatusLabels).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_featured}
-                    onChange={(e) => updateField('is_featured', e.target.checked)}
-                    className="w-5 h-5 text-primary rounded border-input focus:ring-ring"
-                  />
-                  <span className="text-foreground">Destacado</span>
-                </label>
+                <div className="flex items-end">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_featured}
+                      onChange={(e) => updateField('is_featured', e.target.checked)}
+                      className="w-5 h-5 text-primary rounded border-input focus:ring-ring"
+                    />
+                    <span className="text-foreground">Destacado</span>
+                  </label>
+                </div>
               </div>
             </section>
 

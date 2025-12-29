@@ -22,7 +22,6 @@ const defaultFilters: PropertyFilters = {
   maxPrice: null,
   bedrooms: null,
   bathrooms: null,
-  nearBeach: false,
   featured: false,
   sortBy: 'newest',
 };
@@ -67,7 +66,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
       const { data, error } = await supabase
         .from('properties')
         .select('*')
-        .eq('is_published', true)
+        .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -146,11 +145,6 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
       });
     }
 
-    // Near beach filter
-    if (filters.nearBeach) {
-      result = result.filter(p => p.near_beach);
-    }
-
     // Featured filter
     if (filters.featured) {
       result = result.filter(p => p.is_featured);
@@ -184,7 +178,6 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
     if (filters.minPrice !== null || filters.maxPrice !== null) count++;
     if (filters.bedrooms !== null) count++;
     if (filters.bathrooms !== null) count++;
-    if (filters.nearBeach) count++;
     if (filters.featured) count++;
     return count;
   }, [filters]);

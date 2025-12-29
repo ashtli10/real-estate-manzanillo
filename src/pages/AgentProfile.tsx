@@ -75,7 +75,7 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
         .from('properties')
         .select('*')
         .eq('user_id', profileData.id)
-        .eq('is_published', true)
+        .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       if (!propertiesError && propertiesData) {

@@ -29,7 +29,7 @@ export function useRealtimeProperties(options: UseRealtimePropertiesOptions = {}
         let query = supabase
           .from('properties')
           .select('*')
-          .eq('is_published', true);
+          .eq('status', 'active');
 
         if (featured) {
           query = query.eq('is_featured', true);
@@ -72,7 +72,7 @@ export function useRealtimeProperties(options: UseRealtimePropertiesOptions = {}
           event: '*',
           schema: 'public',
           table: 'properties',
-          filter: 'is_published=eq.true'
+          filter: 'status=eq.active'
         },
         (payload) => {
           console.log('Real-time property change:', payload);
@@ -129,7 +129,7 @@ export function useRealtimeProperty(slug: string, enabled: boolean = true) {
           .from('properties')
           .select('*')
           .eq('slug', slug)
-          .eq('is_published', true)
+          .eq('status', 'active')
           .maybeSingle();
 
         if (queryError) throw queryError;

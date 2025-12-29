@@ -1,6 +1,20 @@
 // Property types matching the database schema
 export type PropertyType = 'casa' | 'departamento' | 'terreno' | 'local' | 'oficina';
 
+// Property status matching the database schema
+export type PropertyStatus = 'draft' | 'pending' | 'active' | 'sold' | 'rented' | 'paused' | 'archived';
+
+// Labels for property status in Spanish
+export const propertyStatusLabels: Record<PropertyStatus, string> = {
+  draft: 'Borrador',
+  pending: 'Pendiente',
+  active: 'Activo',
+  sold: 'Vendido',
+  rented: 'Rentado',
+  paused: 'Pausado',
+  archived: 'Archivado',
+};
+
 // Characteristic types - some are boolean (yes/no), some are numeric (quantities)
 export type CharacteristicType = 'boolean' | 'number';
 
@@ -291,10 +305,9 @@ export interface Property {
   images: string[];
   videos: string[];
   is_featured: boolean;
-  is_published: boolean;
+  status: PropertyStatus;
   display_order: number;
   show_map: boolean;
-  near_beach?: boolean;
   characteristics: PropertyCharacteristic[];
 }
 

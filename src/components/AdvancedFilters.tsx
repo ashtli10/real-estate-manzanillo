@@ -11,7 +11,6 @@ export interface PropertyFilters {
   maxPrice: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
-  nearBeach: boolean;
   featured: boolean;
   sortBy: 'newest' | 'price_asc' | 'price_desc' | 'views';
 }
@@ -80,7 +79,6 @@ export function AdvancedFilters({ filters, onChange, onClose, isOpen, propertyCo
       maxPrice: null,
       bedrooms: null,
       bathrooms: null,
-      nearBeach: false,
       featured: false,
       sortBy: 'newest',
     };
@@ -328,15 +326,6 @@ export function AdvancedFilters({ filters, onChange, onClose, isOpen, propertyCo
           </button>
           {expandedSections.extras && (
             <div className="mt-3 space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={localFilters.nearBeach}
-                  onChange={(e) => handleChange('nearBeach', e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">{t('properties.filters.nearBeach')}</span>
-              </label>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"

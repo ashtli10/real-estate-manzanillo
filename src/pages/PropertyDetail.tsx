@@ -388,7 +388,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
         .from('properties')
         .select('*')
         .eq('slug', propertySlug)
-        .eq('is_published', true)
+        .eq('status', 'active')
         .maybeSingle();
 
       if (error) throw error;

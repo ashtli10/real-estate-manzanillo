@@ -80,10 +80,9 @@ export function transformProperty(row: Record<string, unknown>): Property {
     images: parseJsonArray(row.images),
     videos: parseJsonArray(row.videos),
     is_featured: Boolean(row.is_featured),
-    is_published: Boolean(row.is_published),
+    status: (row.status as Property['status']) || 'draft',
     display_order: Number(row.display_order) || 0,
     show_map: row.show_map !== false,
-    near_beach: row.near_beach === true,
     characteristics: parseCharacteristics(row.characteristics),
   };
 }

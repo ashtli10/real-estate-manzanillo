@@ -41,14 +41,13 @@ const handler: RequestHandler = async (req, res) => {
       propertyType, 
       minPrice, 
       maxPrice,
-      nearBeach,
       slug
     } = req.query;
 
     let query = supabase
       .from('properties')
       .select('*')
-      .eq('is_published', true);
+      .eq('status', 'active');
 
     // Apply filters
     if (featured === 'true') {
@@ -71,10 +70,6 @@ const handler: RequestHandler = async (req, res) => {
       if (!isNaN(max) && max > 0) {
         query = query.lte('price', max);
       }
-    }
-
-    if (nearBeach === 'true') {
-      query = query.eq('near_beach', true);
     }
 
     if (slug) {

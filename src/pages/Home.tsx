@@ -43,7 +43,7 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
         .from('properties')
         .select('*')
         .eq('is_featured', true)
-        .eq('is_published', true)
+        .eq('status', 'active')
         .order('display_order', { ascending: true })
         .limit(6);
 

@@ -160,10 +160,20 @@ export function getPropertySEO(property: Property): SEOConfig {
     .filter(Boolean)
     .join(', ');
 
+  // Helper to get characteristic value
+  const getCharValue = (key: string): number | boolean | null => {
+    const char = property.characteristics?.find(c => c.key === key);
+    return char ? char.value : null;
+  };
+
+  const bedrooms = getCharValue('bedrooms') as number | null;
+  const bathrooms = getCharValue('bathrooms') as number | null;
+  const sizeTotal = getCharValue('size_total') as number | null;
+
   const title = `${property.title} - ${price} - ${SITE_NAME}`;
   const description = property.description
     ? property.description.substring(0, 155) + '...'
-    : `${property.title} en ${location}. ${property.bedrooms} recámaras, ${property.bathrooms} baños, ${property.total_size_m2}m².`;
+    : `${property.title} en ${location}.${bedrooms ? ` ${bedrooms} recámaras,` : ''}${bathrooms ? ` ${bathrooms} baños,` : ''}${sizeTotal ? ` ${sizeTotal}m².` : ''}`;
 
   const images = property.images && property.images.length > 0 
     ? property.images[0] 
@@ -172,7 +182,7 @@ export function getPropertySEO(property: Property): SEOConfig {
   // Build structured data for property
   const structuredData: any = {
     '@context': 'https://schema.org',
-    '@type': property.property_type === 'commercial' ? 'Store' : 'House',
+    '@type': property.property_type === 'local' ? 'Store' : 'House',
     name: property.title,
     description: property.description || title,
     url: `${SITE_URL}/propiedad/${property.slug}`,
@@ -191,15 +201,12 @@ export function getPropertySEO(property: Property): SEOConfig {
   }
 
   // Add geo coordinates if available
-  if (property.coordinates) {
-    const [lat, lng] = property.coordinates.split(',').map(s => parseFloat(s.trim()));
-    if (!isNaN(lat) && !isNaN(lng)) {
-      structuredData.geo = {
-        '@type': 'GeoCoordinates',
-        latitude: lat,
-        longitude: lng
-      };
-    }
+  if (property.location_lat && property.location_lng) {
+    structuredData.geo = {
+      '@type': 'GeoCoordinates',
+      latitude: property.location_lat,
+      longitude: property.location_lng
+    };
   }
 
   // Add property details
@@ -208,7 +215,7 @@ export function getPropertySEO(property: Property): SEOConfig {
       '@type': 'Offer',
       price: property.price,
       priceCurrency: 'MXN',
-      availability: property.is_published ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      availability: property.status === 'active' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       seller: {
         '@type': 'RealEstateAgent',
         name: SITE_NAME
@@ -216,14 +223,16 @@ export function getPropertySEO(property: Property): SEOConfig {
     };
   }
 
-  // Add additional property info
-  structuredData.numberOfRooms = property.bedrooms;
-  structuredData.numberOfBathroomsTotal = property.bathrooms;
-  structuredData.floorSize = {
-    '@type': 'QuantitativeValue',
-    value: property.total_size_m2,
-    unitCode: 'MTK' // Square meters
-  };
+  // Add additional property info from characteristics
+  if (bedrooms) structuredData.numberOfRooms = bedrooms;
+  if (bathrooms) structuredData.numberOfBathroomsTotal = bathrooms;
+  if (sizeTotal) {
+    structuredData.floorSize = {
+      '@type': 'QuantitativeValue',
+      value: sizeTotal,
+      unitCode: 'MTK' // Square meters
+    };
+  }
 
   return {
     title,

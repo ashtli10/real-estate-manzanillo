@@ -104,7 +104,6 @@ export const es = {
       bathrooms: 'Baños',
       location: 'Ubicación',
       size: 'Tamaño (m²)',
-      nearBeach: 'Cerca de playa',
       featured: 'Solo destacadas',
       all: 'Todos',
       forSale: 'En Venta',

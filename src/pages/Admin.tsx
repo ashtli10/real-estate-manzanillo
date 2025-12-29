@@ -117,9 +117,10 @@ export function Admin({ onNavigate }: AdminProps) {
 
   const handleTogglePublish = async (property: Property) => {
     try {
+      const newStatus = property.status === 'active' ? 'draft' : 'active';
       const { error } = await supabase
         .from('properties')
-        .update({ is_published: !property.is_published })
+        .update({ status: newStatus })
         .eq('id', property.id);
 
       if (error) throw error;

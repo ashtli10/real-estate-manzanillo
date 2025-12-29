@@ -18,7 +18,6 @@ vi.mock('react-i18next', () => ({
         'properties.filters.bedrooms': 'Bedrooms',
         'properties.filters.bathrooms': 'Bathrooms',
         'properties.filters.location': 'Location',
-        'properties.filters.nearBeach': 'Near Beach',
         'properties.filters.extras': 'Extras',
         'properties.filters.featured': 'Featured',
         'properties.filters.sortBy': 'Sort By',
@@ -57,7 +56,6 @@ describe('AdvancedFilters', () => {
     maxPrice: null,
     bedrooms: null,
     bathrooms: null,
-    nearBeach: false,
     featured: false,
     sortBy: 'newest',
   };
