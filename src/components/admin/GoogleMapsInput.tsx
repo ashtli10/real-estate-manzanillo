@@ -18,29 +18,6 @@ interface GoogleMapsInputProps {
 
 type ApiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-// Common locations in Manzanillo for quick selection when Google is not ready
-const SUGGESTED_LOCATIONS = [
-  { name: 'Centro de Manzanillo', lat: 19.0528, lng: -104.3161 },
-  { name: 'Playa La Audiencia', lat: 19.0944, lng: -104.3389 },
-  { name: 'Playa Miramar', lat: 19.0656, lng: -104.2967 },
-  { name: 'Santiago, Manzanillo', lat: 19.1142, lng: -104.3394 },
-  { name: 'Salagua', lat: 19.0839, lng: -104.3097 },
-  { name: 'Las Brisas', lat: 19.0594, lng: -104.2819 },
-  { name: 'Salahua', lat: 19.0803, lng: -104.3186 },
-  { name: 'Playa Azul', lat: 19.0503, lng: -104.285 },
-  { name: 'Bahía de Manzanillo', lat: 19.0472, lng: -104.3342 },
-  { name: 'Las Hadas', lat: 19.1019, lng: -104.3458 },
-  { name: 'Club Santiago', lat: 19.1183, lng: -104.3403 },
-  { name: 'Olas Altas', lat: 19.0444, lng: -104.3261 },
-  { name: 'Fraccionamiento Mar de Plata', lat: 19.0722, lng: -104.3019 },
-  { name: 'Nuevo Salagua', lat: 19.0886, lng: -104.3056 },
-  { name: 'Valle de las Garzas', lat: 19.0875, lng: -104.2944 },
-  { name: 'La Joya', lat: 19.1067, lng: -104.3267 },
-  { name: 'Vida del Mar', lat: 19.0697, lng: -104.2903 },
-  { name: 'El Naranjo', lat: 19.0764, lng: -104.2847 },
-  { name: 'Tapeixtles', lat: 19.0731, lng: -104.3317 },
-];
-
 declare global {
   interface Window {
     google?: any;
@@ -222,14 +199,6 @@ export function GoogleMapsInput({
     );
   };
 
-  const selectFallbackLocation = (location: (typeof SUGGESTED_LOCATIONS)[0]) => {
-    setSearch(location.name);
-    onAddressChange(location.name);
-    onLocationChange(location.lat, location.lng);
-    onLocationDetailsChange?.({ city: '', state: '', neighborhood: '' });
-    setShowSuggestions(false);
-  };
-
   const handleInputChange = (value: string) => {
     setSearch(value);
     onAddressChange(value);
@@ -242,12 +211,6 @@ export function GoogleMapsInput({
     onLocationChange(null, null);
     onLocationDetailsChange?.({ city: '', state: '', neighborhood: '' });
   };
-
-  const filteredFallback = search.trim()
-    ? SUGGESTED_LOCATIONS.filter((loc) =>
-        loc.name.toLowerCase().includes(search.toLowerCase())
-      )
-    : [];
 
   return (
     <div className="space-y-4">
@@ -282,7 +245,7 @@ export function GoogleMapsInput({
           )}
         </div>
 
-        {showSuggestions && (predictions.length > 0 || filteredFallback.length > 0) && (
+        {showSuggestions && predictions.length > 0 && (
           <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-card rounded-lg shadow-strong border border-border">
             {predictions.map((prediction) => (
               <button
@@ -293,18 +256,6 @@ export function GoogleMapsInput({
               >
                 <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                 <span className="text-foreground">{prediction.description}</span>
-              </button>
-            ))}
-
-            {predictions.length === 0 && filteredFallback.map((location, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => selectFallbackLocation(location)}
-                className="w-full text-left px-4 py-3 text-sm hover:bg-muted transition-colors flex items-center gap-2"
-              >
-                <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-                <span className="text-foreground">{location.name}</span>
               </button>
             ))}
           </div>
