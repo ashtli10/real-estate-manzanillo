@@ -4,7 +4,9 @@ const getCurrentRoute = () => {
   if (window.location.hash.startsWith('#/')) {
     const hashPath = window.location.hash.slice(1);
     window.history.replaceState(null, '', hashPath);
-    return hashPath;
+    // Return just pathname, not search params
+    const questionIndex = hashPath.indexOf('?');
+    return questionIndex >= 0 ? hashPath.slice(0, questionIndex) : hashPath;
   }
 
   return window.location.pathname || '/';
@@ -24,13 +26,16 @@ export function useRouter() {
 
   const navigate = (path: string) => {
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-    if (normalizedPath === window.location.pathname) {
-      setRoute(normalizedPath);
-      return;
-    }
-
+    
+    // Extract pathname (without query params) for comparison and state
+    const questionIndex = normalizedPath.indexOf('?');
+    const pathname = questionIndex >= 0 ? normalizedPath.slice(0, questionIndex) : normalizedPath;
+    
+    // Push the full path (with query params) to history
     window.history.pushState(null, '', normalizedPath);
-    setRoute(normalizedPath);
+    
+    // Store only the pathname in route state (query params are in window.location.search)
+    setRoute(pathname);
   };
 
   return { route, navigate };

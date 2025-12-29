@@ -1,6 +1,7 @@
 import { Search, X, Building2, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LocationAutocomplete } from './LocationAutocomplete';
 
 interface SearchBarProps {
   onSearch: (filters: SearchFilters) => void;
@@ -50,16 +51,14 @@ export function SearchBar({ onSearch, variant = 'hero', initialFilters }: Search
         <div className="bg-white rounded-2xl shadow-2xl p-2 md:p-3">
           {/* Main Search Row */}
           <div className="flex flex-col md:flex-row gap-2 md:gap-0">
-            {/* Search Input */}
+            {/* Location Autocomplete */}
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
+              <LocationAutocomplete
+                value={filters.location}
+                onChange={(location) => setFilters({ ...filters, location })}
                 placeholder={t('landing.hero.searchPlaceholder')}
-                value={filters.query}
-                onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-                onKeyDown={handleKeyDown}
                 className="w-full pl-12 pr-4 py-4 text-gray-800 placeholder-gray-400 border-0 focus:ring-0 focus:outline-none text-lg rounded-xl"
+                variant="default"
               />
             </div>
 
