@@ -317,7 +317,6 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
         .upsert({
           user_id: userId,
           status: trialDays > 0 ? 'trialing' : 'active',
-          trial_starts_at: trialDays > 0 ? now.toISOString() : null,
           trial_ends_at: trialDays > 0 ? trialEnd.toISOString() : null,
         }, { onConflict: 'user_id' });
 
