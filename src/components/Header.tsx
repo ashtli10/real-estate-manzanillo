@@ -67,9 +67,9 @@ export function Header({ onNavigate, currentPath }: HeaderProps) {
               {user ? (
                 <>
                   <button
-                    onClick={() => onNavigate('/admin')}
+                    onClick={() => onNavigate('/dashboard')}
                     className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl transition-all ${
-                      currentPath.startsWith('/admin')
+                      currentPath.startsWith('/dashboard')
                         ? 'bg-white text-blue-600 shadow-md font-semibold'
                         : 'hover:bg-white/10'
                     }`}
@@ -136,7 +136,7 @@ export function Header({ onNavigate, currentPath }: HeaderProps) {
                 <>
                   <button
                     onClick={() => {
-                      onNavigate('/admin');
+                      onNavigate('/dashboard');
                       closeMobileMenu();
                     }}
                     className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-white/10 transition-all"

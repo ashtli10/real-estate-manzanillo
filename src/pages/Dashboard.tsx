@@ -16,24 +16,28 @@ import {
   ExternalLink,
   AlertTriangle,
   Clock,
+  Mail,
+  Shield,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../integrations/supabase/client';
 import type { Property, PropertyInsert } from '../types/property';
-import type { Profile, Subscription, Credits } from '../types/user';
+import type { Profile, Subscription, Credits, InvitationToken } from '../types/user';
 import { PropertyTable } from '../components/admin/PropertyTable';
 import { PropertyForm } from '../components/admin/PropertyForm';
 import { DeleteConfirmModal } from '../components/admin/DeleteConfirmModal';
+import { CreateInvitationModal } from '../components/admin/CreateInvitationModal';
+import { InvitationTable } from '../components/admin/InvitationTable';
 import { transformProperty } from '../lib/propertyTransform';
 
-type DashboardTab = 'overview' | 'properties' | 'profile' | 'billing' | 'ai-tools' | 'settings';
+type DashboardTab = 'overview' | 'properties' | 'profile' | 'billing' | 'ai-tools' | 'settings' | 'invitations';
 
 interface DashboardProps {
   onNavigate: (path: string) => void;
 }
 
 export function Dashboard({ onNavigate }: DashboardProps) {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   
   // Data state
@@ -53,6 +57,12 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Invitations state (admin only)
+  const [invitations, setInvitations] = useState<InvitationToken[]>([]);
+  const [loadingInvitations, setLoadingInvitations] = useState(true);
+  const [showCreateInvitation, setShowCreateInvitation] = useState(false);
+  const [creatingInvitation, setCreatingInvitation] = useState(false);
+
   useEffect(() => {
     if (!authLoading && !user) {
       onNavigate('/login');
@@ -63,8 +73,12 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     if (user) {
       loadUserData();
       loadProperties();
+      // Load invitations only for admins
+      if (isAdmin) {
+        loadInvitations();
+      }
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   const loadUserData = async () => {
     if (!user) return;
@@ -109,11 +123,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     
     setLoadingProperties(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('properties')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('display_order', { ascending: true });
+        .select('*');
+      
+      // Admins see all properties, regular users see only their own
+      if (!isAdmin) {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query.order('display_order', { ascending: true });
 
       if (error) throw error;
       setProperties((data || []).map(transformProperty));
@@ -121,6 +140,23 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       console.error('Error loading properties:', error);
     } finally {
       setLoadingProperties(false);
+    }
+  };
+
+  const loadInvitations = async () => {
+    setLoadingInvitations(true);
+    try {
+      const { data, error } = await supabase
+        .from('invitation_tokens')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setInvitations(data || []);
+    } catch (error) {
+      console.error('Error loading invitations:', error);
+    } finally {
+      setLoadingInvitations(false);
     }
   };
 
@@ -132,19 +168,22 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       const maxOrder = properties.reduce((max, p) => Math.max(max, p.display_order || 0), 0);
       const display_order = editingProperty ? data.display_order : maxOrder + 1;
 
+      // For new properties, use current user's ID. For edits, keep the original user_id
+      const user_id = editingProperty ? editingProperty.user_id : user.id;
+
       const dbData = {
         ...data,
-        user_id: user.id,
+        user_id,
         display_order,
         characteristics: JSON.stringify(data.characteristics),
       };
 
       if (editingProperty) {
+        // Admins can update any property, regular users only their own (RLS enforces this)
         const { error } = await supabase
           .from('properties')
           .update({ ...dbData, updated_at: new Date().toISOString() })
-          .eq('id', editingProperty.id)
-          .eq('user_id', user.id);
+          .eq('id', editingProperty.id);
 
         if (error) throw error;
       } else {
@@ -171,11 +210,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
     setDeleting(true);
     try {
+      // Admins can delete any property, regular users only their own (RLS enforces this)
       const { error } = await supabase
         .from('properties')
         .delete()
-        .eq('id', deletingProperty.id)
-        .eq('user_id', user.id);
+        .eq('id', deletingProperty.id);
 
       if (error) throw error;
       await loadProperties();
@@ -191,11 +230,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     if (!user) return;
     try {
       const newStatus = property.status === 'active' ? 'draft' : 'active';
+      // Admins can update any property, regular users only their own (RLS enforces this)
       await supabase
         .from('properties')
         .update({ status: newStatus })
-        .eq('id', property.id)
-        .eq('user_id', user.id);
+        .eq('id', property.id);
       await loadProperties();
     } catch (error) {
       console.error('Error toggling publish:', error);
@@ -205,14 +244,65 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const handleToggleFeatured = async (property: Property) => {
     if (!user) return;
     try {
+      // Admins can update any property, regular users only their own (RLS enforces this)
       await supabase
         .from('properties')
         .update({ is_featured: !property.is_featured })
-        .eq('id', property.id)
-        .eq('user_id', user.id);
+        .eq('id', property.id);
       await loadProperties();
     } catch (error) {
       console.error('Error toggling featured:', error);
+    }
+  };
+
+  const handleCreateInvitation = async (data: {
+    email: string | null;
+    trial_days: number;
+    expires_at: string;
+    notes: string;
+  }) => {
+    setCreatingInvitation(true);
+    try {
+      // Generate a unique token for the invitation
+      const token = crypto.randomUUID();
+      
+      const { error } = await supabase
+        .from('invitation_tokens')
+        .insert([{
+          token,
+          email: data.email,
+          trial_days: data.trial_days,
+          expires_at: data.expires_at,
+          notes: data.notes,
+          created_by: user?.id,
+        }]);
+
+      if (error) throw error;
+      
+      await loadInvitations();
+      setShowCreateInvitation(false);
+    } catch (error) {
+      console.error('Error creating invitation:', error);
+      alert('Error al crear la invitación');
+    } finally {
+      setCreatingInvitation(false);
+    }
+  };
+
+  const handleDeleteInvitation = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta invitación?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('invitation_tokens')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      await loadInvitations();
+    } catch (error) {
+      console.error('Error deleting invitation:', error);
+      alert('Error al eliminar la invitación');
     }
   };
 
@@ -328,6 +418,22 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               Pronto
             </span>
           </button>
+          
+          {/* Admin-only tab */}
+          {isAdmin && (
+            <button
+              onClick={() => setActiveTab('invitations')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+                activeTab === 'invitations'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <Mail className="h-5 w-5" />
+              Invitaciones
+              <Shield className="ml-auto h-4 w-4" />
+            </button>
+          )}
         </nav>
 
         {/* Footer */}
@@ -357,10 +463,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             <div>
               <h2 className="text-2xl font-bold text-foreground">
                 {activeTab === 'overview' && 'Resumen'}
-                {activeTab === 'properties' && 'Mis Propiedades'}
+                {activeTab === 'properties' && (isAdmin ? 'Todas las Propiedades' : 'Mis Propiedades')}
                 {activeTab === 'profile' && 'Mi Perfil'}
                 {activeTab === 'billing' && 'Facturación'}
                 {activeTab === 'ai-tools' && 'Herramientas de IA'}
+                {activeTab === 'invitations' && 'Invitaciones'}
               </h2>
               <p className="text-muted-foreground">
                 Bienvenido, {profile?.full_name || 'Agente'}
@@ -662,6 +769,37 @@ export function Dashboard({ onNavigate }: DashboardProps) {
               </div>
             </div>
           )}
+
+          {/* Invitations Tab - Admin Only */}
+          {activeTab === 'invitations' && isAdmin && (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-muted-foreground">
+                  Gestiona las invitaciones para nuevos agentes
+                </p>
+                <button
+                  onClick={() => setShowCreateInvitation(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                >
+                  <Plus className="h-5 w-5" />
+                  Nueva Invitación
+                </button>
+              </div>
+
+              {loadingInvitations ? (
+                <div className="text-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                  <p className="text-muted-foreground">Cargando invitaciones...</p>
+                </div>
+              ) : (
+                <InvitationTable
+                  invitations={invitations}
+                  onDelete={handleDeleteInvitation}
+                  onRefresh={loadInvitations}
+                />
+              )}
+            </div>
+          )}
         </div>
       </main>
 
@@ -683,6 +821,15 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           onConfirm={handleDelete}
           onCancel={() => setDeletingProperty(null)}
           loading={deleting}
+        />
+      )}
+
+      {/* Create Invitation Modal - Admin Only */}
+      {showCreateInvitation && isAdmin && (
+        <CreateInvitationModal
+          onSave={handleCreateInvitation}
+          onCancel={() => setShowCreateInvitation(false)}
+          loading={creatingInvitation}
         />
       )}
     </div>
