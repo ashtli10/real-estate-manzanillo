@@ -180,7 +180,8 @@ export function getPropertySEO(property: Property): SEOConfig {
     : DEFAULT_IMAGE;
 
   // Build structured data for property
-  const structuredData: any = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const structuredData: Record<string, any> = {
     '@context': 'https://schema.org',
     '@type': property.property_type === 'local' ? 'Store' : 'House',
     name: property.title,

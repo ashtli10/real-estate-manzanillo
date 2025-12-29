@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
@@ -17,96 +15,93 @@ export type Database = {
       properties: {
         Row: {
           characteristics: Json | null
-          created_at: string
-          currency: string
+          created_at: string | null
+          currency: string | null
           custom_bonuses: Json | null
           description: string | null
           display_order: number | null
           id: string
-          images: Json | null
-          videos: Json | null
+          images: string[] | null
           is_featured: boolean | null
-          is_published: boolean | null
+          is_for_rent: boolean | null
+          is_for_sale: boolean | null
           location_address: string | null
-          location_city: string
+          location_city: string | null
           location_lat: number | null
           location_lng: number | null
           location_neighborhood: string | null
-          location_state: string
-          near_beach: boolean | null
-          price: number | null
-          is_for_sale: boolean | null
-          is_for_rent: boolean | null
-          rent_price: number | null
+          location_state: string | null
+          price: number
+          property_type: string
           rent_currency: string | null
-          property_condition: Database["public"]["Enums"]["property_condition"]
-          property_type: Database["public"]["Enums"]["property_type"]
+          rent_price: number | null
           show_map: boolean | null
-          slug: string
+          slug: string | null
+          status: string | null
           title: string
-          updated_at: string
+          updated_at: string | null
+          user_id: string
+          videos: string[] | null
         }
         Insert: {
           characteristics?: Json | null
-          created_at?: string
-          currency?: string
+          created_at?: string | null
+          currency?: string | null
           custom_bonuses?: Json | null
           description?: string | null
           display_order?: number | null
           id?: string
-          images?: Json | null
-          videos?: Json | null
+          images?: string[] | null
           is_featured?: boolean | null
-          is_published?: boolean | null
+          is_for_rent?: boolean | null
+          is_for_sale?: boolean | null
           location_address?: string | null
-          location_city?: string
+          location_city?: string | null
           location_lat?: number | null
           location_lng?: number | null
           location_neighborhood?: string | null
-          location_state?: string
-          near_beach?: boolean | null
-          price?: number | null
-          is_for_sale?: boolean | null
-          is_for_rent?: boolean | null
-          rent_price?: number | null
+          location_state?: string | null
+          price: number
+          property_type: string
           rent_currency?: string | null
-          property_condition?: Database["public"]["Enums"]["property_condition"]
-          property_type?: Database["public"]["Enums"]["property_type"]
+          rent_price?: number | null
           show_map?: boolean | null
-          slug: string
+          slug?: string | null
+          status?: string | null
           title: string
-          updated_at?: string
+          updated_at?: string | null
+          user_id: string
+          videos?: string[] | null
         }
         Update: {
           characteristics?: Json | null
-          created_at?: string
-          currency?: string
+          created_at?: string | null
+          currency?: string | null
           custom_bonuses?: Json | null
           description?: string | null
           display_order?: number | null
           id?: string
-          images?: Json | null
-          videos?: Json | null
+          images?: string[] | null
           is_featured?: boolean | null
-          is_published?: boolean | null
+          is_for_rent?: boolean | null
+          is_for_sale?: boolean | null
           location_address?: string | null
-          location_city?: string
+          location_city?: string | null
           location_lat?: number | null
           location_lng?: number | null
           location_neighborhood?: string | null
-          location_state?: string
-          near_beach?: boolean | null
-          price?: number | null
-          is_for_sale?: boolean | null
-          is_for_rent?: boolean | null
-          rent_price?: number | null
+          location_state?: string | null
+          price?: number
+          property_type?: string
           rent_currency?: string | null
-          property_condition?: Database["public"]["Enums"]["property_condition"]
-          property_type?: Database["public"]["Enums"]["property_type"]
+          rent_price?: number | null
           show_map?: boolean | null
-          slug?: string
+          slug?: string | null
+          status?: string | null
           title?: string
-          updated_at?: string
+          updated_at?: string | null
+          user_id?: string
+          videos?: string[] | null
         }
         Relationships: []
       }
@@ -114,19 +109,19 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
+          role: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          role?: string
           user_id?: string
         }
         Relationships: []
@@ -137,17 +132,12 @@ export type Database = {
     }
     Functions: {
       has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
+        Args: { check_role: string; check_user_id: string }
         Returns: boolean
       }
     }
     Enums: {
-      app_role: "admin" | "user"
-      property_condition: "nuevo" | "usado"
-      property_type: "casa" | "departamento" | "terreno" | "local" | "oficina"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -237,47 +227,3 @@ export type TablesUpdate<
       ? U
       : never
     : never
-
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
-
-export const Constants = {
-  public: {
-    Enums: {
-      app_role: ["admin", "user"],
-      property_condition: ["nuevo", "usado"],
-      property_type: ["casa", "departamento", "terreno", "local", "oficina"],
-    },
-  },
-} as const
