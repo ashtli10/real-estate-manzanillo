@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
+    "@vercel/node": "^5.5.16",
     "i18next": "^25.7.3",
     "i18next-browser-languagedetector": "^8.2.0",
     "lovable-tagger": "^1.1.13",
@@ -29,6 +30,7 @@
     "react-markdown": "^9.1.0",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
+    "stripe": "^20.1.0",
     "yet-another-react-lightbox": "^3.28.0"
   },
   "devDependencies": {

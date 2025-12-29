@@ -7,6 +7,7 @@ import { Home } from './pages/Home';
 import { Properties } from './pages/Properties';
 import { PropertyDetail } from './pages/PropertyDetail';
 import { Login } from './pages/Login';
+import { Admin } from './pages/Admin';
 import { AgentProfile } from './pages/AgentProfile';
 import { InvitePage } from './pages/InvitePage';
 import { OnboardingPage } from './pages/OnboardingPage';
@@ -15,7 +16,7 @@ import { FloatingWhatsappButton } from './components/FloatingWhatsappButton';
 import { DEFAULT_WHATSAPP_MESSAGE } from './lib/whatsapp';
 
 // Reserved routes that should not be treated as agent usernames
-const RESERVED_ROUTES = ['/', '/propiedades', '/login', '/dashboard', '/onboarding'];
+const RESERVED_ROUTES = ['/', '/propiedades', '/login', '/admin', '/dashboard', '/onboarding'];
 
 function AppContent() {
   const { route, navigate } = useRouter();
@@ -72,6 +73,10 @@ function AppContent() {
 
     if (route === '/login') {
       return <Login onNavigate={navigate} />;
+    }
+
+    if (route === '/admin') {
+      return <Admin onNavigate={navigate} />;
     }
 
     // Check for agent profile route (/:username)

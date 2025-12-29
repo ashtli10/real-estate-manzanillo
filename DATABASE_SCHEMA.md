@@ -1,5 +1,7 @@
 # 🗄️ Database Schema Documentation
 
+**Last Edited: 2025-06-24**
+
 **Real Estate Manzanillo Platform**  
 *Complete Database Setup with Strict RLS Policies*
 

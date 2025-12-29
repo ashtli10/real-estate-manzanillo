@@ -1,5 +1,7 @@
 # BN Inmobiliaria - Architecture Overview
 
+**Last Edited: 2025-06-24**
+
 ## System Architecture
 
 ```
@@ -39,6 +41,19 @@
 │  │  • Auto-updates with property changes                 │     │
 │  │  • Caching: 1 hour                                    │     │
 │  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ /api/stripe/webhook                                    │     │
+│  │  • Stripe webhook handler                             │     │
+│  │  • Subscription lifecycle events                      │     │
+│  │  • Credit purchase processing                         │     │
+│  │  • Uses Supabase service role (bypasses RLS)          │     │
+│  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ /api/stripe/create-checkout                            │     │
+│  │  • Creates Stripe checkout sessions                   │     │
+│  │  • Subscription + credit pack purchases               │     │
+│  │  • Customer portal session creation                   │     │
+│  └───────────────────────────────────────────────────────┘     │
 │                                                                  │
 │  Static Assets:                                                 │
 │  • /robots.txt                                                  │
@@ -66,6 +81,30 @@
 │  │ Storage                                                │     │
 │  │  • Property images                                    │     │
 │  │  • Media files                                        │     │
+│  └───────────────────────────────────────────────────────┘     │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ ↑
+                         Payment Processing
+                              ↓ ↑
+┌─────────────────────────────────────────────────────────────────┐
+│                         Stripe Platform                          │
+├─────────────────────────────────────────────────────────────────┤
+│  Products:                                                      │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ Subscription                                           │     │
+│  │  • Plan Estándar: 199 MXN/month                       │     │
+│  │  • Includes 50 free AI credits/month                  │     │
+│  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ Credit Packs                                           │     │
+│  │  • 20, 50, 100, 500, 1000 credits                     │     │
+│  │  • One-time purchases                                 │     │
+│  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ Webhooks                                               │     │
+│  │  • customer.subscription.created/updated/deleted      │     │
+│  │  • invoice.payment_succeeded/failed                   │     │
+│  │  • checkout.session.completed                         │     │
 │  └───────────────────────────────────────────────────────┘     │
 └─────────────────────────────────────────────────────────────────┘
                               ↓ ↑
@@ -122,6 +161,59 @@ Search Engine → /sitemap.xml
              → Cache (1 hour)
              → XML Response
 ```
+
+### 5. Subscription Flow
+```
+User clicks "Subscribe" → /api/stripe/create-checkout
+                        → Stripe Checkout Session
+                        → User completes payment
+                        → Stripe Webhook → /api/stripe/webhook
+                        → Update subscriptions table
+                        → User gets access
+```
+
+### 6. Credit Purchase Flow
+```
+User clicks "Buy Credits" → /api/stripe/create-checkout
+                          → Stripe Checkout Session
+                          → User completes payment
+                          → Stripe Webhook → /api/stripe/webhook
+                          → Add credits via add_credits() function
+                          → Credits available immediately
+```
+
+## Subscription & Access Control
+
+### Access Control Logic
+```javascript
+function canAccessDashboard(subscription) {
+  // Active subscription
+  if (status === 'active') return true;
+  
+  // In trial period
+  if (status === 'trialing' && trial_ends_at > now) return true;
+  
+  // Grace period for past_due
+  if (status === 'past_due') return true; // but show warning
+  
+  // No access
+  return false;
+}
+```
+
+### Visibility Rules
+- **No subscription**: Properties hidden from public
+- **Subscription active**: Properties visible
+- **Past due**: Access with warning banner
+- **Canceled**: No access, prompt to resubscribe
+
+### React Hooks
+- `useSubscription(userId)`: Subscription state, access control
+- `useCredits(userId)`: Credit balance, purchase functions
+
+### Components
+- `SubscriptionGuard`: Route protection wrapper
+- `BillingTab`: Subscription/credits management UI
 
 ## SEO Components
 
@@ -192,23 +284,31 @@ Search Engine → /sitemap.xml
 ```
 ├── api/
 │   ├── properties.ts          # Property API endpoint
-│   └── sitemap.xml.ts         # Sitemap generator
+│   ├── sitemap.xml.ts         # Sitemap generator
+│   └── stripe/
+│       ├── webhook.ts         # Stripe webhook handler
+│       └── create-checkout.ts # Checkout session creation
 ├── public/
 │   ├── robots.txt             # Crawler instructions
 │   └── seo-validator.html     # SEO testing tool
 ├── src/
 │   ├── components/
-│   │   └── Breadcrumb.tsx     # Navigation breadcrumbs
+│   │   ├── Breadcrumb.tsx     # Navigation breadcrumbs
+│   │   ├── SubscriptionGuard.tsx # Route protection
+│   │   └── BillingTab.tsx     # Billing UI component
 │   ├── hooks/
-│   │   └── useRealtimeProperties.ts  # Real-time subscriptions
+│   │   ├── useRealtimeProperties.ts  # Real-time subscriptions
+│   │   ├── useSubscription.ts # Subscription state management
+│   │   └── useCredits.ts      # Credits state management
 │   ├── lib/
 │   │   └── seo.ts             # SEO utilities
 │   └── pages/
 │       ├── Home.tsx           # SEO: Home page
 │       ├── Properties.tsx     # SEO: Properties list
-│       └── PropertyDetail.tsx # SEO: Property detail
+│       ├── PropertyDetail.tsx # SEO: Property detail
+│       └── Dashboard.tsx      # Agent dashboard
 ├── DEPLOYMENT.md              # Deployment guide
-├── IMPLEMENTATION_SUMMARY.md  # This summary
+├── ARCHITECTURE.md            # This file
 └── vercel.json               # Vercel configuration
 ```
 

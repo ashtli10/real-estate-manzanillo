@@ -308,13 +308,24 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
         const trialEnd = new Date(now);
         trialEnd.setDate(trialEnd.getDate() + trialDays);
 
+        // For users with trial, create subscription with trial status
+        // For users without trial, set status to 'none' - they need to subscribe via Stripe
+        const subscriptionData = trialDays > 0 
+          ? {
+              user_id: userId,
+              status: 'trialing',
+              trial_ends_at: trialEnd.toISOString(),
+              plan_type: 'standard',
+            }
+          : {
+              user_id: userId,
+              status: 'none', // Will be updated by Stripe webhook after payment
+              plan_type: 'none',
+            };
+
         const { error: subError } = await supabase
           .from('subscriptions')
-          .upsert({
-            user_id: userId,
-            status: trialDays > 0 ? 'trialing' : 'active',
-            trial_ends_at: trialDays > 0 ? trialEnd.toISOString() : null,
-          }, { onConflict: 'user_id' });
+          .upsert(subscriptionData, { onConflict: 'user_id' });
 
         if (subError) {
           console.warn('Could not create subscription (table may not exist):', subError.message);
@@ -324,19 +335,48 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
       }
 
       // 6. Create or update initial credits (with error handling)
-      try {
-        const { error: creditsError } = await supabase
-          .from('credits')
-          .upsert({
-            user_id: userId,
-            balance: 50, // Initial credits from subscription
-          }, { onConflict: 'user_id' });
+      // Only give credits if they have trial (will get credits after subscription otherwise)
+      if (trialDays > 0) {
+        try {
+          const { error: creditsError } = await supabase
+            .from('credits')
+            .upsert({
+              user_id: userId,
+              balance: 0,
+              free_credits_remaining: 50, // Monthly free credits
+            }, { onConflict: 'user_id' });
 
-        if (creditsError) {
-          console.warn('Could not create credits (table may not exist):', creditsError.message);
+          if (creditsError) {
+            console.warn('Could not create credits (table may not exist):', creditsError.message);
+          }
+        } catch (err) {
+          console.warn('Credits creation skipped:', err);
         }
-      } catch (err) {
-        console.warn('Credits creation skipped:', err);
+      }
+
+      // If no trial, redirect to Stripe checkout
+      if (trialDays === 0) {
+        try {
+          const response = await fetch('/api/stripe/create-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'subscription',
+              userId,
+            }),
+          });
+
+          const data = await response.json();
+          
+          if (data.url) {
+            // Redirect to Stripe checkout
+            window.location.href = data.url;
+            return; // Don't show success step - they'll come back after payment
+          }
+        } catch (err) {
+          console.error('Error creating checkout session:', err);
+          // Fall through to success step if checkout creation fails
+        }
       }
 
       // Success!

@@ -27,4 +27,16 @@ Format for date tracking in documentation files:
 Last Edited: YYYY-MM-DD
 ```
 
+## Security Standards
+
+**Follow these security principles at all times:**
+
+1. **Row Level Security (RLS)**: All database tables MUST have proper RLS policies. Never bypass RLS unless absolutely necessary and documented
+2. **Supabase Edge Functions**: Use Edge Functions for any sensitive operations, API calls with secrets, or business logic that shouldn't be exposed client-side
+3. **No Sensitive Data Client-Side**: Never expose API keys, secrets, or sensitive configuration in client-side code. Use environment variables and Edge Functions
+4. **Abuse Prevention**: Implement rate limiting, input validation, and proper authentication checks to prevent abuse
+5. **Principle of Least Privilege**: Grant only the minimum permissions necessary for each role/user
+6. **Input Validation**: Always validate and sanitize user inputs on both client and server side
+7. **Secure by Default**: When in doubt, choose the more secure option
+
 ## Coding Guidelines

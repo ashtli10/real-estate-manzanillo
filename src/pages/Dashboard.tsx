@@ -19,14 +19,18 @@ import {
   Shield,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
+import { useCredits } from '../hooks/useCredits';
 import { supabase } from '../integrations/supabase/client';
 import type { Property, PropertyInsert } from '../types/property';
-import type { Profile, Subscription, Credits, InvitationToken } from '../types/user';
+import type { Profile, InvitationToken } from '../types/user';
 import { PropertyTable } from '../components/admin/PropertyTable';
 import { PropertyForm } from '../components/admin/PropertyForm';
 import { DeleteConfirmModal } from '../components/admin/DeleteConfirmModal';
 import { CreateInvitationModal } from '../components/admin/CreateInvitationModal';
 import { InvitationTable } from '../components/admin/InvitationTable';
+import { BillingTab } from '../components/BillingTab';
+import { SubscriptionGuard } from '../components/SubscriptionGuard';
 import { transformProperty } from '../lib/propertyTransform';
 
 type DashboardTab = 'overview' | 'properties' | 'profile' | 'billing' | 'ai-tools' | 'settings' | 'invitations';
@@ -39,10 +43,22 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   
+  // Use subscription and credits hooks
+  const { 
+    isTrialing,
+    isPastDue,
+    getStatusMessage,
+    canAccessDashboard,
+  } = useSubscription(user?.id);
+  
+  const {
+    totalCredits,
+    freeCredits,
+    paidCredits,
+  } = useCredits(user?.id);
+  
   // Data state
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [credits, setCredits] = useState<Credits | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
   
   // Loading states
@@ -92,30 +108,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         .single();
       
       if (profileData) setProfile(profileData as Profile);
-
-      // Load subscription (with error handling)
-      try {
-        const { data: subData, error: subError } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (!subError && subData) {
-          setSubscription(subData as Subscription);
-        }
-      } catch (err) {
-        console.warn('Could not load subscription:', err);
-      }
-
-      // Load credits
-      const { data: creditsData } = await supabase
-        .from('credits')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (creditsData) setCredits(creditsData as Credits);
+      // Subscription and credits are now handled by hooks
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {
@@ -317,26 +310,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     onNavigate('/');
   };
 
-  const getSubscriptionStatus = () => {
-    if (!subscription) return { status: 'unknown', message: 'No hay suscripción' };
-    
-    if (subscription.status === 'active') {
-      return { status: 'active', message: 'Suscripción activa' };
-    }
-    if (subscription.status === 'trialing') {
-      const trialEnd = new Date(subscription.trial_ends_at || '');
-      const daysLeft = Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-      if (daysLeft > 0) {
-        return { status: 'trial', message: `${daysLeft} días de prueba restantes` };
-      }
-      return { status: 'expired', message: 'Período de prueba expirado' };
-    }
-    if (subscription.status === 'past_due') {
-      return { status: 'warning', message: 'Pago pendiente' };
-    }
-    return { status: 'inactive', message: 'Suscripción inactiva' };
-  };
-
   // Loading state
   if (authLoading || loadingProfile) {
     return (
@@ -351,10 +324,20 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
   if (!user) return null;
 
-  const subStatus = getSubscriptionStatus();
+  // Check subscription access (admins bypass)
+  if (!isAdmin && !canAccessDashboard()) {
+    return (
+      <SubscriptionGuard userId={user.id} onNavigate={onNavigate}>
+        <div /> {/* This won't render - SubscriptionGuard handles the UI */}
+      </SubscriptionGuard>
+    );
+  }
+
+  const subStatus = getStatusMessage();
   const activeProperties = properties.filter(p => p.status === 'active').length;
 
-  return (
+  // Render past due warning wrapper
+  const dashboardContent = (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col">
@@ -482,13 +465,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             
             {/* Subscription status badge */}
             <div className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-              subStatus.status === 'active' ? 'bg-green-100 text-green-700' :
-              subStatus.status === 'trial' ? 'bg-blue-100 text-blue-700' :
-              subStatus.status === 'warning' ? 'bg-amber-100 text-amber-700' :
-              'bg-red-100 text-red-700'
+              subStatus.color === 'green' ? 'bg-green-100 text-green-700' :
+              subStatus.color === 'blue' ? 'bg-blue-100 text-blue-700' :
+              subStatus.color === 'yellow' ? 'bg-amber-100 text-amber-700' :
+              subStatus.color === 'red' ? 'bg-red-100 text-red-700' :
+              'bg-gray-100 text-gray-700'
             }`}>
-              {subStatus.status === 'warning' && <AlertTriangle className="h-4 w-4" />}
-              {subStatus.status === 'trial' && <Clock className="h-4 w-4" />}
+              {isPastDue && <AlertTriangle className="h-4 w-4" />}
+              {isTrialing && <Clock className="h-4 w-4" />}
               <span className="font-medium text-sm">{subStatus.message}</span>
             </div>
           </div>
@@ -546,10 +530,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     </div>
                     <div>
                       <p className="text-muted-foreground text-sm">Créditos de IA</p>
-                      <p className="text-2xl font-bold text-foreground">{credits?.balance || 0}</p>
+                      <p className="text-2xl font-bold text-foreground">{totalCredits}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {freeCredits} gratis + {paidCredits} comprados
+                      </p>
                     </div>
                   </div>
-                  <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors">
+                  <button 
+                    onClick={() => setActiveTab('billing')}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors"
+                  >
                     + Comprar más
                   </button>
                 </div>
@@ -705,43 +695,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           )}
 
           {/* Billing Tab */}
-          {activeTab === 'billing' && (
-            <div className="max-w-2xl space-y-6">
-              <div className="bg-card rounded-xl shadow-soft p-6">
-                <h3 className="font-semibold text-foreground mb-4">Plan actual</h3>
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div>
-                    <p className="font-bold text-lg">Plan Agente</p>
-                    <p className="text-muted-foreground">$199 MXN/mes</p>
-                  </div>
-                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    subStatus.status === 'active' ? 'bg-green-100 text-green-700' :
-                    subStatus.status === 'trial' ? 'bg-blue-100 text-blue-700' :
-                    'bg-amber-100 text-amber-700'
-                  }`}>
-                    {subStatus.message}
-                  </div>
-                </div>
-                {subscription?.trial_ends_at && subStatus.status === 'trial' && (
-                  <p className="text-sm text-muted-foreground mt-4">
-                    Tu prueba termina el {new Date(subscription.trial_ends_at).toLocaleDateString('es-MX')}
-                  </p>
-                )}
-              </div>
-
-              <div className="bg-card rounded-xl shadow-soft p-6">
-                <h3 className="font-semibold text-foreground mb-4">Créditos de IA</h3>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-3xl font-bold">{credits?.balance || 0}</p>
-                    <p className="text-muted-foreground text-sm">créditos disponibles</p>
-                  </div>
-                  <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium">
-                    Comprar créditos
-                  </button>
-                </div>
-              </div>
-            </div>
+          {activeTab === 'billing' && user && (
+            <BillingTab userId={user.id} />
           )}
 
           {/* AI Tools Tab */}
@@ -770,7 +725,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                  Tienes <strong>{credits?.balance || 0} créditos</strong> disponibles
+                  Tienes <strong>{totalCredits} créditos</strong> disponibles
                 </p>
               </div>
             </div>
@@ -839,4 +794,32 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       )}
     </div>
   );
+
+  // Wrap with past due warning if needed
+  if (isPastDue) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        {/* Warning banner */}
+        <div className="bg-amber-500 text-white px-4 py-3 flex-shrink-0">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5" />
+              <span className="font-medium">
+                Tu pago está pendiente. Actualiza tu método de pago para evitar la suspensión.
+              </span>
+            </div>
+            <button
+              onClick={() => setActiveTab('billing')}
+              className="bg-white text-amber-600 px-4 py-1.5 rounded-lg font-medium text-sm hover:bg-amber-50 transition-colors"
+            >
+              Actualizar pago
+            </button>
+          </div>
+        </div>
+        {dashboardContent}
+      </div>
+    );
+  }
+
+  return dashboardContent;
 }
