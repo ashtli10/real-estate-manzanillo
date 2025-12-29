@@ -175,6 +175,8 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
           type: 'subscription',
           userId,
           trialDays,
+          successUrl: `${window.location.origin}/dashboard?checkout=success`,
+          cancelUrl: `${window.location.origin}/dashboard?checkout=canceled`,
         }),
       });
 
@@ -204,6 +206,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
         body: JSON.stringify({
           type: 'portal',
           userId,
+          successUrl: `${window.location.origin}/dashboard`,
         }),
       });
 

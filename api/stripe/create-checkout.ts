@@ -24,17 +24,40 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   },
 });
 
-// Price IDs - Production
-const SUBSCRIPTION_PRICE_ID = 'price_1Sj2fjCGlYYoSu1ta4UNOAUF'; // 199 MXN/month
-
-// Credit pack prices
-const CREDIT_PRICES: Record<string, string> = {
+// Price IDs - LIVE mode (production)
+const LIVE_SUBSCRIPTION_PRICE_ID = 'price_1Sj2fjCGlYYoSu1ta4UNOAUF'; // 199 MXN/month
+const LIVE_CREDIT_PRICES: Record<string, string> = {
   '20': 'price_1Sj2ixCGlYYoSu1tTQy1qTpw',   // 20 MXN
   '50': 'price_1Sj2ixCGlYYoSu1tgRme2T4z',   // 50 MXN
   '100': 'price_1Sj2ixCGlYYoSu1t5H55JGaP',  // 100 MXN
   '500': 'price_1Sj2ixCGlYYoSu1tmPCi46qt',  // 500 MXN
   '1000': 'price_1Sj2ixCGlYYoSu1t7qNkVJog', // 1000 MXN
 };
+
+// Price IDs - TEST mode (development) - These need to be created in Stripe Test mode
+// For now, we'll use environment variables to override, or fall back to live prices (will cause error in test mode)
+const TEST_SUBSCRIPTION_PRICE_ID = process.env.STRIPE_TEST_SUBSCRIPTION_PRICE_ID || '';
+const TEST_CREDIT_PRICES: Record<string, string> = {
+  '20': process.env.STRIPE_TEST_CREDIT_PRICE_20 || '',
+  '50': process.env.STRIPE_TEST_CREDIT_PRICE_50 || '',
+  '100': process.env.STRIPE_TEST_CREDIT_PRICE_100 || '',
+  '500': process.env.STRIPE_TEST_CREDIT_PRICE_500 || '',
+  '1000': process.env.STRIPE_TEST_CREDIT_PRICE_1000 || '',
+};
+
+// Select price IDs based on mode
+const SUBSCRIPTION_PRICE_ID = STRIPE_MODE === 'live' 
+  ? LIVE_SUBSCRIPTION_PRICE_ID 
+  : (TEST_SUBSCRIPTION_PRICE_ID || LIVE_SUBSCRIPTION_PRICE_ID);
+
+const CREDIT_PRICES = STRIPE_MODE === 'live' 
+  ? LIVE_CREDIT_PRICES 
+  : Object.fromEntries(
+      Object.entries(LIVE_CREDIT_PRICES).map(([amount, livePrice]) => [
+        amount, 
+        TEST_CREDIT_PRICES[amount] || livePrice
+      ])
+    );
 
 export default async function handler(
   req: VercelRequest,
@@ -84,7 +107,13 @@ export default async function handler(
         .eq('id', userId);
     }
 
-    const baseUrl = successUrl || process.env.VITE_APP_URL || 'http://localhost:5173';
+    // Get base URL from request headers (for Vercel deployments) or env var
+    // Priority: 1) successUrl from request, 2) VITE_APP_URL env, 3) request origin, 4) localhost fallback
+    const requestOrigin = req.headers.origin || req.headers.referer?.replace(/\/$/, '');
+    const baseUrl = successUrl?.split('?')[0]?.replace(/\/dashboard.*$/, '') 
+      || process.env.VITE_APP_URL 
+      || requestOrigin 
+      || 'http://localhost:5173';
 
     if (type === 'subscription') {
       // Create subscription checkout session

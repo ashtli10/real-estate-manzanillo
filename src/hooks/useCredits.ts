@@ -125,6 +125,8 @@ export function useCredits(userId: string | undefined): UseCreditsReturn {
           type: 'credits',
           userId,
           creditAmount: amount,
+          successUrl: `${window.location.origin}/dashboard?checkout=credits-success`,
+          cancelUrl: `${window.location.origin}/dashboard?checkout=canceled`,
         }),
       });
 
