@@ -206,6 +206,7 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
 
       if (signUpError) throw signUpError;
       if (!authData.user) throw new Error('No se pudo crear el usuario');
+      if (!authData.session) throw new Error('No se pudo establecer la sesión');
 
       const userId = authData.user.id;
 
