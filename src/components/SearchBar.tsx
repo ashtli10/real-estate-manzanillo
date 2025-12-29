@@ -52,13 +52,12 @@ export function SearchBar({ onSearch, variant = 'hero', initialFilters }: Search
           {/* Main Search Row */}
           <div className="flex flex-col md:flex-row gap-2 md:gap-0">
             {/* Location Autocomplete */}
-            <div className="flex-1 relative">
+            <div className="flex-1">
               <LocationAutocomplete
                 value={filters.location}
                 onChange={(location) => setFilters({ ...filters, location })}
                 placeholder={t('landing.hero.searchPlaceholder')}
-                className="w-full pl-12 pr-4 py-4 text-gray-800 placeholder-gray-400 border-0 focus:ring-0 focus:outline-none text-lg rounded-xl"
-                variant="default"
+                variant="hero"
               />
             </div>
 

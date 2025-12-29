@@ -7,7 +7,7 @@ interface LocationAutocompleteProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  variant?: 'default' | 'compact' | 'filter';
+  variant?: 'default' | 'compact' | 'filter' | 'hero';
 }
 
 interface PlacePrediction {
@@ -221,15 +221,25 @@ export function LocationAutocomplete({
   };
 
   const baseInputClasses =
-    variant === 'filter'
-      ? 'w-full pl-10 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-      : variant === 'compact'
-        ? 'w-full pl-10 pr-8 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-        : 'w-full appearance-none pl-10 pr-8 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+    variant === 'hero'
+      ? 'w-full pl-12 pr-10 py-4 text-gray-800 placeholder-gray-400 border-0 focus:ring-0 focus:outline-none text-lg bg-transparent'
+      : variant === 'filter'
+        ? 'w-full pl-10 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+        : variant === 'compact'
+          ? 'w-full pl-10 pr-8 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+          : 'w-full appearance-none pl-10 pr-8 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+
+  const iconClasses = variant === 'hero'
+    ? 'absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none z-10'
+    : 'absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10';
+
+  const clearButtonClasses = variant === 'hero'
+    ? 'absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10'
+    : 'absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10';
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
-      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+      <MapPin className={iconClasses} />
       <input
         ref={inputRef}
         type="text"
@@ -238,16 +248,16 @@ export function LocationAutocomplete({
         onFocus={handleFocus}
         onKeyDown={handleKeyDown}
         placeholder={placeholder || t('common.searchLocation')}
-        className={`${baseInputClasses} ${className}`}
+        className={baseInputClasses}
       />
 
       {/* Clear button */}
       {search && (
         <button
           onClick={handleClear}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className={clearButtonClasses}
         >
-          <X className="h-4 w-4" />
+          <X className={variant === 'hero' ? 'h-5 w-5' : 'h-4 w-4'} />
         </button>
       )}
 
