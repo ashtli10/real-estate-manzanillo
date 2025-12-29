@@ -235,8 +235,8 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
     setError(null);
 
     try {
-      if (!formData.otp || formData.otp.length !== 6) {
-        throw new Error('Por favor ingresa el código de 6 dígitos');
+      if (!formData.otp || formData.otp.length !== 8) {
+        throw new Error('Por favor ingresa el código de 8 dígitos');
       }
 
       // Verify OTP
@@ -514,7 +514,7 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
                 Verifica tu correo
               </h2>
               <p className="text-gray-600">
-                Hemos enviado un código de 6 dígitos a <br />
+                Hemos enviado un código de 8 dígitos a <br />
                 <span className="font-semibold">{formData.email}</span>
               </p>
             </div>
@@ -528,12 +528,12 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
                   type="text"
                   value={formData.otp}
                   onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 8);
                     updateField('otp', value);
                   }}
                   className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="000000"
-                  maxLength={6}
+                  placeholder="00000000"
+                  maxLength={8}
                 />
                 <p className="text-sm text-gray-500 text-center mt-2">
                   Revisa tu bandeja de entrada y spam
@@ -791,7 +791,7 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
 
           <button
             onClick={handleNext}
-            disabled={loading || (step === 3 && !usernameAvailable) || (step === 1.5 && formData.otp.length !== 6)}
+            disabled={loading || (step === 3 && !usernameAvailable) || (step === 1.5 && formData.otp.length !== 8)}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition-all disabled:opacity-50"
           >
             {loading ? (
