@@ -5,7 +5,6 @@ import {
   User,
   CreditCard,
   Sparkles,
-  Settings,
   LogOut,
   Plus,
   Eye,
@@ -174,12 +173,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       const maxOrder = properties.reduce((max, p) => Math.max(max, p.display_order || 0), 0);
       const display_order = editingProperty ? data.display_order : maxOrder + 1;
 
-      // For new properties, use current user's ID. For edits, keep the original user_id
-      const user_id = editingProperty ? editingProperty.user_id : user.id;
-
       const dbData = {
         ...data,
-        user_id,
+        price: data.price ?? 0,
+        rent_price: data.rent_price ?? 0,
+        user_id: user.id,
         display_order,
         characteristics: JSON.stringify(data.characteristics),
       };
@@ -267,6 +265,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     expires_at: string;
     notes: string;
   }) => {
+    if (!user) return;
+    
     setCreatingInvitation(true);
     try {
       // Generate a unique token for the invitation
@@ -280,7 +280,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           trial_days: data.trial_days,
           expires_at: data.expires_at,
           notes: data.notes,
-          created_by: user?.id,
+          created_by: user.id,
         }]);
 
       if (error) throw error;
@@ -801,7 +801,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 <InvitationTable
                   invitations={invitations}
                   onDelete={handleDeleteInvitation}
-                  onRefresh={loadInvitations}
                 />
               )}
             </div>
@@ -833,8 +832,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       {/* Create Invitation Modal - Admin Only */}
       {showCreateInvitation && isAdmin && (
         <CreateInvitationModal
-          onSave={handleCreateInvitation}
-          onCancel={() => setShowCreateInvitation(false)}
+          onCreate={handleCreateInvitation}
+          onClose={() => setShowCreateInvitation(false)}
           loading={creatingInvitation}
         />
       )}

@@ -13,7 +13,6 @@ import {
   ArrowLeft,
   ArrowRight,
   AtSign,
-  CreditCard,
   PartyPopper,
 } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
@@ -48,7 +47,6 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
   const [validatingToken, setValidatingToken] = useState(true);
-  const [tokenValid, setTokenValid] = useState(false);
   const [trialDays, setTrialDays] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -83,19 +81,16 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
       if (fetchError) throw fetchError;
 
       if (!data || data.length === 0 || !data[0].is_valid) {
-        setTokenValid(false);
         onNavigate('/');
         return;
       }
 
-      setTokenValid(true);
       setTrialDays(data[0].token_trial_days);
       if (data[0].token_email) {
-        setFormData(prev => ({ ...prev, email: data[0].token_email }));
+        setFormData(prev => ({ ...prev, email: data[0].token_email || '' }));
       }
     } catch (err) {
       console.error('Error validating token:', err);
-      setTokenValid(false);
       onNavigate('/');
     } finally {
       setValidatingToken(false);

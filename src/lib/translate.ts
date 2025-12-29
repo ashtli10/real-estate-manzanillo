@@ -148,7 +148,7 @@ export async function translateBatch(
     }
 
     const data = await response.json();
-    const translations = data.data.translations.map((t: any) => t.translatedText);
+    const translations = data.data.translations.map((t: { translatedText: string }) => t.translatedText);
 
     // Fill in results and cache translations
     uncachedIndices.forEach((originalIndex, translationIndex) => {

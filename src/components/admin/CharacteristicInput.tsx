@@ -133,7 +133,6 @@ export function CharacteristicInput({ characteristics, onChange }: Characteristi
           {sortedCategories
             .filter(category => (addedByCategory[category]?.length ?? 0) > 0)
             .map(category => {
-              const categoryInfo = CHARACTERISTIC_CATEGORY_LABELS[category];
               const categoryChars = addedByCategory[category] ?? [];
               const emoji = CATEGORY_EMOJIS[category];
               
@@ -261,7 +260,6 @@ export function CharacteristicInput({ characteristics, onChange }: Characteristi
           <div className="max-h-80 overflow-y-auto">
             {(Object.keys(groupedFiltered) as CharacteristicCategory[]).map((category) => {
               const items = groupedFiltered[category] ?? [];
-              const categoryInfo = CHARACTERISTIC_CATEGORY_LABELS[category];
               const emoji = CATEGORY_EMOJIS[category];
               
               return (

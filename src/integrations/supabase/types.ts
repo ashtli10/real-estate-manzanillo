@@ -7,150 +7,188 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
-      credits: {
+      audit_logs: {
         Row: {
-          id: string
+          action: string
           created_at: string
-          updated_at: string
-          user_id: string
-          balance: number
-          free_credits_remaining: number
-          last_free_credit_reset: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown
+          resource_id: string | null
+          resource_type: string | null
+          user_agent: string | null
+          user_id: string | null
         }
         Insert: {
-          id?: string
+          action: string
           created_at?: string
-          updated_at?: string
-          user_id: string
-          balance?: number
-          free_credits_remaining?: number
-          last_free_credit_reset?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Update: {
-          id?: string
+          action?: string
           created_at?: string
-          updated_at?: string
-          user_id?: string
-          balance?: number
-          free_credits_remaining?: number
-          last_free_credit_reset?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
       credit_transactions: {
         Row: {
-          id: string
-          created_at: string
-          user_id: string
           amount: number
-          type: string
+          created_at: string
           description: string | null
+          id: string
           metadata: Json | null
+          type: string
+          user_id: string
         }
         Insert: {
-          id?: string
-          created_at?: string
-          user_id: string
           amount: number
-          type: string
+          created_at?: string
           description?: string | null
+          id?: string
           metadata?: Json | null
+          type: string
+          user_id: string
         }
         Update: {
-          id?: string
-          created_at?: string
-          user_id?: string
           amount?: number
-          type?: string
+          created_at?: string
           description?: string | null
+          id?: string
           metadata?: Json | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credits: {
+        Row: {
+          balance: number | null
+          created_at: string
+          free_credits_remaining: number | null
+          id: string
+          last_free_credit_reset: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string
+          free_credits_remaining?: number | null
+          id?: string
+          last_free_credit_reset?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string
+          free_credits_remaining?: number | null
+          id?: string
+          last_free_credit_reset?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
       invitation_tokens: {
         Row: {
-          id: string
           created_at: string
-          token: string
+          created_by: string
           email: string | null
-          trial_days: number
           expires_at: string
+          id: string
+          notes: string | null
+          token: string
+          trial_days: number | null
           used_at: string | null
           used_by: string | null
-          created_by: string | null
-          notes: string
         }
         Insert: {
-          id?: string
           created_at?: string
-          token?: string
+          created_by: string
           email?: string | null
-          trial_days?: number
           expires_at: string
+          id?: string
+          notes?: string | null
+          token: string
+          trial_days?: number | null
           used_at?: string | null
           used_by?: string | null
-          created_by?: string | null
-          notes?: string
         }
         Update: {
-          id?: string
           created_at?: string
-          token?: string
+          created_by?: string
           email?: string | null
-          trial_days?: number
           expires_at?: string
+          id?: string
+          notes?: string | null
+          token?: string
+          trial_days?: number | null
           used_at?: string | null
           used_by?: string | null
-          created_by?: string | null
-          notes?: string
         }
         Relationships: []
       }
       profiles: {
         Row: {
-          id: string
-          created_at: string
-          updated_at: string
-          email: string
-          full_name: string | null
-          phone_number: string | null
-          whatsapp_number: string | null
-          username: string | null
-          company_name: string | null
           bio: string | null
-          location: string | null
-          profile_image: string | null
+          company_name: string | null
           cover_image: string | null
-          is_visible: boolean | null
-          onboarding_completed: boolean | null
-          stripe_customer_id: string | null
-          language_preference: string | null
+          created_at: string
+          email: string
           email_verified: boolean | null
+          full_name: string | null
+          id: string
+          is_visible: boolean | null
+          language_preference: string | null
+          location: string | null
+          onboarding_completed: boolean | null
+          phone_number: string | null
+          profile_image: string | null
+          stripe_customer_id: string | null
+          updated_at: string
+          username: string | null
+          whatsapp_number: string | null
         }
         Insert: {
-          id: string
-          created_at?: string
-          updated_at?: string
-          email: string
-          full_name?: string | null
-          phone_number?: string | null
-          whatsapp_number?: string | null
-          username?: string | null
-          company_name?: string | null
           bio?: string | null
-          location?: string | null
-          profile_image?: string | null
+          company_name?: string | null
           cover_image?: string | null
-          is_visible?: boolean | null
-          onboarding_completed?: boolean | null
-          stripe_customer_id?: string | null
-          language_preference?: string | null
+          created_at?: string
+          email: string
           email_verified?: boolean | null
+          full_name?: string | null
+          id: string
+          is_visible?: boolean | null
+          language_preference?: string | null
+          location?: string | null
+          onboarding_completed?: boolean | null
+          phone_number?: string | null
+          profile_image?: string | null
+          stripe_customer_id?: string | null
+          updated_at?: string
+          username?: string | null
+          whatsapp_number?: string | null
         }
         Update: {
           id?: string
