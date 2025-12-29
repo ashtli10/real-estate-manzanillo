@@ -133,6 +133,11 @@ export function GoogleMapsInput({
         {
           input: search,
           componentRestrictions: { country: 'mx' },
+          // Bias results to Manzanillo area
+          locationBias: {
+            center: { lat: 19.0514, lng: -104.3131 },
+            radius: 30000, // 30km radius around Manzanillo
+          },
         },
         (results: any[], status: string) => {
           if (status === 'OK' && results) {

@@ -101,7 +101,7 @@ export function PropertyForm({ property, onSave, onCancel, loading = false }: Pr
     images: [],
     videos: [],
     is_featured: false,
-    status: 'draft',
+    status: 'active',
     display_order: 0,
     show_map: true,
     characteristics: [],
