@@ -277,7 +277,51 @@ async function handleCheckoutCompleted(
     return handleSubscriptionEvent({ type: 'customer.subscription.created' } as Stripe.Event, subscription);
   }
 
-  // For one-time payments (credit purchases), the invoice.payment_succeeded will handle it
+  // Handle one-time payment for credit purchases
+  if (session.mode === 'payment' && session.metadata?.type === 'credits') {
+    const creditAmount = parseInt(session.metadata.credit_amount || '0', 10);
+    
+    if (creditAmount <= 0) {
+      console.error('Invalid credit amount in session metadata:', session.metadata.credit_amount);
+      return { success: false, message: 'Invalid credit amount' };
+    }
+
+    // Check if payment was successful
+    if (session.payment_status !== 'paid') {
+      console.log('Payment not yet complete, status:', session.payment_status);
+      return { success: true, message: 'Payment pending' };
+    }
+
+    // Add purchased credits
+    const { error: addError } = await supabaseAdmin.rpc('add_credits', {
+      p_user_id: userId,
+      p_amount: creditAmount,
+      p_type: 'purchased',
+      p_description: `Compra de ${creditAmount} créditos`,
+    });
+
+    if (addError) {
+      console.error('Error adding credits:', addError);
+      return { success: false, message: 'Failed to add credits' };
+    }
+
+    // Log to audit
+    await supabaseAdmin.from('audit_logs').insert({
+      user_id: userId,
+      action: 'credits.purchased',
+      resource_type: 'credits',
+      resource_id: session.id,
+      details: { 
+        amount: creditAmount, 
+        checkout_session_id: session.id,
+        payment_intent: session.payment_intent,
+      },
+    });
+
+    console.log(`Added ${creditAmount} credits for user ${userId}`);
+    return { success: true, message: `${creditAmount} credits added successfully` };
+  }
+
   return { success: true, message: 'Checkout completed' };
 }
 
