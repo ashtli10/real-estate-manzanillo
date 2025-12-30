@@ -17,7 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
 import type { Property } from '../../types/property';
 import { formatPrice, propertyTypeLabels } from '../../types/property';
 
@@ -67,54 +67,50 @@ export function PropertyTable({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      modifiers={[restrictToVerticalAxis]}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-muted">
-              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-16">Orden</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Imagen</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Título</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Tipo</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Precio</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Ubicación</th>
-              <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Estado</th>
-              <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Destacado</th>
-              <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">Acciones</th>
-            </tr>
-          </thead>
-          <SortableContext
-            items={items}
-            strategy={verticalListSortingStrategy}
-          >
-            <tbody className="divide-y divide-border">
-              {properties.map((property, index) => (
-                <SortableRow
-                  key={property.id}
-                  property={property}
-                  index={index}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onTogglePublish={onTogglePublish}
-                  onToggleFeatured={onToggleFeatured}
-                />
-              ))}
-            </tbody>
-          </SortableContext>
-        </table>
-        
-        {properties.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            No hay propiedades registradas. Crea una nueva propiedad para comenzar.
-          </div>
-        )}
+    <div className="overflow-x-auto">
+      {/* Header */}
+      <div className="grid grid-cols-[60px_80px_1fr_100px_140px_140px_80px_80px_100px] gap-2 bg-muted px-4 py-3 min-w-[900px]">
+        <div className="text-left text-sm font-semibold text-foreground">Orden</div>
+        <div className="text-left text-sm font-semibold text-foreground">Imagen</div>
+        <div className="text-left text-sm font-semibold text-foreground">Título</div>
+        <div className="text-left text-sm font-semibold text-foreground">Tipo</div>
+        <div className="text-left text-sm font-semibold text-foreground">Precio</div>
+        <div className="text-left text-sm font-semibold text-foreground">Ubicación</div>
+        <div className="text-center text-sm font-semibold text-foreground">Estado</div>
+        <div className="text-center text-sm font-semibold text-foreground">Destacado</div>
+        <div className="text-right text-sm font-semibold text-foreground">Acciones</div>
       </div>
-    </DndContext>
+
+      {/* Body */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={items} strategy={verticalListSortingStrategy}>
+          <div className="divide-y divide-border min-w-[900px]">
+            {properties.map((property, index) => (
+              <SortableRow
+                key={property.id}
+                property={property}
+                index={index}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onTogglePublish={onTogglePublish}
+                onToggleFeatured={onToggleFeatured}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+      
+      {properties.length === 0 && (
+        <div className="text-center py-12 text-muted-foreground">
+          No hay propiedades registradas. Crea una nueva propiedad para comenzar.
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -145,79 +141,89 @@ function SortableRow({
   } = useSortable({ id: property.id });
 
   const style: React.CSSProperties = {
-    transform: CSS.Translate.toString(transform),
+    transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
-    backgroundColor: isDragging ? 'var(--muted)' : undefined,
-    position: 'relative' as const,
-    zIndex: isDragging ? 1 : 0,
+    opacity: isDragging ? 0.8 : 1,
+    backgroundColor: isDragging ? 'hsl(var(--muted))' : undefined,
+    boxShadow: isDragging ? '0 4px 12px rgba(0,0,0,0.15)' : undefined,
+    zIndex: isDragging ? 10 : 0,
+    position: 'relative',
   };
 
   return (
-    <tr
+    <div
       ref={setNodeRef}
       style={style}
-      className="hover:bg-muted/50 transition-colors"
+      className="grid grid-cols-[60px_80px_1fr_100px_140px_140px_80px_80px_100px] gap-2 items-center px-4 py-3 hover:bg-muted/50 transition-colors"
     >
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            className="p-1 rounded cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground hover:bg-muted transition-colors touch-none"
-            title="Arrastra para reordenar"
-          >
-            <GripVertical className="h-5 w-5" />
-          </button>
-          <span className="text-sm text-muted-foreground">#{index + 1}</span>
-        </div>
-      </td>
-      <td className="px-4 py-3">
-        <div className="w-16 h-12 rounded-lg overflow-hidden bg-muted">
-          {property.images[0] ? (
-            <img
-              src={property.images[0]}
-              alt={property.title}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-              Sin imagen
-            </div>
-          )}
-        </div>
-      </td>
-      <td className="px-4 py-3">
+      {/* Order / Drag Handle */}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="p-1 rounded cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground hover:bg-muted transition-colors touch-none"
+          title="Arrastra para reordenar"
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
+        <span className="text-sm text-muted-foreground">#{index + 1}</span>
+      </div>
+
+      {/* Image */}
+      <div className="w-16 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+        {property.images[0] ? (
+          <img
+            src={property.images[0]}
+            alt={property.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+            Sin imagen
+          </div>
+        )}
+      </div>
+
+      {/* Title */}
+      <div className="min-w-0">
         <p className="font-medium text-foreground line-clamp-1">{property.title}</p>
-        <p className="text-sm text-muted-foreground">{property.slug}</p>
-      </td>
-      <td className="px-4 py-3">
-        <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+        <p className="text-sm text-muted-foreground truncate">{property.slug}</p>
+      </div>
+
+      {/* Type */}
+      <div>
+        <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full whitespace-nowrap">
           {propertyTypeLabels[property.property_type]}
         </span>
-      </td>
-      <td className="px-4 py-3 font-semibold text-foreground">
+      </div>
+
+      {/* Price */}
+      <div className="font-semibold text-foreground text-sm">
         <div className="space-y-1">
           {property.is_for_sale && (
             <div className="text-foreground">
-              <span className="text-xs uppercase tracking-wide text-muted-foreground">Venta: </span>
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">V: </span>
               {formatPrice(property.price, property.currency)}
             </div>
           )}
           {property.is_for_rent && (
             <div className="text-emerald-700">
-              <span className="text-xs uppercase tracking-wide text-muted-foreground">Renta: </span>
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">R: </span>
               {formatPrice(property.rent_price, property.rent_currency)}
             </div>
           )}
         </div>
-      </td>
-      <td className="px-4 py-3 text-sm text-muted-foreground">
+      </div>
+
+      {/* Location */}
+      <div className="text-sm text-muted-foreground truncate">
         {property.location_neighborhood && `${property.location_neighborhood}, `}
         {property.location_city}
-      </td>
-      <td className="px-4 py-3 text-center">
+      </div>
+
+      {/* Status */}
+      <div className="text-center">
         <button
           onClick={() => onTogglePublish(property)}
           className={`p-2 rounded-lg transition-colors ${
@@ -229,8 +235,10 @@ function SortableRow({
         >
           {property.status === 'active' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
         </button>
-      </td>
-      <td className="px-4 py-3 text-center">
+      </div>
+
+      {/* Featured */}
+      <div className="text-center">
         <button
           onClick={() => onToggleFeatured(property)}
           className={`p-2 rounded-lg transition-colors ${
@@ -242,25 +250,25 @@ function SortableRow({
         >
           {property.is_featured ? <Star className="h-4 w-4" /> : <StarOff className="h-4 w-4" />}
         </button>
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end space-x-2">
-          <button
-            onClick={() => onEdit(property)}
-            className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-            title="Editar"
-          >
-            <Edit2 className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => onDelete(property)}
-            className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-            title="Eliminar"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      </td>
-    </tr>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center justify-end space-x-1">
+        <button
+          onClick={() => onEdit(property)}
+          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+          title="Editar"
+        >
+          <Edit2 className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => onDelete(property)}
+          className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+          title="Eliminar"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
   );
 }
