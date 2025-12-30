@@ -262,57 +262,37 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     }
   };
 
-  const handleMoveUp = async (property: Property) => {
+  const handleReorder = async (reorderedProperties: Property[]) => {
     if (!user) return;
-    const index = properties.findIndex(p => p.id === property.id);
-    if (index <= 0) return;
+    
+    // Update display_order values on the reordered properties
+    const updatedProperties = reorderedProperties.map((property, index) => ({
+      ...property,
+      display_order: index + 1,
+    }));
+    
+    // Optimistic UI update
+    setProperties(updatedProperties);
 
     try {
-      const prevProperty = properties[index - 1];
-      const currentOrder = property.display_order || 0;
-      const prevOrder = prevProperty.display_order || 0;
+      // Update display_order for all reordered properties
+      const updates = updatedProperties.map((property) => 
+        supabase
+          .from('properties')
+          .update({ display_order: property.display_order, updated_at: new Date().toISOString() })
+          .eq('id', property.id)
+      );
 
-      // Swap display orders
-      await Promise.all([
-        supabase
-          .from('properties')
-          .update({ display_order: prevOrder })
-          .eq('id', property.id),
-        supabase
-          .from('properties')
-          .update({ display_order: currentOrder })
-          .eq('id', prevProperty.id),
-      ]);
-      await loadProperties();
+      const results = await Promise.all(updates);
+      
+      const hasError = results.some(result => result.error);
+      if (hasError) {
+        console.error('Error reordering some properties');
+        await loadProperties(); // Reload on error
+      }
     } catch (error) {
-      console.error('Error moving property up:', error);
-    }
-  };
-
-  const handleMoveDown = async (property: Property) => {
-    if (!user) return;
-    const index = properties.findIndex(p => p.id === property.id);
-    if (index < 0 || index >= properties.length - 1) return;
-
-    try {
-      const nextProperty = properties[index + 1];
-      const currentOrder = property.display_order || 0;
-      const nextOrder = nextProperty.display_order || 0;
-
-      // Swap display orders
-      await Promise.all([
-        supabase
-          .from('properties')
-          .update({ display_order: nextOrder })
-          .eq('id', property.id),
-        supabase
-          .from('properties')
-          .update({ display_order: currentOrder })
-          .eq('id', nextProperty.id),
-      ]);
-      await loadProperties();
-    } catch (error) {
-      console.error('Error moving property down:', error);
+      console.error('Error reordering:', error);
+      await loadProperties(); // Reload on error
     }
   };
 
@@ -836,8 +816,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     onDelete={setDeletingProperty}
                     onTogglePublish={handleTogglePublish}
                     onToggleFeatured={handleToggleFeatured}
-                    onMoveUp={handleMoveUp}
-                    onMoveDown={handleMoveDown}
+                    onReorder={handleReorder}
                   />
                 )}
               </div>
