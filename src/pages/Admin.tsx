@@ -224,47 +224,31 @@ export function Admin({ onNavigate }: AdminProps) {
     }
   };
 
-  const swapOrder = async (property: Property, direction: 'up' | 'down') => {
-    const currentIndex = properties.findIndex((p) => p.id === property.id);
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-
-    if (targetIndex < 0 || targetIndex >= properties.length) return;
-
-    const targetProperty = properties[targetIndex];
-    const currentOrder = property.display_order;
-    const targetOrder = targetProperty.display_order;
+  const handleReorder = async (reorderedProperties: Property[]) => {
+    // Optimistic UI update
+    setProperties(reorderedProperties);
 
     try {
-      // Optimistic UI update
-      setProperties((prev) => {
-        const updated = [...prev];
-        updated[currentIndex] = { ...property, display_order: targetOrder };
-        updated[targetIndex] = { ...targetProperty, display_order: currentOrder };
-        return updated.sort((a, b) => a.display_order - b.display_order);
-      });
-
-      // Persist to database
-      const [result1, result2] = await Promise.all([
+      // Update display_order for all reordered properties
+      const updates = reorderedProperties.map((property, index) => 
         supabase
           .from('properties')
-          .update({ display_order: targetOrder, updated_at: new Date().toISOString() })
-          .eq('id', property.id),
-        supabase
-          .from('properties')
-          .update({ display_order: currentOrder, updated_at: new Date().toISOString() })
-          .eq('id', targetProperty.id),
-      ]);
+          .update({ display_order: index + 1, updated_at: new Date().toISOString() })
+          .eq('id', property.id)
+      );
 
-      if (result1.error) throw result1.error;
-      if (result2.error) throw result2.error;
+      const results = await Promise.all(updates);
+      
+      const hasError = results.some(result => result.error);
+      if (hasError) {
+        console.error('Error reordering some properties');
+        await loadProperties(); // Reload on error
+      }
     } catch (error) {
       console.error('Error reordering:', error);
-      await loadProperties();
+      await loadProperties(); // Reload on error
     }
   };
-
-  const handleMoveUp = (property: Property) => swapOrder(property, 'up');
-  const handleMoveDown = (property: Property) => swapOrder(property, 'down');
 
   const handleEdit = (property: Property) => {
     setEditingProperty(property);
@@ -439,8 +423,7 @@ export function Admin({ onNavigate }: AdminProps) {
                   onDelete={setDeletingProperty}
                   onTogglePublish={handleTogglePublish}
                   onToggleFeatured={handleToggleFeatured}
-                  onMoveUp={handleMoveUp}
-                  onMoveDown={handleMoveDown}
+                  onReorder={handleReorder}
                 />
               )}
             </div>

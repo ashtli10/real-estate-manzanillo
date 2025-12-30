@@ -411,15 +411,15 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       )}
 
       {/* Sidebar - Desktop */}
-      <aside className="hidden md:flex w-64 bg-card border-r border-border flex-col">
+      <aside className="hidden md:flex w-64 bg-card border-r border-border flex-col h-screen sticky top-0">
         {/* Logo/Brand */}
-        <div className="p-6 border-b border-border">
+        <div className="p-6 border-b border-border flex-shrink-0">
           <h1 className="text-xl font-bold text-primary">Inmobiliaria Manzanillo</h1>
           <p className="text-sm text-muted-foreground">Panel de Agente</p>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           <button
             onClick={() => setActiveTab('overview')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
@@ -497,7 +497,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border space-y-2">
+        <div className="p-4 border-t border-border space-y-2 flex-shrink-0">
           <button
             onClick={() => onNavigate('/')}
             className="w-full flex items-center gap-3 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
