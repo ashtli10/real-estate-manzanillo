@@ -101,7 +101,6 @@ import { transformProperty } from '../lib/propertyTransform';
 import { buildWhatsappUrl } from '../lib/whatsapp';
 import { updateMetaTags, getPropertySEO } from '../lib/seo';
 import { Breadcrumb } from '../components/Breadcrumb';
-import { translateBatch } from '../lib/translate';
 
 const FALLBACK_IMAGE_URL = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg?auto=compress&cs=tinysrgb&w=1600';
 type MediaItem = { type: 'image' | 'video'; url: string };
@@ -345,12 +344,10 @@ interface PropertyDetailProps {
 }
 
 export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessage, onUpdateWhatsappNumber }: PropertyDetailProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [property, setProperty] = useState<Property | null>(null);
-  const [translatedProperty, setTranslatedProperty] = useState<Property | null>(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [translating, setTranslating] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const thumbnailListRef = useRef<HTMLDivElement | null>(null);
@@ -386,96 +383,6 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
       updateMetaTags(getPropertySEO(property));
     }
   }, [property]);
-
-  // Translate property when language changes
-  useEffect(() => {
-    const translatePropertyAsync = async () => {
-      if (!property) {
-        setTranslatedProperty(null);
-        return;
-      }
-
-      const currentLang = i18n.language;
-      
-      // If Spanish, use original
-      if (currentLang === 'es') {
-        setTranslatedProperty(property);
-        return;
-      }
-
-      setTranslating(true);
-      try {
-        // Collect all texts to translate
-        const textsToTranslate: string[] = [];
-        const textMap: { field: string; arrayIndex?: number; characteristicIndex?: number; charField?: 'label' | 'description' }[] = [];
-
-        // Title
-        textsToTranslate.push(property.title);
-        textMap.push({ field: 'title' });
-
-        // Description
-        if (property.description) {
-          textsToTranslate.push(property.description);
-          textMap.push({ field: 'description' });
-        }
-
-        // Location neighborhood
-        if (property.location_neighborhood) {
-          textsToTranslate.push(property.location_neighborhood);
-          textMap.push({ field: 'location_neighborhood' });
-        }
-
-        // Custom bonuses
-        if (property.custom_bonuses && property.custom_bonuses.length > 0) {
-          property.custom_bonuses.forEach((bonus, arrayIndex) => {
-            textsToTranslate.push(bonus);
-            textMap.push({ field: 'custom_bonuses', arrayIndex });
-          });
-        }
-
-        // Characteristic descriptions (labels will be translated via i18n)
-        if (property.characteristics && property.characteristics.length > 0) {
-          property.characteristics.forEach((char, characteristicIndex) => {
-            if (char.description && char.description.trim()) {
-              textsToTranslate.push(char.description);
-              textMap.push({ field: 'characteristics', characteristicIndex, charField: 'description' });
-            }
-          });
-        }
-
-        // Translate all texts in batch
-        const translations = await translateBatch(textsToTranslate, currentLang);
-
-        // Apply translations
-        const translated = { ...property };
-        translations.forEach((translatedText, index) => {
-          const mapping = textMap[index];
-
-          if (mapping.field === 'custom_bonuses' && mapping.arrayIndex !== undefined) {
-            if (!translated.custom_bonuses) translated.custom_bonuses = [];
-            translated.custom_bonuses[mapping.arrayIndex] = translatedText;
-          } else if (mapping.field === 'characteristics' && mapping.characteristicIndex !== undefined && mapping.charField) {
-            if (!translated.characteristics) translated.characteristics = [];
-            translated.characteristics[mapping.characteristicIndex] = {
-              ...translated.characteristics[mapping.characteristicIndex],
-              [mapping.charField]: translatedText
-            };
-          } else {
-            (translated as any)[mapping.field] = translatedText;
-          }
-        });
-
-        setTranslatedProperty(translated);
-      } catch (error) {
-        console.error('Translation error:', error);
-        setTranslatedProperty(property);
-      } finally {
-        setTranslating(false);
-      }
-    };
-
-    translatePropertyAsync();
-  }, [property, i18n.language]);
 
   const loadProperty = async () => {
     try {
@@ -540,27 +447,26 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
   };
 
   useEffect(() => {
-    onUpdateWhatsappMessage(buildPageWhatsappMessage(translatedProperty));
-  }, [translatedProperty, onUpdateWhatsappMessage, i18n.language, t]);
+    onUpdateWhatsappMessage(buildPageWhatsappMessage(property));
+  }, [property, onUpdateWhatsappMessage, t]);
 
 
 
-  if (loading || translating) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">{loading ? t('propertyDetail.loadingProperty') : t('propertyDetail.translating')}</p>
+          <p className="mt-4 text-gray-600">{t('propertyDetail.loadingProperty')}</p>
         </div>
       </div>
     );
   }
 
-  const displayProperty = translatedProperty || property;
-  const whatsappMessage = buildPageWhatsappMessage(displayProperty);
+  const whatsappMessage = buildPageWhatsappMessage(property);
   const whatsappUrl = buildWhatsappUrl(whatsappMessage);
 
-  if (!displayProperty) {
+  if (!property) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -596,7 +502,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
         <Breadcrumb 
           items={[
             { label: t('nav.properties'), path: '/propiedades' },
-            { label: displayProperty.title }
+            { label: property.title }
           ]} 
           onNavigate={onNavigate}
         />
@@ -621,7 +527,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                   >
                     <img
                       src={mediaItems[currentMediaIndex]?.url}
-                      alt={`${displayProperty.title} - ${t('propertyDetail.image')} ${currentMediaIndex + 1}`}
+                      alt={`${property.title} - ${t('propertyDetail.image')} ${currentMediaIndex + 1}`}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -714,35 +620,35 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
 
             <div className="bg-white rounded-xl shadow-lg p-6">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-                {displayProperty.title}
+                {property.title}
               </h1>
               <div className="flex items-center text-gray-600 mb-6">
                 <MapPin className="h-5 w-5 mr-2 text-blue-500" />
                 <span className="text-lg">
-                  {displayProperty.location_address && `${displayProperty.location_address}, `}
-                  {displayProperty.location_neighborhood && `${displayProperty.location_neighborhood}, `}
-                  {displayProperty.location_city}, {displayProperty.location_state}
+                  {property.location_address && `${property.location_address}, `}
+                  {property.location_neighborhood && `${property.location_neighborhood}, `}
+                  {property.location_city}, {property.location_state}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-3 mb-6">
-                {displayProperty.is_for_sale && (
+                {property.is_for_sale && (
                   <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-lg border border-blue-200">
                     <p className="text-xs uppercase font-semibold">{t('propertyDetail.sale')}</p>
-                    <p className="text-3xl font-bold">{formatPrice(displayProperty.price, displayProperty.currency)}</p>
+                    <p className="text-3xl font-bold">{formatPrice(property.price, property.currency)}</p>
                   </div>
                 )}
-                {displayProperty.is_for_rent && (
+                {property.is_for_rent && (
                   <div className="bg-emerald-50 text-emerald-700 px-4 py-3 rounded-lg border border-emerald-200">
                     <p className="text-xs uppercase font-semibold">{t('propertyDetail.monthlyRent')}</p>
-                    <p className="text-3xl font-bold">{formatPrice(displayProperty.rent_price, displayProperty.rent_currency)}</p>
+                    <p className="text-3xl font-bold">{formatPrice(property.rent_price, property.rent_currency)}</p>
                   </div>
                 )}
               </div>
 
               {/* Quick Stats from Characteristics - Priority items shown first */}
-              {displayProperty.characteristics && displayProperty.characteristics.length > 0 && (() => {
+              {property.characteristics && property.characteristics.length > 0 && (() => {
                 const coreKeys = ['bedrooms', 'bathrooms', 'size_total', 'size_construction', 'parking_spaces'];
-                const coreChars = (displayProperty.characteristics as PropertyCharacteristic[])
+                const coreChars = (property.characteristics as PropertyCharacteristic[])
                   .filter(c => coreKeys.includes(c.key) && c.value && (typeof c.value === 'boolean' || (c.value as number) > 0))
                   .sort((a, b) => coreKeys.indexOf(a.key) - coreKeys.indexOf(b.key));
                 
@@ -772,14 +678,14 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                 );
               })()}
 
-              {displayProperty.custom_bonuses && displayProperty.custom_bonuses.length > 0 && (
+              {property.custom_bonuses && property.custom_bonuses.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-3 flex items-center">
                     <Tag className="h-6 w-6 mr-2 text-cyan-500" />
                     {t('propertyDetail.specialFeatures')}
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {displayProperty.custom_bonuses.map((bonus: string, index: number) => (
+                    {property.custom_bonuses.map((bonus: string, index: number) => (
                       <span
                         key={index}
                         className="bg-gradient-to-r from-cyan-50 to-blue-50 text-cyan-700 px-4 py-2 rounded-full border border-cyan-200 font-medium"
@@ -802,7 +708,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                     ),
                   }}
                 >
-                  {displayProperty.description || ''}
+                  {property.description || ''}
                 </ReactMarkdown>
               </div>
             </div>
@@ -824,8 +730,8 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               </div>
 
               {/* All Characteristics - Grouped by Category */}
-              {displayProperty.characteristics && displayProperty.characteristics.length > 0 && (() => {
-                const activeChars = (displayProperty.characteristics as PropertyCharacteristic[])
+              {property.characteristics && property.characteristics.length > 0 && (() => {
+                const activeChars = (property.characteristics as PropertyCharacteristic[])
                   .filter(c => c.value && (typeof c.value === 'boolean' || (c.value as number) > 0));
                 
                 // Group characteristics by category
@@ -940,12 +846,12 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
             </div>
 
             {/* Conditionally show map based on show_map field */}
-            {displayProperty.show_map && displayProperty.location_lat && displayProperty.location_lng && (
+            {property.show_map && property.location_lat && property.location_lng && (
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h3 className="text-2xl font-bold text-gray-800 mb-4">{t('propertyDetail.location')}</h3>
                 <div className="aspect-video rounded-lg overflow-hidden">
                   <iframe
-                    src={`https://www.google.com/maps?q=${displayProperty.location_lat},${displayProperty.location_lng}&output=embed`}
+                    src={`https://www.google.com/maps?q=${property.location_lat},${property.location_lng}&output=embed`}
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
@@ -999,7 +905,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                 sources: [{ src: item.url, type: 'video/mp4' }],
                 poster: videoPoster,
               }
-            : { src: item.url, alt: displayProperty.title }
+            : { src: item.url, alt: property.title }
         )}
         plugins={[LightboxVideo]}
         carousel={{ finite: false }}

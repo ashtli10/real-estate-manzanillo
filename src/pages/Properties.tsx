@@ -8,7 +8,6 @@ import { Breadcrumb } from '../components/Breadcrumb';
 import { AdvancedFilters, PropertyFilters } from '../components/AdvancedFilters';
 import { transformProperty } from '../lib/propertyTransform';
 import { updateMetaTags, getPropertiesListSEO } from '../lib/seo';
-import { translateBatch } from '../lib/translate';
 
 interface PropertiesProps {
   onNavigate: (path: string) => void;
@@ -28,11 +27,9 @@ const defaultFilters: PropertyFilters = {
 };
 
 export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [translatedProperties, setTranslatedProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [translating, setTranslating] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<PropertyFilters>(defaultFilters);
@@ -64,78 +61,6 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
     onUpdateWhatsappMessage(t('whatsapp.defaultMessage'));
   }, [onUpdateWhatsappMessage, t]);
 
-  // Translate properties when language changes
-  useEffect(() => {
-    const translateProperties = async () => {
-      const currentLang = i18n.language;
-      
-      // If Spanish or no properties, use originals
-      if (currentLang === 'es' || properties.length === 0) {
-        setTranslatedProperties(properties);
-        return;
-      }
-
-      setTranslating(true);
-      try {
-        // Collect all texts to translate
-        const textsToTranslate: string[] = [];
-        const textMap: { propertyIndex: number; field: string; arrayIndex?: number }[] = [];
-
-        properties.forEach((property, propertyIndex) => {
-          // Title
-          textsToTranslate.push(property.title);
-          textMap.push({ propertyIndex, field: 'title' });
-
-          // Description
-          if (property.description) {
-            textsToTranslate.push(property.description);
-            textMap.push({ propertyIndex, field: 'description' });
-          }
-
-          // Location neighborhood
-          if (property.location_neighborhood) {
-            textsToTranslate.push(property.location_neighborhood);
-            textMap.push({ propertyIndex, field: 'location_neighborhood' });
-          }
-
-          // Custom bonuses
-          if (property.custom_bonuses && property.custom_bonuses.length > 0) {
-            property.custom_bonuses.forEach((bonus, arrayIndex) => {
-              textsToTranslate.push(bonus);
-              textMap.push({ propertyIndex, field: 'custom_bonuses', arrayIndex });
-            });
-          }
-        });
-
-        // Translate all texts in batch
-        const translations = await translateBatch(textsToTranslate, currentLang);
-
-        // Apply translations
-        const translated = properties.map((property) => ({ ...property }));
-        translations.forEach((translatedText, index) => {
-          const mapping = textMap[index];
-          const property = translated[mapping.propertyIndex];
-
-          if (mapping.field === 'custom_bonuses' && mapping.arrayIndex !== undefined) {
-            if (!property.custom_bonuses) property.custom_bonuses = [];
-            property.custom_bonuses[mapping.arrayIndex] = translatedText;
-          } else {
-            (property as any)[mapping.field] = translatedText;
-          }
-        });
-
-        setTranslatedProperties(translated);
-      } catch (error) {
-        console.error('Translation error:', error);
-        setTranslatedProperties(properties);
-      } finally {
-        setTranslating(false);
-      }
-    };
-
-    translateProperties();
-  }, [properties, i18n.language]);
-
   const loadProperties = async () => {
     try {
       const { data, error } = await supabase
@@ -159,7 +84,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
   };
 
   const filteredProperties = useMemo(() => {
-    let result = [...translatedProperties];
+    let result = [...properties];
 
     // Search query filter
     if (searchQuery) {
@@ -243,7 +168,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
     }
 
     return result;
-  }, [translatedProperties, searchQuery, filters]);
+  }, [properties, searchQuery, filters]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -393,7 +318,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
               </select>
             </div>
 
-            {loading || translating ? (
+            {loading ? (
               <div className="flex justify-center py-16">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
               </div>
