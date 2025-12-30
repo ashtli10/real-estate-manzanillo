@@ -165,9 +165,6 @@ function SortableRow({
             type="button"
             {...attributes}
             {...listeners}
-            className="p-1 rounded cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground hover:bg-muted transition-colors touch-none
-            {...attributes}
-            {...listeners}
             className="p-1 rounded cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground hover:bg-muted transition-colors touch-none"
             title="Arrastra para reordenar"
           >
