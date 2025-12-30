@@ -46,23 +46,20 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
             </span>
           )}
         </div>
-
-        <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
-          {property.is_for_sale && (
-            <div className="bg-blue-600/90 text-white px-2.5 py-1 rounded-md shadow-md">
-              <p className="text-sm font-semibold">{formatPrice(property.price, property.currency)}</p>
-            </div>
-          )}
-          {property.is_for_rent && (
-            <div className="bg-emerald-600/90 text-white px-2.5 py-1 rounded-md shadow-md">
-              <p className="text-sm font-semibold">{formatPrice(property.rent_price, property.rent_currency)}/mo</p>
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="p-5">
-        <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">{property.title}</h3>
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="text-lg font-bold text-gray-800 line-clamp-2 flex-1">{property.title}</h3>
+          <div className="flex flex-col items-end shrink-0">
+            {property.is_for_sale && (
+              <span className="text-blue-600 font-bold text-base">{formatPrice(property.price, property.currency)}</span>
+            )}
+            {property.is_for_rent && (
+              <span className="text-emerald-600 font-semibold text-sm">{formatPrice(property.rent_price, property.rent_currency)}/mo</span>
+            )}
+          </div>
+        </div>
 
         <div className="flex items-center text-gray-600 mb-3">
           <MapPin className="h-4 w-4 mr-1 text-blue-500" />
