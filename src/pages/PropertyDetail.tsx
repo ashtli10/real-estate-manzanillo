@@ -96,9 +96,9 @@ import remarkBreaks from 'remark-breaks';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../integrations/supabase/client';
 import type { Property, PropertyCharacteristic, CharacteristicCategory } from '../types/property';
-import { propertyTypeLabels, formatPrice, CHARACTERISTIC_DEFINITIONS, CHARACTERISTIC_CATEGORY_LABELS } from '../types/property';
+import { formatPrice, CHARACTERISTIC_DEFINITIONS, CHARACTERISTIC_CATEGORY_LABELS } from '../types/property';
 import { transformProperty } from '../lib/propertyTransform';
-import { buildWhatsappUrl, DEFAULT_WHATSAPP_MESSAGE } from '../lib/whatsapp';
+import { buildWhatsappUrl } from '../lib/whatsapp';
 import { updateMetaTags, getPropertySEO } from '../lib/seo';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { translateBatch } from '../lib/translate';
@@ -389,7 +389,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
 
   // Translate property when language changes
   useEffect(() => {
-    const translateProperty = async () => {
+    const translatePropertyAsync = async () => {
       if (!property) {
         setTranslatedProperty(null);
         return;
@@ -410,32 +410,32 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
         const textMap: { field: string; arrayIndex?: number; characteristicIndex?: number; charField?: 'label' | 'description' }[] = [];
 
         // Title
-        textsToTranslate.push(displayProperty.title);
+        textsToTranslate.push(property.title);
         textMap.push({ field: 'title' });
 
         // Description
-        if (displayProperty.description) {
-          textsToTranslate.push(displayProperty.description);
+        if (property.description) {
+          textsToTranslate.push(property.description);
           textMap.push({ field: 'description' });
         }
 
         // Location neighborhood
-        if (displayProperty.location_neighborhood) {
-          textsToTranslate.push(displayProperty.location_neighborhood);
+        if (property.location_neighborhood) {
+          textsToTranslate.push(property.location_neighborhood);
           textMap.push({ field: 'location_neighborhood' });
         }
 
         // Custom bonuses
-        if (displayProperty.custom_bonuses && displayProperty.custom_bonuses.length > 0) {
-          displayProperty.custom_bonuses.forEach((bonus, arrayIndex) => {
+        if (property.custom_bonuses && property.custom_bonuses.length > 0) {
+          property.custom_bonuses.forEach((bonus, arrayIndex) => {
             textsToTranslate.push(bonus);
             textMap.push({ field: 'custom_bonuses', arrayIndex });
           });
         }
 
         // Characteristic descriptions (labels will be translated via i18n)
-        if (displayProperty.characteristics && displayProperty.characteristics.length > 0) {
-          displayProperty.characteristics.forEach((char, characteristicIndex) => {
+        if (property.characteristics && property.characteristics.length > 0) {
+          property.characteristics.forEach((char, characteristicIndex) => {
             if (char.description && char.description.trim()) {
               textsToTranslate.push(char.description);
               textMap.push({ field: 'characteristics', characteristicIndex, charField: 'description' });
@@ -474,7 +474,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
       }
     };
 
-    translateProperty();
+    translatePropertyAsync();
   }, [property, i18n.language]);
 
   const loadProperty = async () => {
@@ -496,28 +496,33 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
   };
 
   const buildPageWhatsappMessage = (currentProperty: Property | null) => {
-    if (!currentProperty) return DEFAULT_WHATSAPP_MESSAGE;
+    if (!currentProperty) return t('whatsapp.defaultMessage');
 
     const location = currentProperty.location_neighborhood || currentProperty.location_city || 'Manzanillo';
     const priceParts: string[] = [];
 
     if (currentProperty.is_for_sale) {
-      priceParts.push(`Venta ${formatPrice(currentProperty.price, currentProperty.currency)}`);
+      priceParts.push(`${t('whatsapp.saleLabel')} ${formatPrice(currentProperty.price, currentProperty.currency)}`);
     }
 
     if (currentProperty.is_for_rent) {
-      priceParts.push(`Renta ${formatPrice(currentProperty.rent_price, currentProperty.rent_currency)}`);
+      priceParts.push(`${t('whatsapp.rentLabel')} ${formatPrice(currentProperty.rent_price, currentProperty.rent_currency)}`);
     }
 
-    const priceText = priceParts.length > 0 ? priceParts.join(' | ') : 'Precio a consultar';
-    const typeLabel = propertyTypeLabels[currentProperty.property_type] || 'propiedad';
+    const priceText = priceParts.length > 0 ? priceParts.join(' | ') : t('whatsapp.priceAskingPrice');
+    const typeLabel = t(`propertyTypes.${currentProperty.property_type}`);
 
-    return `Hola, me interesa la ${typeLabel} "${currentProperty.title}" en ${location}. ${priceText}. ¿Podemos agendar una visita?`;
+    return t('whatsapp.propertyDetailMessage', {
+      type: typeLabel,
+      title: currentProperty.title,
+      location: location,
+      price: priceText
+    });
   };
 
   useEffect(() => {
     onUpdateWhatsappMessage(buildPageWhatsappMessage(translatedProperty));
-  }, [translatedProperty, onUpdateWhatsappMessage]);
+  }, [translatedProperty, onUpdateWhatsappMessage, i18n.language, t]);
 
 
 
@@ -526,7 +531,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">{loading ? 'Cargando propiedad...' : 'Traduciendo...'}</p>
+          <p className="mt-4 text-gray-600">{loading ? t('propertyDetail.loadingProperty') : t('propertyDetail.translating')}</p>
         </div>
       </div>
     );
@@ -541,12 +546,12 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <HomeIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Propiedad no encontrada</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('propertyDetail.propertyNotFound')}</h2>
           <button
             onClick={() => onNavigate('/propiedades')}
             className="text-blue-600 hover:text-blue-700 font-medium"
           >
-            Volver a propiedades
+            {t('propertyDetail.backToProperties')}
           </button>
         </div>
       </div>
@@ -571,7 +576,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb 
           items={[
-            { label: 'Propiedades', path: '/propiedades' },
+            { label: t('nav.properties'), path: '/propiedades' },
             { label: displayProperty.title }
           ]} 
           onNavigate={onNavigate}
@@ -582,7 +587,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
           className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
         >
           <ChevronLeft className="h-5 w-5" />
-          <span>Volver a propiedades</span>
+          <span>{t('propertyDetail.backToProperties')}</span>
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -597,7 +602,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                   >
                     <img
                       src={mediaItems[currentMediaIndex]?.url}
-                      alt={`${displayProperty.title} - Imagen ${currentMediaIndex + 1}`}
+                      alt={`${displayProperty.title} - ${t('propertyDetail.image')} ${currentMediaIndex + 1}`}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -662,20 +667,20 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                           {item.type === 'image' ? (
                             <img
                               src={item.url}
-                              alt={`Miniatura ${index + 1}`}
+                              alt={`${t('propertyDetail.thumbnail')} ${index + 1}`}
                               className="w-full h-full object-cover"
                             />
                           ) : (
                             <div className="w-full h-full relative">
                               <img
                                 src={videoPoster}
-                                alt={`Miniatura de video ${index + 1}`}
+                                alt={`${t('propertyDetail.videoThumbnail')} ${index + 1}`}
                                 className="w-full h-full object-cover"
                               />
                               <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
                                 <div className="flex items-center gap-2 text-sm">
                                   <Video className="h-4 w-4" />
-                                  Video
+                                  {t('propertyDetail.video')}
                                 </div>
                               </div>
                             </div>
@@ -703,13 +708,13 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               <div className="flex flex-wrap items-center gap-3 mb-6">
                 {displayProperty.is_for_sale && (
                   <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-lg border border-blue-200">
-                    <p className="text-xs uppercase font-semibold">Venta</p>
+                    <p className="text-xs uppercase font-semibold">{t('propertyDetail.sale')}</p>
                     <p className="text-3xl font-bold">{formatPrice(displayProperty.price, displayProperty.currency)}</p>
                   </div>
                 )}
                 {displayProperty.is_for_rent && (
                   <div className="bg-emerald-50 text-emerald-700 px-4 py-3 rounded-lg border border-emerald-200">
-                    <p className="text-xs uppercase font-semibold">Renta mensual</p>
+                    <p className="text-xs uppercase font-semibold">{t('propertyDetail.monthlyRent')}</p>
                     <p className="text-3xl font-bold">{formatPrice(displayProperty.rent_price, displayProperty.rent_currency)}</p>
                   </div>
                 )}
@@ -752,7 +757,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                 <div className="mb-6">
                   <h3 className="text-xl font-bold text-gray-800 mb-3 flex items-center">
                     <Tag className="h-6 w-6 mr-2 text-cyan-500" />
-                    Características especiales
+                    {t('propertyDetail.specialFeatures')}
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {displayProperty.custom_bonuses.map((bonus: string, index: number) => (
@@ -768,7 +773,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               )}
 
               <div className="prose max-w-none">
-                <h3 className="text-xl font-bold text-gray-800 mb-3">Descripción</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-3">{t('propertyDetail.description')}</h3>
                 <ReactMarkdown
                   className="prose max-w-none text-gray-700 leading-relaxed prose-headings:text-gray-800 prose-strong:text-gray-800 prose-a:text-blue-600 hover:prose-a:text-blue-700 whitespace-pre-wrap"
                   remarkPlugins={[remarkGfm, remarkBreaks]}
@@ -784,7 +789,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">Detalles de la propiedad</h3>
+              <h3 className="text-2xl font-bold text-gray-800 mb-6">{t('propertyDetail.propertyDetails')}</h3>
               
               {/* Property Type - Always shown */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -793,8 +798,8 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                     <HomeIcon className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 font-medium">Tipo</p>
-                    <p className="font-bold text-gray-800 text-lg">{propertyTypeLabels[property.property_type]}</p>
+                    <p className="text-sm text-gray-500 font-medium">{t('propertyDetail.type')}</p>
+                    <p className="font-bold text-gray-800 text-lg">{t(`propertyTypes.${property?.property_type}`)}</p>
                   </div>
                 </div>
               </div>
@@ -918,7 +923,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
             {/* Conditionally show map based on show_map field */}
             {displayProperty.show_map && displayProperty.location_lat && displayProperty.location_lng && (
               <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">Ubicación</h3>
+                <h3 className="text-2xl font-bold text-gray-800 mb-4">{t('propertyDetail.location')}</h3>
                 <div className="aspect-video rounded-lg overflow-hidden">
                   <iframe
                     src={`https://www.google.com/maps?q=${displayProperty.location_lat},${displayProperty.location_lng}&output=embed`}
@@ -935,17 +940,17 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
 
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg p-6 sticky top-24">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">Habla con nosotros</h3>
+              <h3 className="text-2xl font-bold text-gray-800 mb-4">{t('propertyDetail.talkToUs')}</h3>
               <p className="text-gray-600 mb-4">
-                Escríbenos por WhatsApp para resolver dudas o agendar una visita personalizada.
+                {t('propertyDetail.whatsappContactText')}
               </p>
 
               <div className="space-y-4">
                 <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-100 rounded-lg">
                   <Phone className="h-5 w-5 text-green-600 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">Respuesta rápida</p>
-                    <p className="text-sm text-gray-600">Atendemos mensajes y coordinamos recorridos.</p>
+                    <p className="text-sm font-semibold text-gray-800">{t('propertyDetail.quickResponse')}</p>
+                    <p className="text-sm text-gray-600">{t('propertyDetail.quickResponseText')}</p>
                   </div>
                 </div>
 
@@ -956,7 +961,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                   className="w-full inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold shadow-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300"
                 >
                   <User className="h-5 w-5" />
-                  <span>Escribir por WhatsApp</span>
+                  <span>{t('propertyDetail.writeOnWhatsapp')}</span>
                 </a>
 
               </div>
