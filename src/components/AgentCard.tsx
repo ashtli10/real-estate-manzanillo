@@ -1,5 +1,6 @@
 import { Phone, MessageCircle, MapPin, Building2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { buildWhatsappUrl } from '../lib/whatsapp';
 
 export interface AgentInfo {
   id: string;
@@ -28,12 +29,6 @@ export function AgentCard({ agent, onNavigate, variant = 'compact', propertyTitl
   const { t } = useTranslation();
 
   const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(agent.full_name || 'Agent')}&background=3b82f6&color=fff&size=128`;
-  
-  const buildWhatsappUrl = (message: string) => {
-    if (!agent.whatsapp_number) return '';
-    const phone = agent.whatsapp_number.replace(/\D/g, '');
-    return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
-  };
 
   const handleCall = () => {
     if (agent.phone) {
@@ -42,13 +37,12 @@ export function AgentCard({ agent, onNavigate, variant = 'compact', propertyTitl
   };
 
   const handleWhatsapp = () => {
+    if (!agent.whatsapp_number) return;
     const message = propertyTitle 
       ? t('whatsapp.propertyMessage', { title: propertyTitle })
       : t('whatsapp.agentMessage');
-    const url = buildWhatsappUrl(message);
-    if (url) {
-      window.open(url, '_blank');
-    }
+    const url = buildWhatsappUrl(message, agent.whatsapp_number);
+    window.open(url, '_blank');
   };
 
   const handleProfileClick = () => {
