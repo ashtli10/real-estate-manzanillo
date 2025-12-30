@@ -906,6 +906,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           onSave={handleSave}
           onCancel={() => { setShowForm(false); setEditingProperty(null); }}
           loading={saving}
+          username={profile?.username || undefined}
         />
       )}
 

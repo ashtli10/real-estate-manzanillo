@@ -487,7 +487,26 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
         .maybeSingle();
 
       if (error) throw error;
-      setProperty(data ? transformProperty(data) : null);
+      
+      if (data) {
+        const transformedProperty = transformProperty(data);
+        setProperty(transformedProperty);
+        
+        // Fetch agent's WhatsApp number from profiles table
+        if (transformedProperty.user_id && onUpdateWhatsappNumber) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('whatsapp_number')
+            .eq('id', transformedProperty.user_id)
+            .single();
+          
+          if (profileData?.whatsapp_number) {
+            onUpdateWhatsappNumber(profileData.whatsapp_number);
+          }
+        }
+      } else {
+        setProperty(null);
+      }
     } catch (error) {
       console.error('Error loading property:', error);
     } finally {

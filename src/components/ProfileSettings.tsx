@@ -17,6 +17,7 @@ import {
 import { supabase } from '../integrations/supabase/client';
 import type { Profile, ProfileUpdate } from '../types/user';
 import { isValidUsername, formatUsernameError } from '../types/user';
+import { validatePhoneNumber, formatPhoneDisplay, normalizePhoneNumber } from '../lib/whatsapp';
 
 interface ProfileSettingsProps {
   userId: string;
@@ -221,6 +222,23 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
       }
     }
 
+    // Validate phone numbers
+    if (formData.phone_number) {
+      const phoneError = validatePhoneNumber(formData.phone_number);
+      if (phoneError) {
+        setError(`Teléfono: ${phoneError}`);
+        return;
+      }
+    }
+
+    if (formData.whatsapp_number) {
+      const whatsappError = validatePhoneNumber(formData.whatsapp_number);
+      if (whatsappError) {
+        setError(`WhatsApp: ${whatsappError}`);
+        return;
+      }
+    }
+
     setSaving(true);
     setError(null);
 
@@ -228,8 +246,8 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
       const updateData: ProfileUpdate = {
         full_name: formData.full_name?.trim() || null,
         username: formData.username?.toLowerCase().trim() || null,
-        phone_number: formData.phone_number?.trim() || null,
-        whatsapp_number: formData.whatsapp_number?.trim() || null,
+        phone_number: formData.phone_number ? normalizePhoneNumber(formData.phone_number) : null,
+        whatsapp_number: formData.whatsapp_number ? normalizePhoneNumber(formData.whatsapp_number) : null,
         company_name: formData.company_name?.trim() || null,
         bio: formData.bio?.trim() || null,
         location: formData.location?.trim() || null,
@@ -474,13 +492,22 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                 Teléfono
               </label>
               {isEditing ? (
-                <input
-                  type="tel"
-                  value={formData.phone_number || ''}
-                  onChange={(e) => handleInputChange('phone_number', e.target.value)}
-                  className="sm:col-span-2 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="+52 314 123 4567"
-                />
+                <div className="sm:col-span-2">
+                  <input
+                    type="tel"
+                    value={formData.phone_number || ''}
+                    onChange={(e) => handleInputChange('phone_number', e.target.value)}
+                    onBlur={(e) => {
+                      const formatted = formatPhoneDisplay(e.target.value);
+                      if (formatted) handleInputChange('phone_number', formatted);
+                    }}
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="+52 1 314 123 4567"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Formato: +52 1 314 123 4567 (10 dígitos mínimo)
+                  </p>
+                </div>
               ) : (
                 <p className="sm:col-span-2 font-medium text-foreground">{profile.phone_number || '-'}</p>
               )}
@@ -498,11 +525,15 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                     type="tel"
                     value={formData.whatsapp_number || ''}
                     onChange={(e) => handleInputChange('whatsapp_number', e.target.value)}
+                    onBlur={(e) => {
+                      const formatted = formatPhoneDisplay(e.target.value);
+                      if (formatted) handleInputChange('whatsapp_number', formatted);
+                    }}
                     className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="+52 314 123 4567"
+                    placeholder="+52 1 314 123 4567"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Incluye el código de país (ej: +52 para México)
+                    Este número aparecerá en tus propiedades para que te contacten
                   </p>
                 </div>
               ) : (

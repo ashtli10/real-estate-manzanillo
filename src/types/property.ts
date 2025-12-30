@@ -283,6 +283,7 @@ export const CHARACTERISTIC_DEFINITIONS: CharacteristicDefinition[] = [
 
 export interface Property {
   id: string;
+  user_id: string;
   created_at: string;
   updated_at: string;
   title: string;
@@ -311,7 +312,8 @@ export interface Property {
   characteristics: PropertyCharacteristic[];
 }
 
-export type PropertyInsert = Omit<Property, 'id' | 'created_at' | 'updated_at'>;
+// PropertyInsert omits auto-generated fields and makes user_id optional (added by backend/dashboard)
+export type PropertyInsert = Omit<Property, 'id' | 'created_at' | 'updated_at' | 'user_id'> & { user_id?: string };
 export type PropertyUpdate = Partial<PropertyInsert>;
 
 // Labels for property types in Spanish

@@ -38,7 +38,7 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
         .single();
 
       if (profileError || !profileData) {
-        setError(t('errors.agentNotFound'));
+        setError('AGENT_NOT_FOUND');
         return;
       }
 
@@ -95,11 +95,11 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
       }
     } catch (err) {
       console.error('Error loading agent profile:', err);
-      setError(t('errors.genericError'));
+      setError('GENERIC_ERROR');
     } finally {
       setLoading(false);
     }
-  }, [username, t, onUpdateWhatsappNumber]);
+  }, [username, onUpdateWhatsappNumber]);
 
   useEffect(() => {
     loadAgentProfile();
@@ -126,12 +126,19 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
     );
   }
 
+  // Get translated error message based on error code
+  const getErrorMessage = () => {
+    if (error === 'AGENT_NOT_FOUND') return t('errors.agentNotFound');
+    if (error === 'GENERIC_ERROR') return t('errors.genericError');
+    return t('errors.genericError');
+  };
+
   if (error || !agent) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">{t('errors.agentNotFound')}</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">{getErrorMessage()}</h1>
           <p className="text-gray-600 mb-6">{t('errors.tryAgain')}</p>
           <button
             onClick={() => onNavigate('/')}

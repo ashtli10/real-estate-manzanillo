@@ -58,6 +58,7 @@ export function parseCharacteristics(value: unknown): PropertyCharacteristic[] {
 export function transformProperty(row: Record<string, unknown>): Property {
   return {
     id: row.id as string,
+    user_id: row.user_id as string,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
     title: row.title as string,

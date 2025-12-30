@@ -112,6 +112,16 @@ function AppContent() {
   const isDashboardPage = route === '/dashboard';
   const hideHeaderFooter = isAuthPage || isDashboardPage;
 
+  // Check if current route is agent profile or property detail page (where WhatsApp should show)
+  const isAgentProfilePage = !RESERVED_ROUTES.includes(route) && 
+                             !route.startsWith('/propiedad/') && 
+                             !route.startsWith('/invite/') &&
+                             route.startsWith('/') &&
+                             route.slice(1) && 
+                             !route.slice(1).includes('/');
+  const isPropertyDetailPage = route.startsWith('/propiedad/');
+  const showWhatsappButton = (isAgentProfilePage || isPropertyDetailPage) && !isAuthPage;
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [route]);
@@ -127,7 +137,7 @@ function AppContent() {
       {!hideHeaderFooter && <Header onNavigate={navigate} currentPath={route} />}
       <main className="flex-1">{renderPage()}</main>
       {!hideHeaderFooter && <Footer onNavigate={navigate} />}
-      {!isAuthPage && <FloatingWhatsappButton message={whatsappMessage} phone={whatsappNumber} />}
+      {showWhatsappButton && <FloatingWhatsappButton message={whatsappMessage} phone={whatsappNumber} />}
     </div>
   );
 }

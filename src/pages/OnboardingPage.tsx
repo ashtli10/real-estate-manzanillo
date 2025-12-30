@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { isValidUsername, formatUsernameError } from '../types/user';
+import { validatePhoneNumber, formatPhoneDisplay, normalizePhoneNumber } from '../lib/whatsapp';
 
 interface OnboardingPageProps {
   token: string;
@@ -154,8 +155,13 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
 
   const validateStep2 = () => {
     if (!formData.fullName.trim()) return 'El nombre completo es requerido';
-    if (!formData.phoneNumber.trim()) return 'El teléfono es requerido';
-    if (!formData.whatsappNumber.trim()) return 'El WhatsApp es requerido';
+    
+    const phoneError = validatePhoneNumber(formData.phoneNumber);
+    if (phoneError) return `Teléfono: ${phoneError}`;
+    
+    const whatsappError = validatePhoneNumber(formData.whatsappNumber);
+    if (whatsappError) return `WhatsApp: ${whatsappError}`;
+    
     return null;
   };
 
@@ -280,8 +286,8 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
           id: userId,
           email: formData.email,
           full_name: formData.fullName,
-          phone_number: formData.phoneNumber,
-          whatsapp_number: formData.whatsappNumber,
+          phone_number: normalizePhoneNumber(formData.phoneNumber),
+          whatsapp_number: normalizePhoneNumber(formData.whatsappNumber),
           company_name: formData.companyName,
           username: formData.username.toLowerCase(),
           bio: formData.bio,
@@ -626,10 +632,17 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
                     type="tel"
                     value={formData.phoneNumber}
                     onChange={(e) => updateField('phoneNumber', e.target.value)}
+                    onBlur={(e) => {
+                      const formatted = formatPhoneDisplay(e.target.value);
+                      if (formatted) updateField('phoneNumber', formatted);
+                    }}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+52 314 123 4567"
+                    placeholder="+52 1 314 123 4567"
                   />
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Formato: +52 1 314 123 4567 (10 dígitos mínimo)
+                </p>
               </div>
 
               <div>
@@ -642,8 +655,12 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
                     type="tel"
                     value={formData.whatsappNumber}
                     onChange={(e) => updateField('whatsappNumber', e.target.value)}
+                    onBlur={(e) => {
+                      const formatted = formatPhoneDisplay(e.target.value);
+                      if (formatted) updateField('whatsappNumber', formatted);
+                    }}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+52 314 123 4567"
+                    placeholder="+52 1 314 123 4567"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">

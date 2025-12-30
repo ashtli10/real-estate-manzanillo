@@ -14,6 +14,7 @@ interface PropertyFormProps {
   onSave: (data: PropertyInsert) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
+  username?: string; // Agent's username to prefix slugs
 }
 
 
@@ -79,7 +80,7 @@ const formatPriceValue = (value: number | null | undefined) =>
     ? new Intl.NumberFormat('es-MX', { maximumFractionDigits: 0 }).format(value)
     : '';
 
-export function PropertyForm({ property, onSave, onCancel, loading = false }: PropertyFormProps) {
+export function PropertyForm({ property, onSave, onCancel, loading = false, username }: PropertyFormProps) {
   const [formData, setFormData] = useState<PropertyInsert>({
     title: '',
     slug: '',
@@ -154,15 +155,18 @@ export function PropertyForm({ property, onSave, onCancel, loading = false }: Pr
     }
   }, [property]);
 
-  // Auto-generate slug from title
+  // Auto-generate slug from title with username prefix
   useEffect(() => {
     if (autoSlug && formData.title) {
+      const baseSlug = generateSlug(formData.title);
+      // Prefix with username if provided
+      const prefixedSlug = username ? `${username}/${baseSlug}` : baseSlug;
       setFormData((prev) => ({
         ...prev,
-        slug: generateSlug(formData.title),
+        slug: prefixedSlug,
       }));
     }
-  }, [formData.title, autoSlug]);
+  }, [formData.title, autoSlug, username]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -327,18 +331,33 @@ export function PropertyForm({ property, onSave, onCancel, loading = false }: Pr
                       {autoSlug ? 'Editar manualmente' : 'Auto-generar'}
                     </button>
                   </label>
-                  <input
-                    type="text"
-                    value={formData.slug}
-                    onChange={(e) => {
-                      setAutoSlug(false);
-                      updateField('slug', e.target.value);
-                    }}
-                    className="input-field"
-                    placeholder="casa-nuevo-salagua"
-                    required
-                    disabled={autoSlug}
-                  />
+                  <div className="flex items-center gap-0">
+                    {username && (
+                      <span className="px-3 py-2 bg-muted border border-r-0 border-border rounded-l-lg text-muted-foreground text-sm">
+                        {username}/
+                      </span>
+                    )}
+                    <input
+                      type="text"
+                      value={username && formData.slug.startsWith(`${username}/`) 
+                        ? formData.slug.slice(username.length + 1) 
+                        : formData.slug}
+                      onChange={(e) => {
+                        setAutoSlug(false);
+                        const baseSlug = e.target.value;
+                        // Always prefix with username when editing manually
+                        const fullSlug = username ? `${username}/${baseSlug}` : baseSlug;
+                        updateField('slug', fullSlug);
+                      }}
+                      className={`input-field flex-1 ${username ? 'rounded-l-none' : ''}`}
+                      placeholder="casa-nuevo-salagua"
+                      required
+                      disabled={autoSlug}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    URL final: /propiedad/{formData.slug || 'tu-slug'}
+                  </p>
                 </div>
 
                 <div className="md:col-span-2">
