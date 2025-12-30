@@ -44,11 +44,13 @@ function AppContent() {
       return <Properties onNavigate={navigate} onUpdateWhatsappMessage={setWhatsappMessage} />;
     }
 
-    const propertyParams = getRouteParams(route, '/propiedad/:slug');
+    const propertyParams = getRouteParams(route, '/propiedad/:username/:slug');
     if (propertyParams) {
+      // Combine username and slug for the full slug path
+      const fullSlug = `${propertyParams.username}/${propertyParams.slug}`;
       return (
         <PropertyDetail
-          propertySlug={propertyParams.slug}
+          propertySlug={fullSlug}
           onNavigate={navigate}
           onUpdateWhatsappMessage={setWhatsappMessage}
           onUpdateWhatsappNumber={setWhatsappNumber}
