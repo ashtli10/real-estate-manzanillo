@@ -67,27 +67,27 @@ export function PropertyTable({
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="bg-muted">
-            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-16">Orden</th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Imagen</th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Título</th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Tipo</th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Precio</th>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Ubicación</th>
-            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Estado</th>
-            <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Destacado</th>
-            <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">Acciones</th>
-          </tr>
-        </thead>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          modifiers={[restrictToVerticalAxis]}
-          onDragEnd={handleDragEnd}
-        >
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      modifiers={[restrictToVerticalAxis]}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="bg-muted">
+              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-16">Orden</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Imagen</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Título</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Tipo</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Precio</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Ubicación</th>
+              <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Estado</th>
+              <th className="px-4 py-3 text-center text-sm font-semibold text-foreground">Destacado</th>
+              <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">Acciones</th>
+            </tr>
+          </thead>
           <SortableContext
             items={items}
             strategy={verticalListSortingStrategy}
@@ -106,15 +106,15 @@ export function PropertyTable({
               ))}
             </tbody>
           </SortableContext>
-        </DndContext>
-      </table>
-      
-      {properties.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          No hay propiedades registradas. Crea una nueva propiedad para comenzar.
-        </div>
-      )}
-    </div>
+        </table>
+        
+        {properties.length === 0 && (
+          <div className="text-center py-12 text-muted-foreground">
+            No hay propiedades registradas. Crea una nueva propiedad para comenzar.
+          </div>
+        )}
+      </div>
+    </DndContext>
   );
 }
 
