@@ -341,14 +341,21 @@ interface PropertyDetailProps {
   onNavigate: (path: string) => void;
   onUpdateWhatsappMessage: (message: string) => void;
   onUpdateWhatsappNumber?: (number: string | undefined) => void;
+  referrer?: string;
 }
 
-export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessage, onUpdateWhatsappNumber }: PropertyDetailProps) {
+export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessage, onUpdateWhatsappNumber, referrer }: PropertyDetailProps) {
   const { t } = useTranslation();
   const [property, setProperty] = useState<Property | null>(null);
+  
+  // Determine back navigation path - if referred from agent profile, go back there
+  const agentUsername = propertySlug.includes('/') ? propertySlug.split('/')[0] : null;
+  const backPath = referrer || (agentUsername ? `/${agentUsername}` : '/propiedades');
+  const isBackToAgent = backPath !== '/propiedades' && agentUsername;
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [agentPhone, setAgentPhone] = useState<string | undefined>(undefined);
   const thumbnailRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const thumbnailListRef = useRef<HTMLDivElement | null>(null);
 
@@ -408,6 +415,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
             .single();
           
           if (profileData?.whatsapp_number) {
+            setAgentPhone(profileData.whatsapp_number);
             onUpdateWhatsappNumber(profileData.whatsapp_number);
           }
         }
@@ -464,7 +472,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
   }
 
   const whatsappMessage = buildPageWhatsappMessage(property);
-  const whatsappUrl = buildWhatsappUrl(whatsappMessage);
+  const whatsappUrl = buildWhatsappUrl(whatsappMessage, agentPhone);
 
   if (!property) {
     return (
@@ -501,18 +509,20 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb 
           items={[
-            { label: t('nav.properties'), path: '/propiedades' },
+            isBackToAgent 
+              ? { label: agentUsername!, path: backPath }
+              : { label: t('nav.properties'), path: '/propiedades' },
             { label: property.title }
           ]} 
           onNavigate={onNavigate}
         />
         
         <button
-          onClick={() => onNavigate('/propiedades')}
+          onClick={() => onNavigate(backPath)}
           className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
         >
           <ChevronLeft className="h-5 w-5" />
-          <span>{t('propertyDetail.backToProperties')}</span>
+          <span>{isBackToAgent ? t('propertyDetail.backToAgent') : t('propertyDetail.backToProperties')}</span>
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

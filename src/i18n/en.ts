@@ -369,6 +369,7 @@ export const en = {
     translating: 'Translating...',
     propertyNotFound: 'Property not found',
     backToProperties: 'Back to properties',
+    backToAgent: 'Back to agent',
     sale: 'Sale',
     monthlyRent: 'Monthly rent',
     specialFeatures: 'Special features',

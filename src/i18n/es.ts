@@ -369,6 +369,7 @@ export const es = {
     translating: 'Traduciendo...',
     propertyNotFound: 'Propiedad no encontrada',
     backToProperties: 'Volver a propiedades',
+    backToAgent: 'Volver al agente',
     sale: 'Venta',
     monthlyRent: 'Renta mensual',
     specialFeatures: 'Características especiales',
