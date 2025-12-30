@@ -144,11 +144,13 @@ function SortableRow({
     isDragging,
   } = useSortable({ id: property.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
+  const style: React.CSSProperties = {
+    transform: CSS.Translate.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
     backgroundColor: isDragging ? 'var(--muted)' : undefined,
+    position: 'relative' as const,
+    zIndex: isDragging ? 1 : 0,
   };
 
   return (
@@ -160,9 +162,13 @@ function SortableRow({
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <button
+            type="button"
             {...attributes}
             {...listeners}
-            className="p-1 rounded cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="p-1 rounded cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground hover:bg-muted transition-colors touch-none
+            {...attributes}
+            {...listeners}
+            className="p-1 rounded cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground hover:bg-muted transition-colors touch-none"
             title="Arrastra para reordenar"
           >
             <GripVertical className="h-5 w-5" />
