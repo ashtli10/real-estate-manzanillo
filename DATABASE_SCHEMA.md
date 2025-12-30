@@ -1,6 +1,6 @@
 # 🗄️ Database Schema Documentation
 
-**Last Edited: 2025-12-29**
+**Last Edited: 2025-12-30**
 
 **Real Estate Manzanillo Platform**  
 *Complete Database Setup with Strict RLS Policies*
@@ -9,7 +9,7 @@
 
 ## 📊 Database Overview
 
-The platform uses **8 tables + 1 storage bucket** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
+The platform uses **9 tables + 1 storage bucket** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
 
 ### Tables Summary
 
@@ -23,6 +23,7 @@ The platform uses **8 tables + 1 storage bucket** with comprehensive Row Level S
 | **credit_transactions** | 0 | ✅ | Credit usage and purchase history |
 | **audit_logs** | 0 | ✅ | System audit trail (admin only) |
 | **properties** | 1 | ✅ | Property listings with full details |
+| **video_generation_jobs** | 0 | ✅ | AI video generation job tracking |
 | **storage.objects** | - | ✅ | Property images (properties bucket) |
 
 ---
@@ -39,6 +40,7 @@ The platform uses **8 tables + 1 storage bucket** with comprehensive Row Level S
 - **invitation_tokens**: 4 policies (admin-only)
 - **user_roles**: 5 policies
 - **audit_logs**: 2 policies (admin-only)
+- **video_generation_jobs**: 4 policies (SELECT, INSERT, UPDATE for own, admin full access)
 - **storage.objects (properties bucket)**: 4 policies (INSERT, UPDATE, DELETE, SELECT)
 
 ### Key Security Features
@@ -279,7 +281,51 @@ Property listings with full details.
 
 ---
 
-### 9. **storage.objects (properties bucket)**
+### 9. **video_generation_jobs**
+Tracks AI video generation jobs with status, generated images, scripts, and final video URLs.
+
+**Key Columns:**
+- `id` (UUID, PK) - Job identifier
+- `user_id` (UUID, FK → auth.users) - Job owner
+- `property_id` (UUID, FK → properties) - Associated property
+- `status` (TEXT) - 'pending', 'processing', 'images_ready', 'script_ready', 'completed', 'failed'
+- `selected_images` (TEXT[]) - 3 images selected by user from property
+- `notes` (TEXT) - Optional custom instructions
+- `image_urls` (TEXT[]) - 3 generated AI images
+- `script` (TEXT[]) - 3 script strings for each scene
+- `video_url` (TEXT) - Final video URL
+- `error_message` (TEXT) - Error details if failed
+- `credits_charged` (INT) - Total credits charged for this job
+- `credits_refunded` (BOOLEAN) - Whether credits were refunded
+- `completed_at` (TIMESTAMPTZ) - Completion timestamp
+
+**RLS Policies:**
+- ✅ Users can view own video jobs
+- ✅ Users can insert own video jobs
+- ✅ Users can update own video jobs (for script editing)
+- ✅ Admins can manage all video jobs (full CRUD)
+
+**Triggers:**
+- `trigger_update_video_generation_jobs_updated_at` - Auto-updates updated_at on changes
+
+**Indexes:**
+- `idx_video_generation_jobs_user_id`
+- `idx_video_generation_jobs_property_id`
+- `idx_video_generation_jobs_status`
+- `idx_video_generation_jobs_created_at`
+
+**Status Flow:**
+```
+pending → processing → images_ready → (user approves) → 
+processing → script_ready → (user approves) →
+processing → completed
+                    ↓
+                  failed (at any step, with refund)
+```
+
+---
+
+### 10. **storage.objects (properties bucket)**
 File storage for property images with RLS protection.
 
 **Bucket Configuration:**
@@ -529,7 +575,7 @@ SELECT deduct_credits(
 
 ---
 
-**Last Updated:** December 29, 2025  
+**Last Updated:** December 30, 2025  
 **Database Version:** PostgreSQL 14.1 (Supabase)  
 **Status:** ✅ Production Ready  
-**Total RLS Policies:** 39 (35 table policies + 4 storage policies)
+**Total RLS Policies:** 43 (39 table policies + 4 storage policies)

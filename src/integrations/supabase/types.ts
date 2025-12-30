@@ -374,6 +374,60 @@ export type Database = {
         }
         Relationships: []
       }
+      video_generation_jobs: {
+        Row: {
+          id: string
+          user_id: string
+          property_id: string
+          status: 'pending' | 'processing' | 'images_ready' | 'script_ready' | 'completed' | 'failed'
+          selected_images: string[]
+          notes: string | null
+          image_urls: string[] | null
+          script: string[] | null
+          video_url: string | null
+          error_message: string | null
+          credits_charged: number
+          credits_refunded: boolean
+          created_at: string
+          updated_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          property_id: string
+          status?: 'pending' | 'processing' | 'images_ready' | 'script_ready' | 'completed' | 'failed'
+          selected_images: string[]
+          notes?: string | null
+          image_urls?: string[] | null
+          script?: string[] | null
+          video_url?: string | null
+          error_message?: string | null
+          credits_charged?: number
+          credits_refunded?: boolean
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          property_id?: string
+          status?: 'pending' | 'processing' | 'images_ready' | 'script_ready' | 'completed' | 'failed'
+          selected_images?: string[]
+          notes?: string | null
+          image_urls?: string[] | null
+          script?: string[] | null
+          video_url?: string | null
+          error_message?: string | null
+          credits_charged?: number
+          credits_refunded?: boolean
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -62,6 +62,27 @@
 │  │  • Validates characteristics against definitions      │     │
 │  │  • Proxies to external AI webhook securely            │     │
 │  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ /api/video/generate-images                             │     │
+│  │  • Starts AI video image generation                   │     │
+│  │  • Requires authentication (JWT)                      │     │
+│  │  • Charges 5 credits per request                      │     │
+│  │  • Creates job in video_generation_jobs table         │     │
+│  │  • Calls n8n webhook for processing                   │     │
+│  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ /api/video/approve-images                              │     │
+│  │  • Approves generated images, starts script gen       │     │
+│  │  • Requires authentication (JWT)                      │     │
+│  │  • Charges 30 credits for video generation            │     │
+│  │  • Calls n8n webhook for script generation            │     │
+│  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ /api/video/approve-script                              │     │
+│  │  • Approves edited script, starts final video gen     │     │
+│  │  • Requires authentication (JWT)                      │     │
+│  │  • Calls n8n webhook for video rendering              │     │
+│  └───────────────────────────────────────────────────────┘     │
 │                                                                  │
 │  Static Assets:                                                 │
 │  • /robots.txt                                                  │
@@ -190,6 +211,35 @@ User clicks "Buy Credits" → /api/stripe/create-checkout
                           → Credits available immediately
 ```
 
+### 7. AI Video Generation Flow
+```
+User selects property → Select 3 images → Add notes (optional)
+                      → /api/video/generate-images (5 credits)
+                      → Creates job in video_generation_jobs
+                      → POST to n8n webhook
+                      → Real-time listen to job status
+                      
+n8n processes images → Updates job: status='images_ready'
+                     → image_urls populated with 3 AI images
+                     
+User reviews images → Approve or Regenerate
+                    → If Regenerate: new job (5 more credits)
+                    → If Approve: /api/video/approve-images (30 credits)
+                    
+n8n generates script → Updates job: status='script_ready'
+                     → script array populated with 3 texts
+                     
+User edits script → Adjust text for each scene (max 25 words)
+                  → /api/video/approve-script
+                  
+n8n renders video → Updates job: status='completed'
+                  → video_url populated with final video
+                  
+User downloads → 9:16 vertical video (24 seconds)
+
+Error at any step → status='failed', credits refunded
+```
+
 ## Subscription & Access Control
 
 ### Access Control Logic
@@ -222,11 +272,12 @@ function canAccessDashboard(subscription) {
 - `useAuth()`: Authentication state from AuthContext
 - `useRealtimeProperties()`: Real-time property updates via WebSocket
 - `useLanguageSync()`: Syncs language preference from Supabase profile on login
+- `useVideoGeneration(userId)`: AI video generation workflow state and actions
 
 ### Components
 - `SubscriptionGuard`: Route protection wrapper
 - `BillingTab`: Subscription/credits management UI
-- `AIToolsTab`: AI tools placeholder UI with credit info and FAQ
+- `AIToolsTab`: AI video generation wizard with multi-step workflow
 - `ProfileSettings`: Full profile editing with username validation
 - `PropertyForm`: Property CRUD form
 - `PropertyTable`: Property list with actions
@@ -343,10 +394,15 @@ User logs in → useLanguageSync
 ```
 ├── api/
 │   ├── properties.ts          # Property API endpoint
+│   ├── prefill-property.ts    # AI property prefill endpoint
 │   ├── sitemap.xml.ts         # Sitemap generator
-│   └── stripe/
-│       ├── webhook.ts         # Stripe webhook handler
-│       └── create-checkout.ts # Checkout session creation
+│   ├── stripe/
+│   │   ├── webhook.ts         # Stripe webhook handler
+│   │   └── create-checkout.ts # Checkout session creation
+│   └── video/
+│       ├── generate-images.ts # Start AI image generation (5 credits)
+│       ├── approve-images.ts  # Approve images, start script gen (30 credits)
+│       └── approve-script.ts  # Approve script, start video render
 ├── public/
 │   ├── robots.txt             # Crawler instructions
 │   ├── seo-validator.html     # SEO testing tool
@@ -356,7 +412,7 @@ User logs in → useLanguageSync
 │   │   ├── Breadcrumb.tsx     # Navigation breadcrumbs
 │   │   ├── SubscriptionGuard.tsx # Route protection
 │   │   ├── BillingTab.tsx     # Billing UI component
-│   │   ├── AIToolsTab.tsx     # AI tools placeholder UI
+│   │   ├── AIToolsTab.tsx     # AI video generation wizard
 │   │   ├── ProfileSettings.tsx # Profile editing component
 │   │   ├── LanguageSwitcher.tsx # EN/ES language toggle
 │   │   └── admin/
@@ -370,6 +426,7 @@ User logs in → useLanguageSync
 │   │   ├── useCredits.ts      # Credits state management
 │   │   ├── useDashboardStats.ts # Dashboard statistics hook
 │   │   ├── useLanguageSync.ts # Language preference sync from profile
+│   │   ├── useVideoGeneration.ts # AI video generation workflow
 │   │   └── useAuth.ts         # Auth context hook
 │   ├── i18n/
 │   │   ├── index.ts           # i18next configuration
