@@ -225,15 +225,21 @@ export function Admin({ onNavigate }: AdminProps) {
   };
 
   const handleReorder = async (reorderedProperties: Property[]) => {
+    // Update display_order values on the reordered properties
+    const updatedProperties = reorderedProperties.map((property, index) => ({
+      ...property,
+      display_order: index + 1,
+    }));
+    
     // Optimistic UI update
-    setProperties(reorderedProperties);
+    setProperties(updatedProperties);
 
     try {
       // Update display_order for all reordered properties
-      const updates = reorderedProperties.map((property, index) => 
+      const updates = updatedProperties.map((property) => 
         supabase
           .from('properties')
-          .update({ display_order: index + 1, updated_at: new Date().toISOString() })
+          .update({ display_order: property.display_order, updated_at: new Date().toISOString() })
           .eq('id', property.id)
       );
 
