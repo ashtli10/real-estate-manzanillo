@@ -342,6 +342,8 @@ export const en = {
     bathrooms: 'bathrooms',
     perMonth: '/month',
     contactAgent: 'Contact Agent',
+    more: 'more',
+    viewDetails: 'View details',
   },
 
   // Property Detail

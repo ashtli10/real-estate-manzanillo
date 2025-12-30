@@ -342,6 +342,8 @@ export const es = {
     bathrooms: 'baños',
     perMonth: '/mes',
     contactAgent: 'Contactar Agente',
+    more: 'más',
+    viewDetails: 'Ver detalles',
   },
 
   // Property Detail

@@ -46,7 +46,7 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
         id: profileData.id,
         username: profileData.username,
         full_name: profileData.full_name || profileData.username,
-        avatar_url: profileData.avatar_url,
+        avatar_url: profileData.profile_image,
         bio: profileData.bio,
         whatsapp_number: profileData.whatsapp_number,
         company_name: profileData.company_name,

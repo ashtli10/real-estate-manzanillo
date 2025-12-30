@@ -7,6 +7,7 @@ import { PropertyCard } from '../components/PropertyCard';
 import { SearchBar, SearchFilters } from '../components/SearchBar';
 import { transformProperty } from '../lib/propertyTransform';
 import { updateMetaTags, getHomeSEO } from '../lib/seo';
+import { useTranslatedProperties } from '../hooks/useTranslatedProperty';
 
 interface HomeProps {
   onNavigate: (path: string) => void;
@@ -18,6 +19,9 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
+  
+  // Translate properties when language changes
+  const { translatedProperties } = useTranslatedProperties(featuredProperties);
 
   useEffect(() => {
     loadFeaturedProperties();
@@ -29,13 +33,13 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
   }, [onUpdateWhatsappMessage, t]);
 
   useEffect(() => {
-    if (featuredProperties.length > 1) {
+    if (translatedProperties.length > 1) {
       const interval = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % featuredProperties.length);
+        setCurrentSlide((prev) => (prev + 1) % translatedProperties.length);
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [featuredProperties.length]);
+  }, [translatedProperties.length]);
 
   const loadFeaturedProperties = async () => {
     try {
@@ -67,11 +71,11 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
   };
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % featuredProperties.length);
+    setCurrentSlide((prev) => (prev + 1) % translatedProperties.length);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + featuredProperties.length) % featuredProperties.length);
+    setCurrentSlide((prev) => (prev - 1 + translatedProperties.length) % translatedProperties.length);
   };
 
   return (
@@ -163,12 +167,12 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
             <div className="flex justify-center py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
             </div>
-          ) : featuredProperties.length > 0 ? (
+          ) : translatedProperties.length > 0 ? (
             <>
               {/* Featured Carousel for Desktop */}
               <div className="hidden md:block relative mb-12">
                 <div className="relative h-[500px] rounded-3xl overflow-hidden shadow-2xl">
-                  {featuredProperties.map((property, index) => (
+                  {translatedProperties.map((property, index) => (
                     <div
                       key={property.id}
                       className={`absolute inset-0 transition-all duration-700 ${
@@ -237,7 +241,7 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
                   </button>
 
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                    {featuredProperties.map((_, index) => (
+                    {translatedProperties.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setCurrentSlide(index)}
@@ -251,7 +255,7 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {featuredProperties.slice(0, 6).map((property) => (
+                {translatedProperties.slice(0, 6).map((property) => (
                   <PropertyCard key={property.id} property={property} onNavigate={onNavigate} />
                 ))}
               </div>

@@ -37,12 +37,12 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
         <div className="absolute top-3 left-3 flex flex-wrap gap-2">
           {property.is_for_sale && (
             <span className="bg-white/90 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full shadow">
-              En venta
+              {t('propertyCard.forSale')}
             </span>
           )}
           {property.is_for_rent && (
             <span className="bg-white/90 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full shadow">
-              En renta
+              {t('propertyCard.forRent')}
             </span>
           )}
         </div>
@@ -50,13 +50,13 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
         <div className="absolute bottom-3 left-3 space-y-2">
           {property.is_for_sale && (
             <div className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
-              <p className="text-xs uppercase tracking-wide">Venta</p>
+              <p className="text-xs uppercase tracking-wide">{t('propertyCard.sale')}</p>
               <p className="text-lg font-bold">{formatPrice(property.price, property.currency)}</p>
             </div>
           )}
           {property.is_for_rent && (
             <div className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg">
-              <p className="text-xs uppercase tracking-wide">Renta</p>
+              <p className="text-xs uppercase tracking-wide">{t('propertyCard.rent')}</p>
               <p className="text-lg font-bold">{formatPrice(property.rent_price, property.rent_currency)}</p>
             </div>
           )}
@@ -113,14 +113,14 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
             ))}
             {property.custom_bonuses.length > 2 && (
               <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
-                +{property.custom_bonuses.length - 2} más
+                +{property.custom_bonuses.length - 2} {t('propertyCard.more')}
               </span>
             )}
           </div>
         )}
 
         <button className="mt-4 w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-cyan-600 transition-all shadow-md">
-          Ver detalles
+          {t('propertyCard.viewDetails')}
         </button>
       </div>
     </div>

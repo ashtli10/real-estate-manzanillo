@@ -2,6 +2,7 @@ import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LocationAutocomplete } from './LocationAutocomplete';
+import { PriceRangeSlider } from './PriceRangeSlider';
 
 export interface PropertyFilters {
   propertyType: string;
@@ -32,22 +33,19 @@ const propertyTypes = [
   { value: 'oficina', labelKey: 'propertyTypes.oficina' },
 ];
 
-const priceRanges = {
-  sale: [
-    { min: null, max: null, label: 'Any' },
-    { min: 0, max: 1000000, label: '< $1M' },
-    { min: 1000000, max: 3000000, label: '$1M - $3M' },
-    { min: 3000000, max: 5000000, label: '$3M - $5M' },
-    { min: 5000000, max: 10000000, label: '$5M - $10M' },
-    { min: 10000000, max: null, label: '> $10M' },
-  ],
-  rent: [
-    { min: null, max: null, label: 'Any' },
-    { min: 0, max: 10000, label: '< $10K' },
-    { min: 10000, max: 20000, label: '$10K - $20K' },
-    { min: 20000, max: 50000, label: '$20K - $50K' },
-    { min: 50000, max: null, label: '> $50K' },
-  ],
+// Price range configuration
+const priceConfig = {
+  sale: { min: 0, max: 20000000, step: 100000 },
+  rent: { min: 0, max: 100000, step: 1000 },
+};
+
+const formatPriceMXN = (value: number) => {
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(1)}M`;
+  } else if (value >= 1000) {
+    return `$${(value / 1000).toFixed(0)}K`;
+  }
+  return `$${value}`;
 };
 
 export function AdvancedFilters({ filters, onChange, onClose, isOpen, propertyCount }: AdvancedFiltersProps) {
@@ -57,7 +55,6 @@ export function AdvancedFilters({ filters, onChange, onClose, isOpen, propertyCo
     price: true,
     rooms: true,
     location: true,
-    extras: false,
   });
 
   useEffect(() => {
@@ -184,48 +181,20 @@ export function AdvancedFilters({ filters, onChange, onClose, isOpen, propertyCo
             )}
           </button>
           {expandedSections.price && (
-            <div className="mt-3 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">{t('properties.filters.minPrice')}</label>
-                  <input
-                    type="number"
-                    placeholder="$0"
-                    value={localFilters.minPrice || ''}
-                    onChange={(e) => handleChange('minPrice', e.target.value ? Number(e.target.value) : null)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">{t('properties.filters.maxPrice')}</label>
-                  <input
-                    type="number"
-                    placeholder="∞"
-                    value={localFilters.maxPrice || ''}
-                    onChange={(e) => handleChange('maxPrice', e.target.value ? Number(e.target.value) : null)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              {/* Quick Price Presets */}
-              <div className="flex flex-wrap gap-2">
-                {(localFilters.listingType === 'rent' ? priceRanges.rent : priceRanges.sale).map((range, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      handleChange('minPrice', range.min);
-                      handleChange('maxPrice', range.max);
-                    }}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      localFilters.minPrice === range.min && localFilters.maxPrice === range.max
-                        ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {range.label}
-                  </button>
-                ))}
-              </div>
+            <div className="mt-4">
+              <PriceRangeSlider
+                min={localFilters.listingType === 'rent' ? priceConfig.rent.min : priceConfig.sale.min}
+                max={localFilters.listingType === 'rent' ? priceConfig.rent.max : priceConfig.sale.max}
+                step={localFilters.listingType === 'rent' ? priceConfig.rent.step : priceConfig.sale.step}
+                minValue={localFilters.minPrice}
+                maxValue={localFilters.maxPrice}
+                onChange={(min, max) => {
+                  const newFilters = { ...localFilters, minPrice: min, maxPrice: max };
+                  setLocalFilters(newFilters);
+                  onChange(newFilters);
+                }}
+                formatPrice={formatPriceMXN}
+              />
             </div>
           )}
         </div>
@@ -307,34 +276,6 @@ export function AdvancedFilters({ filters, onChange, onClose, isOpen, propertyCo
                 onChange={(value) => handleChange('location', value)}
                 variant="filter"
               />
-            </div>
-          )}
-        </div>
-
-        {/* Extras Section */}
-        <div className="border-t border-gray-100 pt-4">
-          <button
-            onClick={() => toggleSection('extras')}
-            className="flex items-center justify-between w-full text-left"
-          >
-            <span className="text-sm font-medium text-gray-700">Extras</span>
-            {expandedSections.extras ? (
-              <ChevronUp className="h-4 w-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            )}
-          </button>
-          {expandedSections.extras && (
-            <div className="mt-3 space-y-3">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={localFilters.featured}
-                  onChange={(e) => handleChange('featured', e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">{t('properties.filters.featured')}</span>
-              </label>
             </div>
           )}
         </div>
