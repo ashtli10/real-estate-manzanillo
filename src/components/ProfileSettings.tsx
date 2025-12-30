@@ -17,7 +17,7 @@ import {
 import { supabase } from '../integrations/supabase/client';
 import type { Profile, ProfileUpdate } from '../types/user';
 import { isValidUsername, formatUsernameError } from '../types/user';
-import { validatePhoneNumber, formatPhoneDisplay, normalizePhoneNumber } from '../lib/whatsapp';
+import { validatePhoneNumber, formatPhoneAsYouType, normalizePhoneNumber } from '../lib/whatsapp';
 
 interface ProfileSettingsProps {
   userId: string;
@@ -496,16 +496,12 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                   <input
                     type="tel"
                     value={formData.phone_number || ''}
-                    onChange={(e) => handleInputChange('phone_number', e.target.value)}
-                    onBlur={(e) => {
-                      const formatted = formatPhoneDisplay(e.target.value);
-                      if (formatted) handleInputChange('phone_number', formatted);
-                    }}
+                    onChange={(e) => handleInputChange('phone_number', formatPhoneAsYouType(e.target.value))}
                     className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="+52 1 314 123 4567"
+                    placeholder="+52 332 183 1999"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Formato: +52 1 314 123 4567 (10 dígitos mínimo)
+                    Formato: +52 332 183 1999
                   </p>
                 </div>
               ) : (
@@ -524,13 +520,9 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                   <input
                     type="tel"
                     value={formData.whatsapp_number || ''}
-                    onChange={(e) => handleInputChange('whatsapp_number', e.target.value)}
-                    onBlur={(e) => {
-                      const formatted = formatPhoneDisplay(e.target.value);
-                      if (formatted) handleInputChange('whatsapp_number', formatted);
-                    }}
+                    onChange={(e) => handleInputChange('whatsapp_number', formatPhoneAsYouType(e.target.value))}
                     className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="+52 1 314 123 4567"
+                    placeholder="+52 332 183 1999"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
                     Este número aparecerá en tus propiedades para que te contacten

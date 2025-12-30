@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import { isValidUsername, formatUsernameError } from '../types/user';
-import { validatePhoneNumber, formatPhoneDisplay, normalizePhoneNumber } from '../lib/whatsapp';
+import { validatePhoneNumber, formatPhoneAsYouType, normalizePhoneNumber } from '../lib/whatsapp';
 
 interface OnboardingPageProps {
   token: string;
@@ -631,17 +631,13 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
                   <input
                     type="tel"
                     value={formData.phoneNumber}
-                    onChange={(e) => updateField('phoneNumber', e.target.value)}
-                    onBlur={(e) => {
-                      const formatted = formatPhoneDisplay(e.target.value);
-                      if (formatted) updateField('phoneNumber', formatted);
-                    }}
+                    onChange={(e) => updateField('phoneNumber', formatPhoneAsYouType(e.target.value))}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+52 1 314 123 4567"
+                    placeholder="+52 332 183 1999"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Formato: +52 1 314 123 4567 (10 dígitos mínimo)
+                  Formato: +52 332 183 1999
                 </p>
               </div>
 
@@ -654,13 +650,9 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
                   <input
                     type="tel"
                     value={formData.whatsappNumber}
-                    onChange={(e) => updateField('whatsappNumber', e.target.value)}
-                    onBlur={(e) => {
-                      const formatted = formatPhoneDisplay(e.target.value);
-                      if (formatted) updateField('whatsappNumber', formatted);
-                    }}
+                    onChange={(e) => updateField('whatsappNumber', formatPhoneAsYouType(e.target.value))}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+52 1 314 123 4567"
+                    placeholder="+52 332 183 1999"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">

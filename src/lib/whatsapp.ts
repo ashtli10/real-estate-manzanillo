@@ -17,7 +17,7 @@ export const validatePhoneNumber = (phone: string): string | null => {
     return 'El número debe tener al menos 10 dígitos';
   }
   
-  if (cleaned.length > 15) {
+  if (cleaned.length > 12) {
     return 'El número es demasiado largo';
   }
   
@@ -25,59 +25,81 @@ export const validatePhoneNumber = (phone: string): string | null => {
 };
 
 /**
- * Formats a phone number for display
+ * Formats a phone number as the user types
  * Input: any phone string
- * Output: formatted like +52 314 141 7309
+ * Output: formatted like +52 332 183 1999
+ */
+export const formatPhoneAsYouType = (phone: string): string => {
+  // Remove all non-numeric characters except +
+  let cleaned = phone.replace(/[^\d+]/g, '');
+  
+  // Remove + if not at start
+  if (cleaned.indexOf('+') > 0) {
+    cleaned = cleaned.replace(/\+/g, '');
+  }
+  
+  // Extract just digits for formatting
+  const digits = cleaned.replace(/\D/g, '');
+  
+  if (digits.length === 0) return '';
+  
+  // Format based on length
+  // Target: +52 332 183 1999 (10 local digits, or 12 with country code)
+  
+  let result = '+';
+  
+  if (digits.startsWith('52')) {
+    // Already has country code
+    result += '52';
+    const rest = digits.slice(2);
+    if (rest.length > 0) result += ' ' + rest.slice(0, 3);
+    if (rest.length > 3) result += ' ' + rest.slice(3, 6);
+    if (rest.length > 6) result += ' ' + rest.slice(6, 10);
+  } else {
+    // Assume Mexican number, add 52
+    result += '52 ';
+    if (digits.length > 0) result += digits.slice(0, 3);
+    if (digits.length > 3) result += ' ' + digits.slice(3, 6);
+    if (digits.length > 6) result += ' ' + digits.slice(6, 10);
+  }
+  
+  return result.trim();
+};
+
+/**
+ * Formats a phone number for display (final format)
+ * Input: any phone string
+ * Output: formatted like +52 332 183 1999
  */
 export const formatPhoneDisplay = (phone: string): string => {
-  const cleaned = phone.replace(/\D/g, '');
-  
-  if (cleaned.length === 0) return '';
-  
-  // If it's a Mexican number (starts with 52 and has enough digits)
-  if (cleaned.startsWith('52') && cleaned.length >= 12) {
-    const rest = cleaned.slice(2);
-    if (rest.startsWith('1') && rest.length === 11) {
-      // Has mobile prefix: +52 1 XXX XXX XXXX
-      return `+52 1 ${rest.slice(1, 4)} ${rest.slice(4, 7)} ${rest.slice(7)}`;
-    }
-    // Format: +52 XXX XXX XXXX
-    return `+52 ${rest.slice(0, 3)} ${rest.slice(3, 6)} ${rest.slice(6)}`;
-  }
-  
-  // If it's just 10 digits (local Mexican format)
-  if (cleaned.length === 10) {
-    return `+52 1 ${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
-  }
-  
-  // For other formats, just add + if it looks international
-  if (cleaned.length > 10) {
-    return `+${cleaned}`;
-  }
-  
-  return cleaned;
+  return formatPhoneAsYouType(phone);
 };
 
 /**
  * Normalizes a phone number for storage (ready for WhatsApp API)
- * Strips all non-numeric characters and ensures country code
+ * Format: 52 + 10 digits = 523321831999
  */
 export const normalizePhoneNumber = (phone: string): string => {
   const cleaned = phone.replace(/\D/g, '');
   
   if (cleaned.length === 0) return '';
   
-  // If it's a 10-digit Mexican number, add 521 prefix
+  // If it's a 10-digit Mexican number, add 52 prefix
   if (cleaned.length === 10) {
-    return `521${cleaned}`;
+    return `52${cleaned}`;
   }
   
-  // If it starts with 52 but missing the 1 for mobile (12 digits total: 52 + 10)
+  // If it starts with 52 and has 12 digits total, it's correct
   if (cleaned.startsWith('52') && cleaned.length === 12) {
-    return `521${cleaned.slice(2)}`;
+    return cleaned;
   }
   
-  // Already has full country code with mobile prefix or international
+  // If it has 521 prefix (old mobile format), remove the 1
+  if (cleaned.startsWith('521') && cleaned.length === 13) {
+    return `52${cleaned.slice(3)}`;
+  }
+  
+  // Already formatted or international
   return cleaned;
 };
 
