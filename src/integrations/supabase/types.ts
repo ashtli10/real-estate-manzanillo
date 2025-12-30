@@ -404,10 +404,6 @@ export type Database = {
           user_id: string
           total_properties: number
           active_properties: number
-          total_views: number
-          total_leads: number
-          views_this_week: number
-          leads_this_month: number
         }[]
       }
       get_subscription_status: {

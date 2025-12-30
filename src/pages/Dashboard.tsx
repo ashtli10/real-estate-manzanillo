@@ -7,8 +7,6 @@ import {
   Sparkles,
   LogOut,
   Plus,
-  Eye,
-  MessageSquare,
   TrendingUp,
   RefreshCw,
   Loader2,
@@ -677,7 +675,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 <div className="bg-card rounded-xl shadow-soft p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -702,41 +700,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 <div className="bg-card rounded-xl shadow-soft p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-muted-foreground text-sm">Vistas Esta Semana</p>
+                      <p className="text-muted-foreground text-sm">Créditos Disponibles</p>
                       <p className="text-3xl font-bold text-foreground mt-1">
-                        {loadingStats ? (
-                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        ) : (
-                          dashboardStats.viewsThisWeek
-                        )}
+                        {totalCredits}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {dashboardStats.totalViews} total
+                        {freeCredits} gratis + {paidCredits} comprados
                       </p>
                     </div>
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Eye className="h-6 w-6 text-blue-600" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-card rounded-xl shadow-soft p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Contactos Este Mes</p>
-                      <p className="text-3xl font-bold text-foreground mt-1">
-                        {loadingStats ? (
-                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        ) : (
-                          dashboardStats.leadsThisMonth
-                        )}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {dashboardStats.totalLeads} total
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                      <MessageSquare className="h-6 w-6 text-green-600" />
+                    <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                      <Sparkles className="h-6 w-6 text-amber-600" />
                     </div>
                   </div>
                 </div>

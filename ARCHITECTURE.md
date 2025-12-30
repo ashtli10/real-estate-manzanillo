@@ -210,7 +210,7 @@ function canAccessDashboard(subscription) {
 ### React Hooks
 - `useSubscription(userId)`: Subscription state, access control
 - `useCredits(userId)`: Credit balance, purchase functions
-- `useDashboardStats(userId)`: Dashboard analytics (views, leads, properties)
+- `useDashboardStats(userId)`: Dashboard statistics (property counts)
 - `useAuth()`: Authentication state from AuthContext
 - `useRealtimeProperties()`: Real-time property updates via WebSocket
 - `useLanguageSync()`: Syncs language preference from Supabase profile on login
@@ -324,13 +324,12 @@ User logs in → useLanguageSync
 - **Code Splitting**: Ready for implementation
 - **Image Optimization**: Lazy loading supported
 
-## Monitoring & Analytics
+## Monitoring
 
 ### Recommended Setup
 1. **Google Search Console**: Submit sitemap, monitor indexing
-2. **Google Analytics**: Track user behavior
-3. **Vercel Analytics**: Monitor deployment performance
-4. **Supabase Dashboard**: Monitor database queries
+2. **Vercel Analytics**: Monitor deployment performance
+3. **Supabase Dashboard**: Monitor database queries
 
 ## File Structure
 ```
@@ -361,7 +360,7 @@ User logs in → useLanguageSync
 │   │   ├── useRealtimeProperties.ts  # Real-time subscriptions
 │   │   ├── useSubscription.ts # Subscription state management
 │   │   ├── useCredits.ts      # Credits state management
-│   │   ├── useDashboardStats.ts # Dashboard analytics hook
+│   │   ├── useDashboardStats.ts # Dashboard statistics hook
 │   │   ├── useLanguageSync.ts # Language preference sync from profile
 │   │   └── useAuth.ts         # Auth context hook
 │   ├── i18n/

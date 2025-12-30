@@ -500,8 +500,6 @@ export const en = {
     viewSite: 'View site',
     logout: 'Log out',
     activeProperties: 'Active Properties',
-    viewsThisWeek: 'Views This Week',
-    contactsThisMonth: 'Contacts This Month',
     aiCredits: 'AI Credits',
     buyMore: 'Buy more',
     videoGenerator: 'AI Video Generator',

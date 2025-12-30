@@ -4,10 +4,6 @@ import { supabase } from '../integrations/supabase/client';
 export interface DashboardStats {
   totalProperties: number;
   activeProperties: number;
-  totalViews: number;
-  viewsThisWeek: number;
-  totalLeads: number;
-  leadsThisMonth: number;
 }
 
 export interface UseDashboardStatsReturn {
@@ -20,10 +16,6 @@ export interface UseDashboardStatsReturn {
 const DEFAULT_STATS: DashboardStats = {
   totalProperties: 0,
   activeProperties: 0,
-  totalViews: 0,
-  viewsThisWeek: 0,
-  totalLeads: 0,
-  leadsThisMonth: 0,
 };
 
 /**
@@ -57,10 +49,6 @@ export function useDashboardStats(userId: string | undefined): UseDashboardStats
         setStats({
           totalProperties: result.total_properties || 0,
           activeProperties: result.active_properties || 0,
-          totalViews: result.total_views || 0,
-          viewsThisWeek: result.views_this_week || 0,
-          totalLeads: result.total_leads || 0,
-          leadsThisMonth: result.leads_this_month || 0,
         });
       } else {
         // No data returned, set defaults

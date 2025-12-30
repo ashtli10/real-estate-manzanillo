@@ -9,7 +9,7 @@
 
 ## 📊 Database Overview
 
-The platform uses **10 tables + 1 storage bucket** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
+The platform uses **8 tables + 1 storage bucket** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
 
 ### Tables Summary
 
@@ -23,8 +23,6 @@ The platform uses **10 tables + 1 storage bucket** with comprehensive Row Level 
 | **credit_transactions** | 0 | ✅ | Credit usage and purchase history |
 | **audit_logs** | 0 | ✅ | System audit trail (admin only) |
 | **properties** | 1 | ✅ | Property listings with full details |
-| **property_views** | 0 | ✅ | Analytics: Property view tracking |
-| **property_leads** | 0 | ✅ | Analytics: WhatsApp/Phone/Email leads |
 | **storage.objects** | - | ✅ | Property images (properties bucket) |
 
 ---
@@ -41,8 +39,6 @@ The platform uses **10 tables + 1 storage bucket** with comprehensive Row Level 
 - **invitation_tokens**: 4 policies (admin-only)
 - **user_roles**: 5 policies
 - **audit_logs**: 2 policies (admin-only)
-- **property_views**: 3 policies
-- **property_leads**: 3 policies
 - **storage.objects (properties bucket)**: 4 policies (INSERT, UPDATE, DELETE, SELECT)
 
 ### Key Security Features
@@ -51,8 +47,7 @@ The platform uses **10 tables + 1 storage bucket** with comprehensive Row Level 
 2. **Admin Separation**: Admin-only tables (invitations, audit logs) strictly controlled
 3. **Self-Service with Limits**: Users can manage their own data but cannot access others'
 4. **Audit Trail**: Credit transactions and audit logs are append-only
-5. **Public Analytics**: Anonymous users can trigger view/lead tracking
-6. **Secure File Storage**: Only authenticated users can upload/modify images, public read access
+5. **Secure File Storage**: Only authenticated users can upload/modify images, public read access
 
 ---
 
@@ -284,53 +279,7 @@ Property listings with full details.
 
 ---
 
-### 9. **property_views**
-Analytics: Track property views for agent dashboard.
-
-**Key Columns:**
-- `id` (UUID, PK)
-- `property_id` (UUID, FK → properties)
-- `user_id` (UUID, NULLABLE, FK → auth.users)
-- `ip_address`, `user_agent`, `referrer`
-- `viewed_at` (TIMESTAMPTZ)
-- `session_id`
-
-**RLS Policies:**
-- ✅ Anyone (including anon) can insert views
-- ✅ Property owners can view their property's views
-- ✅ Admins can view all views
-
-**Indexes:**
-- `idx_property_views_property_id`
-- `idx_property_views_viewed_at`
-- `idx_property_views_user_id`
-
----
-
-### 10. **property_leads**
-Analytics: Track WhatsApp/Phone/Email contact attempts.
-
-**Key Columns:**
-- `id` (UUID, PK)
-- `property_id` (UUID, FK → properties)
-- `user_id` (UUID, NULLABLE, FK → auth.users)
-- `lead_type` (TEXT) - 'whatsapp', 'phone', 'email'
-- `ip_address`, `user_agent`
-- `metadata` (JSONB)
-
-**RLS Policies:**
-- ✅ Anyone (including anon) can insert leads
-- ✅ Property owners can view their property's leads
-- ✅ Admins can view all leads
-
-**Indexes:**
-- `idx_property_leads_property_id`
-- `idx_property_leads_created_at`
-- `idx_property_leads_user_id`
-
----
-
-### 11. **storage.objects (properties bucket)**
+### 9. **storage.objects (properties bucket)**
 File storage for property images with RLS protection.
 
 **Bucket Configuration:**
@@ -345,8 +294,6 @@ File storage for property images with RLS protection.
 - ✅ **SELECT** - Public read access (anyone can view property images)
 
 ---
-
-
 
 ## 🔧 Helper Functions
 
@@ -407,7 +354,7 @@ File storage for property images with RLS protection.
 
 ---
 
-## 📊 Helper Functions
+## 📊 Dashboard Statistics Function
 
 ### `get_agent_dashboard_stats(agent_user_id UUID)`
 Aggregated statistics for agent dashboard with security.
@@ -419,10 +366,6 @@ Aggregated statistics for agent dashboard with security.
 - `user_id` (UUID)
 - `total_properties` (BIGINT)
 - `active_properties` (BIGINT)
-- `total_views` (BIGINT)
-- `total_leads` (BIGINT)
-- `views_this_week` (BIGINT) - Last 7 days
-- `leads_this_month` (BIGINT) - Last 30 days
 
 **Security:**
 - Users can only view their own stats
@@ -473,15 +416,6 @@ Users can:
 - ❌ Cannot directly update credits (must use functions)
 - ❌ Cannot modify other users' data
 
-### 4. Public Analytics Tracking
-
-Anonymous users can:
-- ✅ Insert property_views records
-- ✅ Insert property_leads records
-- ❌ Cannot view any analytics (owner only)
-
-This allows tracking without requiring login.
-
 ---
 
 ## 🔍 Performance Optimization
@@ -508,16 +442,14 @@ All optimized with appropriate indexes.
 
 ## ✅ Migration Summary
 
-**Total Migrations Applied:** 30
+**Total Migrations Applied:** 32
 
-**Latest Migrations:**
-1. `create_analytics_tables` - Added property_views, property_leads, saved_properties
-2. `create_performance_indexes` - 30+ indexes for fast queries
-3. `create_subscription_helper_function` - has_active_subscription()
-4. `rebuild_*_rls_policies` - 8 migrations rebuilding RLS policies
-5. `create_analytics_tables_rls` - RLS for new tables
-6. `create_update_triggers` - Auto-update timestamps
-7. `create_dashboard_view_and_permissions` - Helper view and grants
+**Key Migrations:**
+1. `create_performance_indexes` - 30+ indexes for fast queries
+2. `create_subscription_helper_function` - has_active_subscription()
+3. `rebuild_*_rls_policies` - 8 migrations rebuilding RLS policies
+4. `create_update_triggers` - Auto-update timestamps
+5. `remove_analytics_tables` - Removed property_views and property_leads tables
 
 ---
 
@@ -528,7 +460,6 @@ All optimized with appropriate indexes.
 - ✅ Strict RLS policies in place
 - ✅ Performance indexes added
 - ✅ Helper functions and triggers active
-- ✅ Analytics tables ready
 
 ### Application Development (Pending)
 1. **Stripe Webhook Integration**
@@ -538,8 +469,7 @@ All optimized with appropriate indexes.
 
 2. **Frontend Implementation**
    - Public property listing with filters
-   - Agent dashboard with analytics
-   - Property view/lead tracking
+   - Agent dashboard
    - Credit management UI
 
 3. **Edge Functions** (None yet)
@@ -575,7 +505,7 @@ SELECT * FROM properties WHERE status = 'active';
 SELECT * FROM properties WHERE user_id = auth.uid();
 
 -- Get dashboard stats
-SELECT * FROM agent_dashboard_stats WHERE user_id = auth.uid();
+SELECT * FROM get_agent_dashboard_stats();
 ```
 
 ### Credit Operations
@@ -602,4 +532,4 @@ SELECT deduct_credits(
 **Last Updated:** December 29, 2025  
 **Database Version:** PostgreSQL 14.1 (Supabase)  
 **Status:** ✅ Production Ready  
-**Total RLS Policies:** 45 (41 table policies + 4 storage policies)
+**Total RLS Policies:** 39 (35 table policies + 4 storage policies)

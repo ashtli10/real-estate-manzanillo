@@ -257,14 +257,10 @@ When subscription is **not active**:
 │              │                                              │
 │  📊 Overview │  Welcome, Barbara!                          │
 │  🏘️ Properties│                                              │
-│  👤 Profile  │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │
-│  💳 Billing  │  │ 5 Active │ │ 120 Views│ │ 8 Leads  │     │
-│  🎨 AI Tools │  │ Properties│ │ This Week│ │ This Mo  │     │
-│  ⚙️ Settings │  └──────────┘ └──────────┘ └──────────┘     │
-│              │                                              │
-│              │  ┌─────────────────────────────────────────┐ │
-│              │  │ 💰 Credits: 47  [+ Buy More]            │ │
-│              │  └─────────────────────────────────────────┘ │
+│  👤 Profile  │  ┌──────────────┐ ┌──────────────┐          │
+│  💳 Billing  │  │ 5 Active     │ │ 47 Credits   │          │
+│  🎨 AI Tools │  │ Properties   │ │ Available    │          │
+│  ⚙️ Settings │  └──────────────┘ └──────────────┘          │
 │              │                                              │
 │              │  🆕 AI Video Generator [COMING SOON]         │
 │              │  Create stunning property videos with AI!    │
@@ -275,16 +271,15 @@ When subscription is **not active**:
 
 **Implementation Details:**
 - `src/pages/Dashboard.tsx` - Main dashboard component with tab navigation
-- `src/hooks/useDashboardStats.ts` - Fetches analytics via `get_agent_dashboard_stats` RPC
+- `src/hooks/useDashboardStats.ts` - Fetches property stats via `get_agent_dashboard_stats` RPC
 - Mobile responsive sidebar with hamburger menu
-- Real-time stats display (views, leads, properties)
+- Property count display
 
 ### 4.2 Properties Management ✅ Implemented
 - List of own properties with thumbnail grid
 - Add/Edit/Delete properties
 - Toggle active/paused status
 - Move up/down for display order (reordering)
-- View stats per property from analytics tables
 
 **Implementation Details:**
 - PropertyForm component for CRUD operations

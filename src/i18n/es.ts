@@ -500,8 +500,6 @@ export const es = {
     viewSite: 'Ver sitio',
     logout: 'Cerrar sesión',
     activeProperties: 'Propiedades Activas',
-    viewsThisWeek: 'Vistas Esta Semana',
-    contactsThisMonth: 'Contactos Este Mes',
     aiCredits: 'Créditos de IA',
     buyMore: 'Comprar más',
     videoGenerator: 'Generador de Videos con IA',

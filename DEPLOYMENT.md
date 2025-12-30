@@ -168,7 +168,6 @@ This is implemented via the `useRealtimeProperties` hook.
 ## Monitoring
 
 ### Recommended Tools
-- **Google Analytics** - Track user behavior
 - **Google Search Console** - Monitor SEO performance
 - **Vercel Analytics** - Monitor deployment and performance
 - **Supabase Dashboard** - Monitor database performance
