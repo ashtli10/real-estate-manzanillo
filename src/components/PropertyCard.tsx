@@ -27,7 +27,7 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
       onClick={() => onNavigate(`/propiedad/${property.slug}`)}
       className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
     >
-      <div className="relative h-56 overflow-hidden">
+      <div className="relative h-72 overflow-hidden">
         <img
           src={mainImage}
           alt={property.title}
@@ -47,17 +47,15 @@ export function PropertyCard({ property, onNavigate }: PropertyCardProps) {
           )}
         </div>
 
-        <div className="absolute bottom-3 left-3 space-y-2">
+        <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
           {property.is_for_sale && (
-            <div className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
-              <p className="text-xs uppercase tracking-wide">{t('propertyCard.sale')}</p>
-              <p className="text-lg font-bold">{formatPrice(property.price, property.currency)}</p>
+            <div className="bg-blue-600/90 text-white px-2.5 py-1 rounded-md shadow-md">
+              <p className="text-sm font-semibold">{formatPrice(property.price, property.currency)}</p>
             </div>
           )}
           {property.is_for_rent && (
-            <div className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-lg">
-              <p className="text-xs uppercase tracking-wide">{t('propertyCard.rent')}</p>
-              <p className="text-lg font-bold">{formatPrice(property.rent_price, property.rent_currency)}</p>
+            <div className="bg-emerald-600/90 text-white px-2.5 py-1 rounded-md shadow-md">
+              <p className="text-sm font-semibold">{formatPrice(property.rent_price, property.rent_currency)}/mo</p>
             </div>
           )}
         </div>
