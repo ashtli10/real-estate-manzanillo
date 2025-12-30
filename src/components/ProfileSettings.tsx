@@ -222,11 +222,13 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
       }
     }
 
-    // Validate phone numbers (required)
-    const phoneError = validatePhoneNumber(formData.phone_number || '');
-    if (phoneError) {
-      setError(`Teléfono: ${phoneError}`);
-      return;
+    // Validate phone numbers (WhatsApp required, phone optional)
+    if (formData.phone_number) {
+      const phoneError = validatePhoneNumber(formData.phone_number);
+      if (phoneError) {
+        setError(`Teléfono: ${phoneError}`);
+        return;
+      }
     }
 
     const whatsappError = validatePhoneNumber(formData.whatsapp_number || '');
@@ -485,7 +487,7 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-start">
               <label className="flex items-center gap-2 text-sm text-muted-foreground sm:pt-2">
                 <Phone className="h-4 w-4" />
-                Teléfono <span className="text-red-500">*</span>
+                Teléfono
               </label>
               {isEditing ? (
                 <div className="sm:col-span-2">
@@ -495,10 +497,9 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                     onChange={(e) => handleInputChange('phone_number', formatPhoneAsYouType(e.target.value))}
                     className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="+52 332 183 1999"
-                    required
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Formato requerido: +52 332 183 1999
+                    Formato: +52 332 183 1999
                   </p>
                 </div>
               ) : (
