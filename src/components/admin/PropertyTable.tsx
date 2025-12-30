@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Edit2, Trash2, Eye, EyeOff, Star, StarOff, GripVertical } from 'lucide-react';
 import {
   DndContext,
@@ -16,6 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import type { Property } from '../../types/property';
 import { formatPrice, propertyTypeLabels } from '../../types/property';
 
@@ -47,14 +49,20 @@ export function PropertyTable({
     })
   );
 
+  // Memoize the items array to prevent unnecessary re-renders
+  const items = useMemo(() => properties.map((p) => p.id), [properties]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
       const oldIndex = properties.findIndex((p) => p.id === active.id);
       const newIndex = properties.findIndex((p) => p.id === over.id);
-      const reordered = arrayMove(properties, oldIndex, newIndex);
-      onReorder(reordered);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reordered = arrayMove(properties, oldIndex, newIndex);
+        onReorder(reordered);
+      }
     }
   };
 
@@ -77,10 +85,11 @@ export function PropertyTable({
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis]}
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={properties.map((p) => p.id)}
+            items={items}
             strategy={verticalListSortingStrategy}
           >
             <tbody className="divide-y divide-border">
