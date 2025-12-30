@@ -1,6 +1,6 @@
 # BN Inmobiliaria - Architecture Overview
 
-**Last Edited: 2025-06-29**
+**Last Edited: 2025-12-29**
 
 ## System Architecture
 
@@ -97,7 +97,7 @@
 │  └───────────────────────────────────────────────────────┘     │
 │  ┌───────────────────────────────────────────────────────┐     │
 │  │ Credit Packs                                           │     │
-│  │  • 20, 50, 100, 500, 1000 credits                     │     │
+│  │  • 20, 50, 100, 650, 1350 credits                     │     │
 │  │  • One-time purchases                                 │     │
 │  └───────────────────────────────────────────────────────┘     │
 │  ┌───────────────────────────────────────────────────────┐     │
@@ -213,13 +213,42 @@ function canAccessDashboard(subscription) {
 - `useDashboardStats(userId)`: Dashboard analytics (views, leads, properties)
 - `useAuth()`: Authentication state from AuthContext
 - `useRealtimeProperties()`: Real-time property updates via WebSocket
+- `useLanguageSync()`: Syncs language preference from Supabase profile on login
 
 ### Components
 - `SubscriptionGuard`: Route protection wrapper
 - `BillingTab`: Subscription/credits management UI
+- `AIToolsTab`: AI tools placeholder UI with credit info and FAQ
 - `ProfileSettings`: Full profile editing with username validation
 - `PropertyForm`: Property CRUD form
 - `PropertyTable`: Property list with actions
+- `LanguageSwitcher`: EN/ES language toggle with persistence
+
+## Internationalization (i18n)
+
+### Configuration
+- **Library**: react-i18next
+- **Default Language**: Spanish (es)
+- **Supported**: Spanish (es), English (en)
+- **Persistence**: localStorage + Supabase profile
+
+### Files
+- `src/i18n/index.ts`: i18next configuration
+- `src/i18n/en.ts`: English translations
+- `src/i18n/es.ts`: Spanish translations
+- `src/hooks/useLanguageSync.ts`: Profile sync hook
+
+### Language Flow
+```
+User changes language → LanguageSwitcher
+                      → Update i18next
+                      → Save to localStorage
+                      → If logged in, save to profiles.language_preference
+                      
+User logs in → useLanguageSync
+            → Load profiles.language_preference
+            → Update i18next if preference exists
+```
 
 ## SEO Components
 
@@ -229,6 +258,8 @@ function canAccessDashboard(subscription) {
 - **PropertyDetail**: Property-specific title, price, location
 
 ### Structured Data (Schema.org)
+
+**Property Schema:**
 ```json
 {
   "@context": "https://schema.org",
@@ -237,6 +268,21 @@ function canAccessDashboard(subscription) {
   "address": { ... },
   "geo": { ... },
   "offers": { ... }
+}
+```
+
+**Agent Profile Schema (Person/RealEstateAgent):**
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "additionalType": "https://schema.org/RealEstateAgent",
+  "name": "Agent Name",
+  "jobTitle": "Real Estate Agent",
+  "image": "...",
+  "telephone": "...",
+  "email": "...",
+  "worksFor": { "@type": "Organization", "name": "..." }
 }
 ```
 
@@ -296,13 +342,16 @@ function canAccessDashboard(subscription) {
 │       └── create-checkout.ts # Checkout session creation
 ├── public/
 │   ├── robots.txt             # Crawler instructions
-│   └── seo-validator.html     # SEO testing tool
+│   ├── seo-validator.html     # SEO testing tool
+│   └── branding/              # Logo and brand assets
 ├── src/
 │   ├── components/
 │   │   ├── Breadcrumb.tsx     # Navigation breadcrumbs
 │   │   ├── SubscriptionGuard.tsx # Route protection
 │   │   ├── BillingTab.tsx     # Billing UI component
+│   │   ├── AIToolsTab.tsx     # AI tools placeholder UI
 │   │   ├── ProfileSettings.tsx # Profile editing component
+│   │   ├── LanguageSwitcher.tsx # EN/ES language toggle
 │   │   └── admin/
 │   │       ├── PropertyForm.tsx  # Property CRUD form
 │   │       ├── PropertyTable.tsx # Property list display
@@ -313,18 +362,25 @@ function canAccessDashboard(subscription) {
 │   │   ├── useSubscription.ts # Subscription state management
 │   │   ├── useCredits.ts      # Credits state management
 │   │   ├── useDashboardStats.ts # Dashboard analytics hook
+│   │   ├── useLanguageSync.ts # Language preference sync from profile
 │   │   └── useAuth.ts         # Auth context hook
+│   ├── i18n/
+│   │   ├── index.ts           # i18next configuration
+│   │   ├── en.ts              # English translations
+│   │   └── es.ts              # Spanish translations
 │   ├── lib/
-│   │   └── seo.ts             # SEO utilities
+│   │   └── seo.ts             # SEO utilities (meta, Schema.org, agent SEO)
 │   └── pages/
 │       ├── Home.tsx           # SEO: Home page
 │       ├── Properties.tsx     # SEO: Properties list
 │       ├── PropertyDetail.tsx # SEO: Property detail
-│       ├── Dashboard.tsx      # Agent dashboard (tabs: overview, properties, profile, billing)
-│       ├── AgentProfile.tsx   # Public agent profile page
+│       ├── Dashboard.tsx      # Agent dashboard (tabs: overview, properties, profile, billing, AI tools)
+│       ├── AgentProfile.tsx   # Public agent profile page (with Schema.org)
 │       └── OnboardingPage.tsx # New user onboarding
 ├── DEPLOYMENT.md              # Deployment guide
 ├── ARCHITECTURE.md            # This file
+├── PROJECT_PLAN.md            # Project roadmap and phases
+├── DATABASE_SCHEMA.md         # Database documentation
 └── vercel.json               # Vercel configuration
 ```
 

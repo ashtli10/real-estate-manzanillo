@@ -6,7 +6,7 @@ import type { Property } from '../types/property';
 import { PropertyCard } from '../components/PropertyCard';
 import { AgentCard, AgentInfo } from '../components/AgentCard';
 import { transformProperty } from '../lib/propertyTransform';
-import { updateMetaTags } from '../lib/seo';
+import { updateMetaTags, getAgentProfileSEO } from '../lib/seo';
 
 interface AgentProfileProps {
   username: string;
@@ -59,12 +59,6 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
 
       setAgent(agentData);
 
-      // Update SEO
-      updateMetaTags({
-        title: `${agentData.full_name} - Real Estate Manzanillo`,
-        description: agentData.bio || `View properties by ${agentData.full_name} in Manzanillo`,
-      });
-
       // Update WhatsApp number
       if (agentData.whatsapp_number && onUpdateWhatsappNumber) {
         onUpdateWhatsappNumber(agentData.whatsapp_number);
@@ -80,7 +74,24 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
 
       if (!propertiesError && propertiesData) {
         setProperties(propertiesData.map(transformProperty));
-        setAgent({ ...agentData, properties_count: propertiesData.length });
+        const updatedAgent = { ...agentData, properties_count: propertiesData.length };
+        setAgent(updatedAgent);
+        
+        // Update SEO with full agent data including property count
+        const seoConfig = getAgentProfileSEO({
+          id: updatedAgent.id,
+          username: updatedAgent.username,
+          full_name: updatedAgent.full_name,
+          bio: updatedAgent.bio,
+          company_name: updatedAgent.company_name,
+          location: updatedAgent.location,
+          avatar_url: updatedAgent.avatar_url,
+          cover_image: updatedAgent.cover_image,
+          whatsapp_number: updatedAgent.whatsapp_number,
+          created_at: updatedAgent.created_at,
+          properties_count: updatedAgent.properties_count,
+        });
+        updateMetaTags(seoConfig);
       }
     } catch (err) {
       console.error('Error loading agent profile:', err);

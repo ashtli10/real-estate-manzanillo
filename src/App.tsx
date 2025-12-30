@@ -1,4 +1,5 @@
 import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import { useRouter, getRouteParams } from './lib/router';
 import { useEffect, useState } from 'react';
 import { Header } from './components/Header';
@@ -14,14 +15,19 @@ import { OnboardingPage } from './pages/OnboardingPage';
 import { Dashboard } from './pages/Dashboard';
 import { FloatingWhatsappButton } from './components/FloatingWhatsappButton';
 import { DEFAULT_WHATSAPP_MESSAGE } from './lib/whatsapp';
+import { useLanguageSync } from './hooks/useLanguageSync';
 
 // Reserved routes that should not be treated as agent usernames
 const RESERVED_ROUTES = ['/', '/propiedades', '/login', '/admin', '/dashboard', '/onboarding'];
 
 function AppContent() {
   const { route, navigate } = useRouter();
+  const { user } = useAuth();
   const [whatsappMessage, setWhatsappMessage] = useState(DEFAULT_WHATSAPP_MESSAGE);
   const [whatsappNumber, setWhatsappNumber] = useState<string | undefined>(undefined);
+
+  // Sync language preference from user profile
+  useLanguageSync(user?.id);
 
   // Get query params from window.location
   const getQueryParam = (param: string): string | null => {

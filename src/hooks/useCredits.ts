@@ -22,8 +22,8 @@ export const CREDIT_PACKS = [
   { amount: 20, price: 20, priceFormatted: '$20 MXN' },
   { amount: 50, price: 50, priceFormatted: '$50 MXN' },
   { amount: 100, price: 100, priceFormatted: '$100 MXN' },
-  { amount: 500, price: 500, priceFormatted: '$500 MXN' },
-  { amount: 1000, price: 1000, priceFormatted: '$1,000 MXN' },
+  { amount: 650, price: 500, priceFormatted: '$500 MXN' },
+  { amount: 1350, price: 1000, priceFormatted: '$1,000 MXN' },
 ] as const;
 
 export function useCredits(userId: string | undefined): UseCreditsReturn {

@@ -35,6 +35,7 @@ import { InvitationTable } from '../components/admin/InvitationTable';
 import { BillingTab } from '../components/BillingTab';
 import { ProfileSettings } from '../components/ProfileSettings';
 import { SubscriptionGuard } from '../components/SubscriptionGuard';
+import { AIToolsTab } from '../components/AIToolsTab';
 import { transformProperty } from '../lib/propertyTransform';
 
 type DashboardTab = 'overview' | 'properties' | 'profile' | 'billing' | 'ai-tools' | 'settings' | 'invitations';
@@ -886,35 +887,11 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           )}
 
           {/* AI Tools Tab */}
-          {activeTab === 'ai-tools' && (
-            <div className="max-w-2xl">
-              <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-xl border border-purple-200 p-8 text-center">
-                <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Sparkles className="h-10 w-10 text-purple-600" />
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">
-                  Generador de Videos con IA
-                </h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  Pronto podrás crear videos profesionales de tus propiedades usando 
-                  inteligencia artificial. Selecciona una propiedad, genera frames, 
-                  y obtén un video listo para redes sociales.
-                </p>
-                
-                <div className="bg-white/50 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-muted-foreground mb-2">Costo por video:</p>
-                  <ul className="text-sm space-y-1">
-                    <li>• Generar 3 frames: <strong>5 créditos</strong></li>
-                    <li>• Regenerar frames: <strong>5 créditos</strong></li>
-                    <li>• Generar video final: <strong>30 créditos</strong></li>
-                  </ul>
-                </div>
-
-                <p className="text-sm text-muted-foreground">
-                  Tienes <strong>{totalCredits} créditos</strong> disponibles
-                </p>
-              </div>
-            </div>
+          {activeTab === 'ai-tools' && user && (
+            <AIToolsTab 
+              userId={user.id} 
+              onNavigateToBilling={() => setActiveTab('billing')} 
+            />
           )}
 
           {/* Invitations Tab - Admin Only */}

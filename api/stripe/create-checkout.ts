@@ -30,19 +30,19 @@ const LIVE_CREDIT_PRICES: Record<string, string> = {
   '20': 'price_1Sj2ixCGlYYoSu1tTQy1qTpw',   // 20 MXN
   '50': 'price_1Sj2ixCGlYYoSu1tgRme2T4z',   // 50 MXN
   '100': 'price_1Sj2ixCGlYYoSu1t5H55JGaP',  // 100 MXN
-  '500': 'price_1Sj2ixCGlYYoSu1tmPCi46qt',  // 500 MXN
-  '1000': 'price_1Sj2ixCGlYYoSu1t7qNkVJog', // 1000 MXN
+  '650': 'price_1Sj2ixCGlYYoSu1tmPCi46qt',  // 500 MXN
+  '1350': 'price_1Sj2ixCGlYYoSu1t7qNkVJog', // 1000 MXN
 };
 
 // Price IDs - TEST mode (development) - These need to be created in Stripe Test mode
 // For now, we'll use environment variables to override, or fall back to live prices (will cause error in test mode)
-const TEST_SUBSCRIPTION_PRICE_ID = process.env.STRIPE_TEST_SUBSCRIPTION_PRICE_ID || '';
+const TEST_SUBSCRIPTION_PRICE_ID = process.env.STRIPE_TEST_SUBSCRIPTION_PRICE_ID || 'price_1SjnxzCGlYYoSu1ttRRmqUb3';
 const TEST_CREDIT_PRICES: Record<string, string> = {
-  '20': process.env.STRIPE_TEST_CREDIT_PRICE_20 || '',
-  '50': process.env.STRIPE_TEST_CREDIT_PRICE_50 || '',
+  '20': process.env.STRIPE_TEST_CREDIT_PRICE_20 || 'price_1SjnwZCGlYYoSu1t7S6RQvwB',
+  '50': process.env.STRIPE_TEST_CREDIT_PRICE_50 || 'price_1SjnwkCGlYYoSu1tkmFLdT7l',
   '100': process.env.STRIPE_TEST_CREDIT_PRICE_100 || '',
-  '500': process.env.STRIPE_TEST_CREDIT_PRICE_500 || '',
-  '1000': process.env.STRIPE_TEST_CREDIT_PRICE_1000 || '',
+  '650': process.env.STRIPE_TEST_CREDIT_PRICE_650 || '',
+  '1350': process.env.STRIPE_TEST_CREDIT_PRICE_1350 || '',
 };
 
 // Select price IDs based on mode

@@ -11,8 +11,24 @@ export interface SEOConfig {
   description: string;
   canonical?: string;
   ogImage?: string;
-  ogType?: 'website' | 'article';
+  ogType?: 'website' | 'article' | 'profile';
   structuredData?: object;
+  keywords?: string;
+}
+
+export interface AgentProfile {
+  id: string;
+  username: string;
+  full_name: string;
+  bio?: string | null;
+  company_name?: string | null;
+  location?: string | null;
+  avatar_url?: string | null;
+  cover_image?: string | null;
+  whatsapp_number?: string | null;
+  phone_number?: string | null;
+  created_at: string;
+  properties_count?: number;
 }
 
 const SITE_NAME = 'BN Inmobiliaria';
@@ -41,12 +57,18 @@ export function updateMetaTags(config: SEOConfig) {
   updateMetaTag('property', 'og:url', config.canonical || window.location.href);
   updateMetaTag('property', 'og:image', config.ogImage || DEFAULT_IMAGE);
   updateMetaTag('property', 'og:site_name', SITE_NAME);
+  updateMetaTag('property', 'og:locale', 'es_MX');
 
   // Twitter Card tags
   updateMetaTag('name', 'twitter:card', 'summary_large_image');
   updateMetaTag('name', 'twitter:title', config.title);
   updateMetaTag('name', 'twitter:description', config.description);
   updateMetaTag('name', 'twitter:image', config.ogImage || DEFAULT_IMAGE);
+
+  // Keywords
+  if (config.keywords) {
+    updateMetaTag('name', 'keywords', config.keywords);
+  }
 
   // Structured data
   if (config.structuredData) {
@@ -282,3 +304,137 @@ ${urls.map(url => `  <url>
 
   return xml;
 }
+
+/**
+ * Generates SEO config for agent profile page
+ * Implements Person/RealEstateAgent Schema.org structured data
+ */
+export function getAgentProfileSEO(agent: AgentProfile): SEOConfig {
+  const fullName = agent.full_name || agent.username;
+  const description = agent.bio 
+    ? agent.bio.substring(0, 155) + (agent.bio.length > 155 ? '...' : '')
+    : `${fullName} - Agente inmobiliario en Manzanillo. ${agent.properties_count || 0} propiedades disponibles. Encuentra casas, departamentos y terrenos.`;
+
+  const keywords = [
+    fullName,
+    'agente inmobiliario',
+    'bienes raíces',
+    'Manzanillo',
+    'Colima',
+    agent.company_name,
+    agent.location,
+    'casas en venta',
+    'departamentos',
+  ].filter(Boolean).join(', ');
+
+  const image = agent.avatar_url || agent.cover_image || DEFAULT_IMAGE;
+
+  // Build RealEstateAgent structured data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const structuredData: Record<string, any> = {
+    '@context': 'https://schema.org',
+    '@type': 'RealEstateAgent',
+    name: fullName,
+    url: `${SITE_URL}/${agent.username}`,
+    image: image,
+    description: agent.bio || `Agente inmobiliario en Manzanillo`,
+  };
+
+  // Add company affiliation
+  if (agent.company_name) {
+    structuredData.worksFor = {
+      '@type': 'Organization',
+      name: agent.company_name,
+    };
+  }
+
+  // Add location
+  if (agent.location) {
+    structuredData.areaServed = {
+      '@type': 'City',
+      name: agent.location,
+    };
+  }
+
+  structuredData.address = {
+    '@type': 'PostalAddress',
+    addressLocality: agent.location || 'Manzanillo',
+    addressRegion: 'Colima',
+    addressCountry: 'MX',
+  };
+
+  // Add contact information (if public)
+  if (agent.whatsapp_number || agent.phone_number) {
+    structuredData.contactPoint = {
+      '@type': 'ContactPoint',
+      contactType: 'customer service',
+      availableLanguage: ['Spanish', 'English'],
+    };
+    if (agent.phone_number) {
+      structuredData.contactPoint.telephone = agent.phone_number;
+    }
+  }
+
+  // Add member since
+  if (agent.created_at) {
+    structuredData.foundingDate = agent.created_at.split('T')[0];
+  }
+
+  // Add number of properties as offers
+  if (agent.properties_count && agent.properties_count > 0) {
+    structuredData.makesOffer = {
+      '@type': 'Offer',
+      itemOffered: {
+        '@type': 'Product',
+        name: 'Real Estate Listings',
+        description: `${agent.properties_count} propiedades disponibles`,
+      },
+    };
+  }
+
+  return {
+    title: `${fullName} - Agente Inmobiliario en Manzanillo | ${SITE_NAME}`,
+    description,
+    canonical: `${SITE_URL}/${agent.username}`,
+    ogImage: image,
+    ogType: 'profile',
+    keywords,
+    structuredData,
+  };
+}
+
+/**
+ * Generates social share meta tags for a property
+ */
+export function getPropertyShareMeta(property: Property): {
+  title: string;
+  description: string;
+  image: string;
+  url: string;
+} {
+  const PRICE_CONSULT_TEXT = 'Consultar precio';
+  const price = property.is_for_sale ? formatPrice(property.price) : PRICE_CONSULT_TEXT;
+  const location = [property.location_neighborhood, property.location_city]
+    .filter(Boolean)
+    .join(', ');
+
+  const getCharValue = (key: string): number | boolean | null => {
+    const char = property.characteristics?.find(c => c.key === key);
+    return char ? char.value : null;
+  };
+
+  const bedrooms = getCharValue('bedrooms') as number | null;
+  const bathrooms = getCharValue('bathrooms') as number | null;
+
+  let details = '';
+  if (bedrooms) details += `${bedrooms} rec. `;
+  if (bathrooms) details += `${bathrooms} baños `;
+
+  return {
+    title: `${property.title} - ${price}`,
+    description: `${property.title} en ${location || 'Manzanillo'}. ${details}${property.is_for_sale ? 'En venta' : ''}${property.is_for_rent ? ' En renta' : ''}`,
+    image: property.images?.[0] || DEFAULT_IMAGE,
+    url: `${SITE_URL}/propiedad/${property.slug}`,
+  };
+}
+

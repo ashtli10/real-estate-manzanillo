@@ -32,8 +32,8 @@ const CREDIT_AMOUNTS: Record<string, number> = {
   'prod_TgPXEmRb61waI0': 20,   // 20 Créditos IA
   'prod_TgPUETBrQfgpx3': 50,   // 50 Créditos IA
   'prod_TgPXp2cS7JVrHE': 100,  // 100 Créditos IA
-  'prod_TgPUmah2qf1ZcK': 500,  // 500 Créditos IA
-  'prod_TgPXzbeOjUjZPh': 1000, // 1000 Créditos IA
+  'prod_TgPUmah2qf1ZcK': 650,  // 650 Créditos IA (500 MXN)
+  'prod_TgPXzbeOjUjZPh': 1350, // 1350 Créditos IA (1000 MXN)
 };
 
 interface WebhookHandlerResult {

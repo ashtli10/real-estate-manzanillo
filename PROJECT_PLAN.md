@@ -1,6 +1,6 @@
 # 🏠 Real Estate Manzanillo - Complete Platform Plan
 
-**Last Edited: 2025-06-29**
+**Last Edited: 2025-12-29**
 
 > **Inmobiliaria Manzanillo** - A marketplace platform for real estate agents in Manzanillo
 
@@ -321,13 +321,13 @@ When subscription is **not active**:
 
 ---
 
-## 📋 PHASE 5: Credits & AI Tools
+## 📋 PHASE 5: Credits & AI Tools ✅ COMPLETED
 
-### 5.1 Credit System
+### 5.1 Credit System ✅ Implemented
 
 **Monthly Refresh:**
 - 50 free credits included with subscription
-- Reset on billing cycle
+- Reset on billing cycle via Stripe webhook
 - Unused credits don't roll over
 
 **Top-up Options:**
@@ -339,57 +339,86 @@ When subscription is **not active**:
 | 650 credits | 500 MXN |
 | 1350 credits | 1000 MXN |
 
-### 5.2 AI Video Generator (Coming Soon)
+**Implementation Details:**
+- `src/hooks/useCredits.ts` - Credit state management with real-time updates
+- `src/components/BillingTab.tsx` - Credit purchase UI
+- `api/stripe/webhook.ts` - Handles credit purchases and monthly reset
+- Database functions: `add_credits()`, `deduct_credits()`, `get_user_credits()`
+
+### 5.2 AI Video Generator (Coming Soon) ✅ UI Implemented
 **User Flow:**
 1. Select property from your listings
 2. Generate 3 starting frames (5 credits)
 3. Regenerate until satisfied (5 credits each)
-4. Generate video from frames (3 frames, 3 videos, clipped togheter) (30 credits)
+4. Generate video from frames (3 frames, 3 videos, clipped together) (30 credits)
 5. Download 9:16 video (24 seconds)
 
 **UI Elements:**
-- "Coming Soon" badge
-- Preview video placeholder
-- Explanation of what it does
-- Credit cost breakdown
+- "Coming Soon" badge ✅
+- Preview video placeholder ✅
+- Explanation of what it does ✅
+- Credit cost breakdown ✅
+- FAQ section ✅
 
-**Priority:** 🟡 Medium  
-**Effort:** Medium (placeholder now, implement later)
+**Implementation Details:**
+- `src/components/AIToolsTab.tsx` - Full AI tools UI with credit info
 
----
-
-## 📋 PHASE 6: Internationalization (i18n)
-
-### 6.1 Language Support
-- 🇺🇸 English (default)
-- 🇲🇽 Spanish
-
-### 6.2 Implementation
-- Language toggle in header (always visible)
-- Save preference in localStorage + profile
-- All text in translation files
-- URL structure: same URLs, content changes
-
-**Priority:** 🟡 Medium  
+**Priority:** ✅ Complete (UI placeholder - AI generation to be implemented later)
 **Effort:** Medium
 
 ---
 
-## 📋 PHASE 7: SEO & Branding
+## 📋 PHASE 6: Internationalization (i18n) ✅ COMPLETED
 
-### 7.1 Branding
+### 6.1 Language Support ✅ Implemented
+- 🇲🇽 Spanish (default)
+- 🇺🇸 English
+
+### 6.2 Implementation ✅ Complete
+- Language toggle in header (always visible) ✅
+- Save preference in localStorage + profile ✅
+- All text in translation files ✅
+- URL structure: same URLs, content changes ✅
+
+**Implementation Details:**
+- `src/i18n/index.ts` - i18next configuration with profile saving
+- `src/i18n/en.ts` - English translations
+- `src/i18n/es.ts` - Spanish translations
+- `src/components/LanguageSwitcher.tsx` - EN/ES toggle with Supabase sync
+- `src/hooks/useLanguageSync.ts` - Loads language preference on login
+- `profiles.language_preference` - Database column for persistence
+
+**Note:** Dashboard intentionally kept in Spanish (not translated per business decision)
+
+**Priority:** ✅ Complete  
+**Effort:** Medium
+
+---
+
+## 📋 PHASE 7: SEO & Branding ✅ COMPLETED
+
+### 7.1 Branding ✅ Configured
 - **Name:** Real Estate Manzanillo / Inmobiliaria Manzanillo
 - **Tagline:** "Your Real Estate Marketplace in Manzanillo"
-- **Colors:** Define primary/secondary/accent
-- **Logo:** Create/update
+- **Colors:** Primary teal, secondary blue, accent orange
+- **Logo:** Located in `/public/branding/`
 
-### 7.2 SEO Enhancements
-- Already have: Meta tags, Schema.org, sitemap
-- Add: Agent profile Schema.org (Person/RealEstateAgent)
-- Add: Per-agent sitemaps
-- Add: Social share images per property
+### 7.2 SEO Enhancements ✅ Implemented
+- ✅ Already have: Meta tags, Schema.org, sitemap
+- ✅ Agent profile Schema.org (Person/RealEstateAgent)
+- ⏳ Per-agent sitemaps (future enhancement)
+- ✅ Social share meta tags per property
 
-**Priority:** 🟡 Medium  
+**Implementation Details:**
+- `src/lib/seo.ts`:
+  - `getAgentProfileSEO()` - Person/RealEstateAgent Schema.org
+  - `getPropertyShareMeta()` - Social share OG tags
+  - Enhanced with keywords and og:locale support
+- `src/pages/AgentProfile.tsx` - Uses agent SEO function
+- `public/robots.txt` - Search engine configuration
+- `api/sitemap.xml.ts` - Dynamic sitemap generation
+
+**Priority:** ✅ Complete  
 **Effort:** Small
 
 ---
@@ -415,11 +444,11 @@ When subscription is **not active**:
 3. ✅ Profile settings
 4. ✅ Billing page
 
-### Sprint 4 (Week 7): Polish
+### Sprint 4 (Week 7): Polish ✅ COMPLETED
 1. ✅ Credit system UI
 2. ✅ AI tools placeholder
 3. ✅ Internationalization
-4. 🔄 Testing & bug fixes
+4. 🔄 Testing & bug fixes (ongoing)
 
 ---
 
