@@ -151,7 +151,10 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
         show_map: property.show_map ?? true,
         characteristics: property.characteristics || [],
       });
-      setAutoSlug(false);
+      setAutoSlug(false); // Keep existing slug when editing
+    } else {
+      // Reset to auto-generate for new properties
+      setAutoSlug(true);
     }
   }, [property]);
 
@@ -297,8 +300,9 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
                   className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold shadow hover:opacity-90 transition disabled:opacity-50 flex items-center gap-2"
                 >
                   {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  Llenar con IA                </button>
-                <p className="text-xs text-muted-foreground">Solo rellena campos soportados. </p>
+                  Llenar con IA (2 créditos)
+                </button>
+                <p className="text-xs text-muted-foreground">Usa 2 créditos por solicitud.</p>
               </div>
             </section>
 

@@ -142,21 +142,87 @@ async function getUserFromToken(authHeader: string | undefined): Promise<{ userI
 }
 
 /**
- * Deducts credits from user account using the database function
+ * Deducts credits from user account directly using service role.
+ * Deducts from free credits first, then from paid balance.
+ * Creates a transaction record for audit trail.
  */
 async function deductCredits(userId: string, amount: number, description: string): Promise<boolean> {
-  const { data, error } = await supabaseAdmin.rpc('deduct_credits', {
-    p_user_id: userId,
-    p_amount: amount,
-    p_description: description,
-  });
+  try {
+    // 1. Get current credits
+    const { data: credits, error: fetchError } = await supabaseAdmin
+      .from('credits')
+      .select('id, balance, free_credits_remaining')
+      .eq('user_id', userId)
+      .single();
 
-  if (error) {
-    console.error('Error deducting credits:', error);
+    if (fetchError || !credits) {
+      console.error('Error fetching credits:', fetchError);
+      return false;
+    }
+
+    const freeRemaining = credits.free_credits_remaining ?? 0;
+    const paidBalance = credits.balance ?? 0;
+    const totalAvailable = freeRemaining + paidBalance;
+
+    // 2. Check if user has enough credits
+    if (totalAvailable < amount) {
+      console.error(`Insufficient credits: need ${amount}, have ${totalAvailable}`);
+      return false;
+    }
+
+    // 3. Calculate deduction split (free first, then paid)
+    let freeDeduction = 0;
+    let paidDeduction = 0;
+
+    if (freeRemaining >= amount) {
+      // All from free credits
+      freeDeduction = amount;
+    } else {
+      // Use all free, rest from paid
+      freeDeduction = freeRemaining;
+      paidDeduction = amount - freeRemaining;
+    }
+
+    // 4. Update credits table
+    const { error: updateError } = await supabaseAdmin
+      .from('credits')
+      .update({
+        free_credits_remaining: freeRemaining - freeDeduction,
+        balance: paidBalance - paidDeduction,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error updating credits:', updateError);
+      return false;
+    }
+
+    // 5. Create transaction record for audit trail
+    const { error: txError } = await supabaseAdmin
+      .from('credit_transactions')
+      .insert({
+        user_id: userId,
+        amount: -amount, // Negative for deduction
+        type: 'used',
+        description,
+        metadata: {
+          free_deducted: freeDeduction,
+          paid_deducted: paidDeduction,
+          source: 'prefill-property-api',
+        },
+      });
+
+    if (txError) {
+      // Log but don't fail - credits were already deducted
+      console.error('Error creating transaction record:', txError);
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Unexpected error in deductCredits:', err);
     return false;
   }
-
-  return data === true;
 }
 
 /**
