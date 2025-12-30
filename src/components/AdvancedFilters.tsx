@@ -13,7 +13,7 @@ export interface PropertyFilters {
   bedrooms: number | null;
   bathrooms: number | null;
   featured: boolean;
-  sortBy: 'newest' | 'price_asc' | 'price_desc' | 'views';
+  sortBy: 'newest' | 'price_asc' | 'price_desc';
 }
 
 interface AdvancedFiltersProps {
@@ -293,7 +293,6 @@ export function AdvancedFilters({ filters, onChange, onClose, isOpen, propertyCo
             <option value="newest">{t('properties.filters.sortNewest')}</option>
             <option value="price_asc">{t('properties.filters.sortPriceAsc')}</option>
             <option value="price_desc">{t('properties.filters.sortPriceDesc')}</option>
-            <option value="views">{t('properties.filters.sortViews')}</option>
           </select>
         </div>
       </div>
