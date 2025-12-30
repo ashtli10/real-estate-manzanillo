@@ -1,6 +1,6 @@
 # BN Inmobiliaria - Deployment & SEO Guide
 
-**Last Edited: 2025-06-29**
+**Last Edited: 2025-12-30**
 
 ## Deployment to Vercel
 
@@ -20,6 +20,11 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_SUPABASE_PROJECT_ID=your_project_id
 VITE_SUPABASE_PUBLISHABLE_KEY=your_publishable_key
 VITE_GOOGLE_MAPS_API_KEY=your_google_maps_key
+
+# Server-side only (not exposed to client)
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+PREFILL_PROPERTY_WEBHOOK_URL=your_ai_webhook_url
+PREFILL_PROPERTY_WEBHOOK_AUTH=your_ai_webhook_auth_header
 ```
 
 ### Deployment Steps
@@ -143,6 +148,25 @@ GET /api/properties?featured=true&limit=6
 - Generates dynamic XML sitemap
 - Includes all published properties
 - Updates automatically
+
+**POST /api/prefill-property**
+- AI-powered property form auto-fill
+- Requires authentication (Bearer JWT token)
+- Charges 2 credits per request
+- Validates returned characteristics against known definitions
+- Request body:
+  - `raw_text` (string, required) - The property listing text to analyze
+  - `language` ('es' | 'en', default: 'es') - Response language
+  - `default_currency` (string, default: 'MXN') - Default currency
+  - `property_types` (string[]) - Valid property types
+  - `currencies` (string[]) - Valid currencies
+  - `characteristic_definitions` (array) - Known characteristic definitions
+- Returns: Extracted property data with validated characteristics
+- Error codes:
+  - 401: Unauthorized (missing/invalid token)
+  - 402: Insufficient credits
+  - 400: Bad request (missing required fields)
+  - 502: AI service error
 
 ### Real-Time Subscriptions
 

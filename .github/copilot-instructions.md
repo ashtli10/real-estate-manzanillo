@@ -1,16 +1,12 @@
----
-applyTo: '**'
----
-
 # Project Guidelines for AI Assistance
 
 ## Critical: Always Consult Documentation First
 
 **Before doing anything, answering questions, or reviewing changes, you MUST:**
 
-1. Check `DATABASE_SCHEMA.md` for database structure, table definitions, and relationships
-2. Check `ARCHITECTURE.md` for system design, component structure, and architectural decisions
-3. Check `PROJECT_PLAN.md` for project goals, features, roadmap, and implementation priorities
+1. FULLY Read/Check `DATABASE_SCHEMA.md` for database structure, table definitions, and relationships
+2. FULLY Read/Check `ARCHITECTURE.md` for system design, component structure, and architectural decisions
+3. FULLY Read/Check `PROJECT_PLAN.md` for project goals, features, roadmap, and implementation priorities
 
 These files contain the source of truth for this project. Any code generation or modifications must align with the specifications in these documents.
 

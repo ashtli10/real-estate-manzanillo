@@ -1,6 +1,6 @@
 # BN Inmobiliaria - Architecture Overview
 
-**Last Edited: 2025-12-29**
+**Last Edited: 2025-12-30**
 
 ## System Architecture
 
@@ -53,6 +53,14 @@
 │  │  • Creates Stripe checkout sessions                   │     │
 │  │  • Subscription + credit pack purchases               │     │
 │  │  • Customer portal session creation                   │     │
+│  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ /api/prefill-property                                  │     │
+│  │  • AI-powered property form prefill                   │     │
+│  │  • Requires authentication (JWT)                      │     │
+│  │  • Charges 2 credits per request                      │     │
+│  │  • Validates characteristics against definitions      │     │
+│  │  • Proxies to external AI webhook securely            │     │
 │  └───────────────────────────────────────────────────────┘     │
 │                                                                  │
 │  Static Assets:                                                 │

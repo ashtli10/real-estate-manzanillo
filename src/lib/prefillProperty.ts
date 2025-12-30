@@ -1,4 +1,5 @@
 import type { CharacteristicDefinition, PropertyType, PropertyCharacteristic } from '../types/property';
+import { supabase } from '../integrations/supabase/client';
 
 export interface PrefillResponsePayload {
   title: string;
@@ -14,10 +15,22 @@ export interface PrefillResponsePayload {
   characteristics: PropertyCharacteristic[];
 }
 
-const PREFILL_ENDPOINT = import.meta.env.VITE_PREFILL_PROPERTY_WEBHOOK_URL;
-const PREFILL_AUTH = import.meta.env.VITE_PREFILL_PROPERTY_WEBHOOK_AUTH;
-const PREFILL_TIMEOUT_MS = 20000;
+export interface PrefillErrorResponse {
+  error: string;
+  credits_required?: number;
+  credits_available?: number;
+}
 
+// Use our secure Vercel API endpoint
+const PREFILL_ENDPOINT = '/api/prefill-property';
+const PREFILL_TIMEOUT_MS = 30000; // 30s to account for AI processing time
+
+/**
+ * Requests AI-powered property prefill through our secure backend.
+ * Costs 2 credits per request.
+ * 
+ * @throws Error with user-friendly message if request fails
+ */
 export async function requestPropertyPrefill(
   rawText: string,
   characteristicDefinitions: CharacteristicDefinition[],
@@ -28,11 +41,11 @@ export async function requestPropertyPrefill(
   if (!rawText.trim()) {
     throw new Error('Proporciona texto para prefillar.');
   }
-  if (!PREFILL_ENDPOINT) {
-    throw new Error('Falta configurar PREFILL webhook URL.');
-  }
-  if (!PREFILL_AUTH) {
-    throw new Error('Falta configurar PREFILL auth.');
+
+  // Get the current session token for authentication
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error('Debes iniciar sesión para usar esta función.');
   }
 
   const controller = new AbortController();
@@ -44,7 +57,7 @@ export async function requestPropertyPrefill(
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        Authorization: PREFILL_AUTH,
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({
         raw_text: rawText,
@@ -57,22 +70,24 @@ export async function requestPropertyPrefill(
       signal: controller.signal,
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Prefill error ${response.status}: ${text.slice(0, 300)}`);
+      const errorData = data as PrefillErrorResponse;
+      
+      // Handle specific error cases
+      if (response.status === 401) {
+        throw new Error('Sesión expirada. Por favor, vuelve a iniciar sesión.');
+      }
+      if (response.status === 402) {
+        // Insufficient credits
+        throw new Error(errorData.error || 'Créditos insuficientes para esta operación.');
+      }
+      
+      throw new Error(errorData.error || `Error ${response.status}: No se pudo procesar la solicitud.`);
     }
 
-    const text = await response.text();
-    if (!text.trim()) {
-      throw new Error('Prefill vacío: el webhook no devolvió contenido');
-    }
-
-    let parsed: PrefillResponsePayload;
-    try {
-      parsed = JSON.parse(text) as PrefillResponsePayload;
-    } catch {
-      throw new Error(`Respuesta de prefill no es JSON válido: ${text.slice(0, 300)}`);
-    }
+    const parsed = data as PrefillResponsePayload;
 
     if (!parsed || typeof parsed !== 'object') {
       throw new Error('Respuesta de prefill inválida');
@@ -91,6 +106,14 @@ export async function requestPropertyPrefill(
       custom_bonuses: Array.isArray(parsed.custom_bonuses) ? parsed.custom_bonuses : [],
       characteristics: Array.isArray(parsed.characteristics) ? parsed.characteristics : [],
     };
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.name === 'AbortError') {
+        throw new Error('La solicitud tardó demasiado. Intenta de nuevo.');
+      }
+      throw err;
+    }
+    throw new Error('Error desconocido al procesar la solicitud.');
   } finally {
     clearTimeout(timeout);
   }
