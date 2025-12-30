@@ -72,34 +72,105 @@ async function verifyAndGetUserId(req: VercelRequest): Promise<string | null> {
   return user.id;
 }
 
-// Deduct credits from user
+// Deduct credits from user (direct table operation - bypasses RPC auth check)
 async function deductCredits(userId: string, amount: number, description: string): Promise<boolean> {
-  const { data, error } = await supabaseAdmin.rpc('deduct_credits', {
-    p_user_id: userId,
-    p_amount: amount,
-    p_description: description,
-  });
+  // First get current credits
+  const { data: credits, error: fetchError } = await supabaseAdmin
+    .from('credits')
+    .select('balance, free_credits_remaining')
+    .eq('user_id', userId)
+    .single();
 
-  if (error) {
-    console.error('Error deducting credits:', error);
+  if (fetchError || !credits) {
+    console.error('Error fetching credits:', fetchError);
     return false;
   }
 
-  return data === true;
+  const freeCredits = credits.free_credits_remaining || 0;
+  const paidCredits = credits.balance || 0;
+  const totalCredits = freeCredits + paidCredits;
+
+  if (totalCredits < amount) {
+    console.error('Insufficient credits:', { totalCredits, required: amount });
+    return false;
+  }
+
+  // Calculate deduction: free credits first, then paid
+  const deductFromFree = Math.min(freeCredits, amount);
+  const deductFromPaid = amount - deductFromFree;
+
+  // Update credits
+  const { error: updateError } = await supabaseAdmin
+    .from('credits')
+    .update({
+      free_credits_remaining: freeCredits - deductFromFree,
+      balance: paidCredits - deductFromPaid,
+    })
+    .eq('user_id', userId);
+
+  if (updateError) {
+    console.error('Error updating credits:', updateError);
+    return false;
+  }
+
+  // Record transaction
+  const { error: txError } = await supabaseAdmin
+    .from('credit_transactions')
+    .insert({
+      user_id: userId,
+      amount: -amount,
+      type: 'used',
+      description,
+    });
+
+  if (txError) {
+    console.error('Error recording transaction:', txError);
+    // Don't fail - credits were already deducted
+  }
+
+  return true;
 }
 
-// Refund credits to user
+// Refund credits to user (direct table operation - bypasses RPC auth check)
 async function refundCredits(userId: string, amount: number, description: string): Promise<boolean> {
-  const { error } = await supabaseAdmin.rpc('add_credits', {
-    p_user_id: userId,
-    p_amount: amount,
-    p_type: 'refund',
-    p_description: description,
-  });
+  // Get current credits
+  const { data: credits, error: fetchError } = await supabaseAdmin
+    .from('credits')
+    .select('balance')
+    .eq('user_id', userId)
+    .single();
 
-  if (error) {
-    console.error('Error refunding credits:', error);
+  if (fetchError || !credits) {
+    console.error('Error fetching credits for refund:', fetchError);
     return false;
+  }
+
+  // Add to paid balance (refunds go to paid credits)
+  const { error: updateError } = await supabaseAdmin
+    .from('credits')
+    .update({
+      balance: (credits.balance || 0) + amount,
+    })
+    .eq('user_id', userId);
+
+  if (updateError) {
+    console.error('Error updating credits for refund:', updateError);
+    return false;
+  }
+
+  // Record transaction
+  const { error: txError } = await supabaseAdmin
+    .from('credit_transactions')
+    .insert({
+      user_id: userId,
+      amount: amount,
+      type: 'refund',
+      description,
+    });
+
+  if (txError) {
+    console.error('Error recording refund transaction:', txError);
+    // Don't fail - credits were already added
   }
 
   return true;

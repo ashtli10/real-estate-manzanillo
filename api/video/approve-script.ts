@@ -71,18 +71,46 @@ async function verifyAndGetUserId(req: VercelRequest): Promise<string | null> {
   return user.id;
 }
 
-// Refund credits to user (for video generation portion)
+// Refund credits to user (direct table operation - bypasses RPC auth check)
 async function refundCredits(userId: string, amount: number, description: string): Promise<boolean> {
-  const { error } = await supabaseAdmin.rpc('add_credits', {
-    p_user_id: userId,
-    p_amount: amount,
-    p_type: 'refund',
-    p_description: description,
-  });
+  // Get current credits
+  const { data: credits, error: fetchError } = await supabaseAdmin
+    .from('credits')
+    .select('balance')
+    .eq('user_id', userId)
+    .single();
 
-  if (error) {
-    console.error('Error refunding credits:', error);
+  if (fetchError || !credits) {
+    console.error('Error fetching credits for refund:', fetchError);
     return false;
+  }
+
+  // Add to paid balance (refunds go to paid credits)
+  const { error: updateError } = await supabaseAdmin
+    .from('credits')
+    .update({
+      balance: (credits.balance || 0) + amount,
+    })
+    .eq('user_id', userId);
+
+  if (updateError) {
+    console.error('Error updating credits for refund:', updateError);
+    return false;
+  }
+
+  // Record transaction
+  const { error: txError } = await supabaseAdmin
+    .from('credit_transactions')
+    .insert({
+      user_id: userId,
+      amount: amount,
+      type: 'refund',
+      description,
+    });
+
+  if (txError) {
+    console.error('Error recording refund transaction:', txError);
+    // Don't fail - credits were already added
   }
 
   return true;
