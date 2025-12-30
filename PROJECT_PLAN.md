@@ -1,6 +1,6 @@
 # 🏠 Real Estate Manzanillo - Complete Platform Plan
 
-**Last Edited: 2025-06-24**
+**Last Edited: 2025-06-29**
 
 > **Inmobiliaria Manzanillo** - A marketplace platform for real estate agents in Manzanillo
 
@@ -247,9 +247,9 @@ When subscription is **not active**:
 
 ---
 
-## 📋 PHASE 4: Agent Dashboard
+## 📋 PHASE 4: Agent Dashboard ✅ COMPLETED
 
-### 4.1 Dashboard Layout
+### 4.1 Dashboard Layout ✅ Implemented
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  🏠 Real Estate Manzanillo                    [ES/EN] [👤]  │
@@ -273,26 +273,50 @@ When subscription is **not active**:
 └──────────────┴──────────────────────────────────────────────┘
 ```
 
-### 4.2 Properties Management
-- List of own properties
-- Add/Edit/Delete
-- Toggle active/paused
-- View stats per property
-- Drag to reorder
+**Implementation Details:**
+- `src/pages/Dashboard.tsx` - Main dashboard component with tab navigation
+- `src/hooks/useDashboardStats.ts` - Fetches analytics via `get_agent_dashboard_stats` RPC
+- Mobile responsive sidebar with hamburger menu
+- Real-time stats display (views, leads, properties)
 
-### 4.3 Profile Settings
-- Edit all profile fields
-- Preview profile page
-- Change username (with availability check)
+### 4.2 Properties Management ✅ Implemented
+- List of own properties with thumbnail grid
+- Add/Edit/Delete properties
+- Toggle active/paused status
+- Move up/down for display order (reordering)
+- View stats per property from analytics tables
 
-### 4.4 Billing
-- Current plan status
+**Implementation Details:**
+- PropertyForm component for CRUD operations
+- PropertyTable component for list view
+- `handleMoveUp` / `handleMoveDown` functions for reordering
+
+### 4.3 Profile Settings ✅ Implemented
+- Edit all profile fields (name, bio, phone, WhatsApp, etc.)
+- Preview profile page link
+- Change username with real-time availability check
+- Toggle profile visibility
+- Profile and cover image uploads
+
+**Implementation Details:**
+- `src/components/ProfileSettings.tsx` - Full profile editing form
+- Username validation with availability check
+- Visibility toggle for public/private profiles
+
+### 4.4 Billing ✅ Implemented
+- Current plan status display
 - Next billing date
-- Credit balance
-- Purchase credits
-- Download invoices
+- Credit balance (free + paid)
+- Purchase credits via Stripe
+- Manage subscription via Stripe Customer Portal
 
-**Priority:** 🔴 Critical  
+**Implementation Details:**
+- `src/components/BillingTab.tsx` - Billing UI component
+- `src/hooks/useSubscription.ts` - Subscription state
+- `src/hooks/useCredits.ts` - Credits state
+- Integration with `/api/stripe/create-checkout` for purchases
+
+**Priority:** ✅ Complete
 **Effort:** Large
 
 ---
@@ -385,7 +409,7 @@ When subscription is **not active**:
 3. ✅ Stripe subscription integration
 4. ✅ Access control middleware
 
-### Sprint 3 (Week 5-6): Dashboard
+### Sprint 3 (Week 5-6): Dashboard ✅ COMPLETED
 1. ✅ Agent dashboard layout
 2. ✅ Property management UI
 3. ✅ Profile settings
@@ -395,7 +419,7 @@ When subscription is **not active**:
 1. ✅ Credit system UI
 2. ✅ AI tools placeholder
 3. ✅ Internationalization
-4. ✅ Testing & bug fixes
+4. 🔄 Testing & bug fixes
 
 ---
 

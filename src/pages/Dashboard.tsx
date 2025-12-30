@@ -17,10 +17,13 @@ import {
   Clock,
   Mail,
   Shield,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
 import { useCredits } from '../hooks/useCredits';
+import { useDashboardStats } from '../hooks/useDashboardStats';
 import { supabase } from '../integrations/supabase/client';
 import type { Property, PropertyInsert } from '../types/property';
 import type { Profile, InvitationToken } from '../types/user';
@@ -30,6 +33,7 @@ import { DeleteConfirmModal } from '../components/admin/DeleteConfirmModal';
 import { CreateInvitationModal } from '../components/admin/CreateInvitationModal';
 import { InvitationTable } from '../components/admin/InvitationTable';
 import { BillingTab } from '../components/BillingTab';
+import { ProfileSettings } from '../components/ProfileSettings';
 import { SubscriptionGuard } from '../components/SubscriptionGuard';
 import { transformProperty } from '../lib/propertyTransform';
 
@@ -42,6 +46,7 @@ interface DashboardProps {
 export function Dashboard({ onNavigate }: DashboardProps) {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Use subscription and credits hooks
   const { 
@@ -56,6 +61,12 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     freeCredits,
     paidCredits,
   } = useCredits(user?.id);
+
+  // Use dashboard stats hook
+  const {
+    stats: dashboardStats,
+    loading: loadingStats,
+  } = useDashboardStats(user?.id);
   
   // Data state
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -252,6 +263,60 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     }
   };
 
+  const handleMoveUp = async (property: Property) => {
+    if (!user) return;
+    const index = properties.findIndex(p => p.id === property.id);
+    if (index <= 0) return;
+
+    try {
+      const prevProperty = properties[index - 1];
+      const currentOrder = property.display_order || 0;
+      const prevOrder = prevProperty.display_order || 0;
+
+      // Swap display orders
+      await Promise.all([
+        supabase
+          .from('properties')
+          .update({ display_order: prevOrder })
+          .eq('id', property.id),
+        supabase
+          .from('properties')
+          .update({ display_order: currentOrder })
+          .eq('id', prevProperty.id),
+      ]);
+      await loadProperties();
+    } catch (error) {
+      console.error('Error moving property up:', error);
+    }
+  };
+
+  const handleMoveDown = async (property: Property) => {
+    if (!user) return;
+    const index = properties.findIndex(p => p.id === property.id);
+    if (index < 0 || index >= properties.length - 1) return;
+
+    try {
+      const nextProperty = properties[index + 1];
+      const currentOrder = property.display_order || 0;
+      const nextOrder = nextProperty.display_order || 0;
+
+      // Swap display orders
+      await Promise.all([
+        supabase
+          .from('properties')
+          .update({ display_order: nextOrder })
+          .eq('id', property.id),
+        supabase
+          .from('properties')
+          .update({ display_order: currentOrder })
+          .eq('id', nextProperty.id),
+      ]);
+      await loadProperties();
+    } catch (error) {
+      console.error('Error moving property down:', error);
+    }
+  };
+
   const handleCreateInvitation = async (data: {
     email: string | null;
     trial_days: number;
@@ -334,13 +399,20 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   }
 
   const subStatus = getStatusMessage();
-  const activeProperties = properties.filter(p => p.status === 'active').length;
 
   // Render past due warning wrapper
   const dashboardContent = (
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-border flex flex-col">
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Desktop */}
+      <aside className="hidden md:flex w-64 bg-card border-r border-border flex-col">
         {/* Logo/Brand */}
         <div className="p-6 border-b border-border">
           <h1 className="text-xl font-bold text-primary">Inmobiliaria Manzanillo</h1>
@@ -444,13 +516,134 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         </div>
       </aside>
 
+      {/* Mobile Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 w-64 bg-card border-r border-border flex flex-col z-50 transform transition-transform duration-300 md:hidden ${
+        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        {/* Logo/Brand with close button */}
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-primary">Inmobiliaria</h1>
+            <p className="text-sm text-muted-foreground">Panel de Agente</p>
+          </div>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <button
+            onClick={() => { setActiveTab('overview'); setMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'overview'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <TrendingUp className="h-5 w-5" />
+            Resumen
+          </button>
+          <button
+            onClick={() => { setActiveTab('properties'); setMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'properties'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Building2 className="h-5 w-5" />
+            Propiedades
+          </button>
+          <button
+            onClick={() => { setActiveTab('profile'); setMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'profile'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <User className="h-5 w-5" />
+            Perfil
+          </button>
+          <button
+            onClick={() => { setActiveTab('billing'); setMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'billing'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <CreditCard className="h-5 w-5" />
+            Facturación
+          </button>
+          <button
+            onClick={() => { setActiveTab('ai-tools'); setMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'ai-tools'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Sparkles className="h-5 w-5" />
+            IA Tools
+            <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+              Pronto
+            </span>
+          </button>
+          {isAdmin && (
+            <button
+              onClick={() => { setActiveTab('invitations'); setMobileMenuOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+                activeTab === 'invitations'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <Mail className="h-5 w-5" />
+              Invitaciones
+              <Shield className="ml-auto h-4 w-4" />
+            </button>
+          )}
+        </nav>
+
+        {/* Mobile Footer */}
+        <div className="p-4 border-t border-border space-y-2">
+          <button
+            onClick={() => { onNavigate('/'); setMobileMenuOpen(false); }}
+            className="w-full flex items-center gap-3 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Home className="h-5 w-5" />
+            Ver sitio
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            Cerrar sesión
+          </button>
+        </div>
+      </aside>
+
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="bg-card border-b border-border px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">
+        <header className="bg-card border-b border-border px-4 md:px-8 py-4 md:py-6">
+          <div className="flex items-center justify-between gap-4">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 text-muted-foreground hover:text-foreground md:hidden"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground truncate">
                 {activeTab === 'overview' && 'Resumen'}
                 {activeTab === 'properties' && (isAdmin ? 'Todas las Propiedades' : 'Mis Propiedades')}
                 {activeTab === 'profile' && 'Mi Perfil'}
@@ -458,13 +651,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 {activeTab === 'ai-tools' && 'Herramientas de IA'}
                 {activeTab === 'invitations' && 'Invitaciones'}
               </h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm hidden md:block">
                 Bienvenido, {profile?.full_name || 'Agente'}
               </p>
             </div>
             
             {/* Subscription status badge */}
-            <div className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+            <div className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg flex items-center gap-2 flex-shrink-0 ${
               subStatus.color === 'green' ? 'bg-green-100 text-green-700' :
               subStatus.color === 'blue' ? 'bg-blue-100 text-blue-700' :
               subStatus.color === 'yellow' ? 'bg-amber-100 text-amber-700' :
@@ -473,22 +666,31 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             }`}>
               {isPastDue && <AlertTriangle className="h-4 w-4" />}
               {isTrialing && <Clock className="h-4 w-4" />}
-              <span className="font-medium text-sm">{subStatus.message}</span>
+              <span className="font-medium text-xs md:text-sm hidden sm:inline">{subStatus.message}</span>
             </div>
           </div>
         </header>
 
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 <div className="bg-card rounded-xl shadow-soft p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-muted-foreground text-sm">Propiedades Activas</p>
-                      <p className="text-3xl font-bold text-foreground mt-1">{activeProperties}</p>
+                      <p className="text-3xl font-bold text-foreground mt-1">
+                        {loadingStats ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        ) : (
+                          dashboardStats.activeProperties
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {dashboardStats.totalProperties} total
+                      </p>
                     </div>
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                       <Building2 className="h-6 w-6 text-primary" />
@@ -500,7 +702,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-muted-foreground text-sm">Vistas Esta Semana</p>
-                      <p className="text-3xl font-bold text-foreground mt-1">--</p>
+                      <p className="text-3xl font-bold text-foreground mt-1">
+                        {loadingStats ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        ) : (
+                          dashboardStats.viewsThisWeek
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {dashboardStats.totalViews} total
+                      </p>
                     </div>
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                       <Eye className="h-6 w-6 text-blue-600" />
@@ -512,7 +723,16 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-muted-foreground text-sm">Contactos Este Mes</p>
-                      <p className="text-3xl font-bold text-foreground mt-1">--</p>
+                      <p className="text-3xl font-bold text-foreground mt-1">
+                        {loadingStats ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        ) : (
+                          dashboardStats.leadsThisMonth
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {dashboardStats.totalLeads} total
+                      </p>
                     </div>
                     <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                       <MessageSquare className="h-6 w-6 text-green-600" />
@@ -642,8 +862,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     onDelete={setDeletingProperty}
                     onTogglePublish={handleTogglePublish}
                     onToggleFeatured={handleToggleFeatured}
-                    onMoveUp={() => {}}
-                    onMoveDown={() => {}}
+                    onMoveUp={handleMoveUp}
+                    onMoveDown={handleMoveDown}
                   />
                 )}
               </div>
@@ -651,47 +871,13 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           )}
 
           {/* Profile Tab */}
-          {activeTab === 'profile' && (
-            <div className="max-w-2xl space-y-6">
-              <div className="bg-card rounded-xl shadow-soft p-6">
-                <h3 className="font-semibold text-foreground mb-4">Información del perfil</h3>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-muted-foreground">Nombre</label>
-                      <p className="font-medium">{profile?.full_name || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Usuario</label>
-                      <p className="font-medium">@{profile?.username || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Email</label>
-                      <p className="font-medium">{profile?.email || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Teléfono</label>
-                      <p className="font-medium">{profile?.phone_number || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">WhatsApp</label>
-                      <p className="font-medium">{profile?.whatsapp_number || '-'}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Empresa</label>
-                      <p className="font-medium">{profile?.company_name || '-'}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm text-muted-foreground">Biografía</label>
-                    <p className="font-medium">{profile?.bio || '-'}</p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Edición del perfil próximamente disponible.
-              </p>
-            </div>
+          {activeTab === 'profile' && user && (
+            <ProfileSettings
+              userId={user.id}
+              profile={profile}
+              onProfileUpdate={setProfile}
+              onNavigate={onNavigate}
+            />
           )}
 
           {/* Billing Tab */}

@@ -1,6 +1,6 @@
 # BN Inmobiliaria - Architecture Overview
 
-**Last Edited: 2025-06-24**
+**Last Edited: 2025-06-29**
 
 ## System Architecture
 
@@ -210,10 +210,16 @@ function canAccessDashboard(subscription) {
 ### React Hooks
 - `useSubscription(userId)`: Subscription state, access control
 - `useCredits(userId)`: Credit balance, purchase functions
+- `useDashboardStats(userId)`: Dashboard analytics (views, leads, properties)
+- `useAuth()`: Authentication state from AuthContext
+- `useRealtimeProperties()`: Real-time property updates via WebSocket
 
 ### Components
 - `SubscriptionGuard`: Route protection wrapper
 - `BillingTab`: Subscription/credits management UI
+- `ProfileSettings`: Full profile editing with username validation
+- `PropertyForm`: Property CRUD form
+- `PropertyTable`: Property list with actions
 
 ## SEO Components
 
@@ -295,18 +301,28 @@ function canAccessDashboard(subscription) {
 │   ├── components/
 │   │   ├── Breadcrumb.tsx     # Navigation breadcrumbs
 │   │   ├── SubscriptionGuard.tsx # Route protection
-│   │   └── BillingTab.tsx     # Billing UI component
+│   │   ├── BillingTab.tsx     # Billing UI component
+│   │   ├── ProfileSettings.tsx # Profile editing component
+│   │   └── admin/
+│   │       ├── PropertyForm.tsx  # Property CRUD form
+│   │       ├── PropertyTable.tsx # Property list display
+│   │       ├── ImageUpload.tsx   # Image upload component
+│   │       └── VideoUpload.tsx   # Video upload component
 │   ├── hooks/
 │   │   ├── useRealtimeProperties.ts  # Real-time subscriptions
 │   │   ├── useSubscription.ts # Subscription state management
-│   │   └── useCredits.ts      # Credits state management
+│   │   ├── useCredits.ts      # Credits state management
+│   │   ├── useDashboardStats.ts # Dashboard analytics hook
+│   │   └── useAuth.ts         # Auth context hook
 │   ├── lib/
 │   │   └── seo.ts             # SEO utilities
 │   └── pages/
 │       ├── Home.tsx           # SEO: Home page
 │       ├── Properties.tsx     # SEO: Properties list
 │       ├── PropertyDetail.tsx # SEO: Property detail
-│       └── Dashboard.tsx      # Agent dashboard
+│       ├── Dashboard.tsx      # Agent dashboard (tabs: overview, properties, profile, billing)
+│       ├── AgentProfile.tsx   # Public agent profile page
+│       └── OnboardingPage.tsx # New user onboarding
 ├── DEPLOYMENT.md              # Deployment guide
 ├── ARCHITECTURE.md            # This file
 └── vercel.json               # Vercel configuration

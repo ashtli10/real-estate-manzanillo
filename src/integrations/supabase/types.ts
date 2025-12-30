@@ -379,21 +379,76 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: { check_role: string; check_user_id: string }
+      add_credits: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+          p_type: string
+          p_description?: string
+        }
         Returns: boolean
+      }
+      deduct_credits: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+          p_description?: string
+        }
+        Returns: boolean
+      }
+      get_agent_dashboard_stats: {
+        Args: {
+          agent_user_id?: string
+        }
+        Returns: {
+          user_id: string
+          total_properties: number
+          active_properties: number
+          total_views: number
+          total_leads: number
+          views_this_week: number
+          leads_this_month: number
+        }[]
+      }
+      get_subscription_status: {
+        Args: {
+          check_user_id: string
+        }
+        Returns: {
+          status: string
+          plan_type: string
+          trial_ends_at: string | null
+          current_period_end: string | null
+          is_active: boolean
+          stripe_subscription_id: string | null
+          stripe_customer_id: string | null
+        }[]
+      }
+      get_user_credits: {
+        Args: {
+          check_user_id: string
+        }
+        Returns: {
+          balance: number
+          free_credits_remaining: number
+          last_free_credits_reset: string | null
+        }[]
       }
       has_active_subscription: {
         Args: { check_user_id: string }
         Returns: boolean
       }
-      validate_invitation_token: {
-        Args: { invite_token: string }
-        Returns: { is_valid: boolean; token_email: string | null; token_trial_days: number }[]
+      has_role: {
+        Args: { check_role: string; check_user_id: string }
+        Returns: boolean
       }
       use_invitation_token: {
         Args: { invite_token: string; user_uuid: string }
         Returns: boolean
+      }
+      validate_invitation_token: {
+        Args: { invite_token: string }
+        Returns: { is_valid: boolean; token_email: string | null; token_trial_days: number }[]
       }
     }
     Enums: {

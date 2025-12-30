@@ -1,5 +1,7 @@
 # BN Inmobiliaria - Deployment & SEO Guide
 
+**Last Edited: 2025-06-29**
+
 ## Deployment to Vercel
 
 This application is optimized for deployment on Vercel with the following features:
