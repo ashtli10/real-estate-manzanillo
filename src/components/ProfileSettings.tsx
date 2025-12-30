@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   User,
   Phone,
@@ -12,6 +12,7 @@ import {
   X,
   ExternalLink,
   AlertCircle,
+  Upload,
 } from 'lucide-react';
 import { supabase } from '../integrations/supabase/client';
 import type { Profile, ProfileUpdate } from '../types/user';
@@ -46,6 +47,11 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
+  
+  // Profile image upload
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [currentProfileImage, setCurrentProfileImage] = useState<string | null>(profile?.profile_image || null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Update form data when profile changes
   useEffect(() => {
@@ -60,6 +66,7 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
         location: profile.location || '',
         is_visible: profile.is_visible ?? true,
       });
+      setCurrentProfileImage(profile.profile_image || null);
     }
   }, [profile]);
 
@@ -122,6 +129,81 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
     }));
     setError(null);
     setSuccess(false);
+  };
+
+  // Handle profile image upload
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !userId) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Solo se permiten imágenes');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La imagen no puede ser mayor a 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    setError(null);
+
+    try {
+      // Generate unique filename
+      const ext = file.name.split('.').pop();
+      const fileName = `${userId}-${Date.now()}.${ext}`;
+      const filePath = `profiles/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('properties')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('properties')
+        .getPublicUrl(filePath);
+
+      const imageUrl = urlData.publicUrl;
+
+      // Update profile with new image URL
+      const { data, error: updateError } = await supabase
+        .from('profiles')
+        .update({ profile_image: imageUrl })
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setCurrentProfileImage(imageUrl);
+      onProfileUpdate(data as Profile);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      const errMessage = err instanceof Error ? err.message : 'Error al subir la imagen';
+      console.error('Error uploading profile image:', err);
+      setError(errMessage);
+    } finally {
+      setUploadingImage(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const handleSave = async () => {
@@ -262,9 +344,11 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
           <div className="flex items-center gap-4">
             <div className="relative">
               <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                {profile.profile_image ? (
+                {uploadingImage ? (
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                ) : currentProfileImage ? (
                   <img
-                    src={profile.profile_image}
+                    src={currentProfileImage}
                     alt={profile.full_name || 'Profile'}
                     className="w-full h-full object-cover"
                   />
@@ -272,15 +356,40 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                   <User className="h-10 w-10 text-muted-foreground" />
                 )}
               </div>
-              {isEditing && (
-                <button className="absolute -bottom-1 -right-1 p-1.5 bg-primary text-primary-foreground rounded-full shadow-md hover:opacity-90 transition-colors">
+              {/* Hidden file input */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              {/* Camera button - always visible for upload */}
+              <button
+                type="button"
+                onClick={triggerFileInput}
+                disabled={uploadingImage}
+                className="absolute -bottom-1 -right-1 p-1.5 bg-primary text-primary-foreground rounded-full shadow-md hover:opacity-90 transition-colors disabled:opacity-50"
+              >
+                {uploadingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
                   <Camera className="h-4 w-4" />
-                </button>
-              )}
+                )}
+              </button>
             </div>
             <div>
               <p className="font-medium text-foreground">{profile.full_name || 'Sin nombre'}</p>
               <p className="text-sm text-muted-foreground">{profile.email}</p>
+              <button
+                type="button"
+                onClick={triggerFileInput}
+                disabled={uploadingImage}
+                className="mt-1 text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                <Upload className="h-3 w-3" />
+                {currentProfileImage ? 'Cambiar foto' : 'Subir foto'}
+              </button>
             </div>
           </div>
 
