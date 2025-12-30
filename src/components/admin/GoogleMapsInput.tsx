@@ -18,11 +18,66 @@ interface GoogleMapsInputProps {
 
 type ApiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-declare global {
-  interface Window {
-    google?: any;
-  }
+// Google Maps API types
+interface GoogleMapsWindow extends Window {
+  google?: {
+    maps?: {
+      places?: {
+        AutocompleteService: new () => GoogleAutocompleteService;
+        PlacesService: new (attrContainer: HTMLElement) => GooglePlacesService;
+        PlacesServiceStatus?: {
+          OK: string;
+        };
+      };
+    };
+  };
 }
+
+interface GoogleAutocompleteService {
+  getPlacePredictions: (
+    request: {
+      input: string;
+      componentRestrictions?: { country: string };
+      locationBias?: { center: { lat: number; lng: number }; radius: number };
+    },
+    callback: (results: GooglePlacePrediction[] | null, status: string) => void
+  ) => void;
+}
+
+interface GooglePlacePrediction {
+  place_id: string;
+  description: string;
+}
+
+interface GooglePlacesService {
+  getDetails: (
+    request: {
+      placeId: string;
+      fields: string[];
+    },
+    callback: (result: GooglePlaceResult | null, status: string) => void
+  ) => void;
+}
+
+interface GooglePlaceResult {
+  formatted_address?: string;
+  name?: string;
+  geometry?: {
+    location?: {
+      lat: () => number;
+      lng: () => number;
+    };
+  };
+  address_components?: GoogleAddressComponent[];
+}
+
+interface GoogleAddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
+
+declare const window: GoogleMapsWindow;
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -40,9 +95,9 @@ export function GoogleMapsInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [manualMode, setManualMode] = useState(false);
   const [apiStatus, setApiStatus] = useState<ApiStatus>('idle');
-  const [predictions, setPredictions] = useState<any[]>([]);
-  const [autocompleteService, setAutocompleteService] = useState<any>(null);
-  const [placesService, setPlacesService] = useState<any>(null);
+  const [predictions, setPredictions] = useState<GooglePlacePrediction[]>([]);
+  const [autocompleteService, setAutocompleteService] = useState<GoogleAutocompleteService | null>(null);
+  const [placesService, setPlacesService] = useState<GooglePlacesService | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -139,7 +194,7 @@ export function GoogleMapsInput({
             radius: 30000, // 30km radius around Manzanillo
           },
         },
-        (results: any[], status: string) => {
+        (results: GooglePlacePrediction[] | null, status: string) => {
           if (status === 'OK' && results) {
             setPredictions(results);
           } else {
@@ -152,7 +207,7 @@ export function GoogleMapsInput({
     return () => window.clearTimeout(handle);
   }, [search, autocompleteService]);
 
-  const parseAddressComponents = (components: any[]) => {
+  const parseAddressComponents = (components: GoogleAddressComponent[]) => {
     const findComponent = (types: string[]) =>
       components.find((component) => types.some((type) => component.types.includes(type)))?.long_name || '';
 
@@ -174,7 +229,7 @@ export function GoogleMapsInput({
     return { city, state, neighborhood };
   };
 
-  const selectPrediction = (prediction: any) => {
+  const selectPrediction = (prediction: GooglePlacePrediction) => {
     if (!placesService) return;
 
     placesService.getDetails(
@@ -182,7 +237,7 @@ export function GoogleMapsInput({
         placeId: prediction.place_id,
         fields: ['formatted_address', 'geometry', 'address_components', 'name'],
       },
-      (result: any, status: string) => {
+      (result: GooglePlaceResult | null, status: string) => {
         const okStatus =
           status === 'OK' ||
           status === window.google?.maps?.places?.PlacesServiceStatus?.OK;

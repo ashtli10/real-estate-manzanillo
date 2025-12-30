@@ -1,8 +1,49 @@
 const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 const TRANSLATE_API_URL = 'https://translation.googleapis.com/language/translate/v2';
+const CACHE_STORAGE_KEY = 'translation_cache';
+const CACHE_VERSION = 1;
 
 // In-memory cache to reduce API calls and costs
 const translationCache = new Map<string, string>();
+
+// Load cache from localStorage on module initialization
+function loadCacheFromStorage(): void {
+  try {
+    const stored = localStorage.getItem(CACHE_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Check version to invalidate old cache formats
+      if (parsed.version === CACHE_VERSION && parsed.data) {
+        Object.entries(parsed.data).forEach(([key, value]) => {
+          translationCache.set(key, value as string);
+        });
+        console.log(`Loaded ${translationCache.size} translations from cache`);
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to load translation cache from localStorage:', error);
+  }
+}
+
+// Save cache to localStorage
+function saveCacheToStorage(): void {
+  try {
+    const data: Record<string, string> = {};
+    translationCache.forEach((value, key) => {
+      data[key] = value;
+    });
+    localStorage.setItem(CACHE_STORAGE_KEY, JSON.stringify({
+      version: CACHE_VERSION,
+      data,
+      savedAt: Date.now()
+    }));
+  } catch (error) {
+    console.warn('Failed to save translation cache to localStorage:', error);
+  }
+}
+
+// Initialize cache from localStorage
+loadCacheFromStorage();
 
 // Generate cache key
 const getCacheKey = (text: string, targetLang: string, sourceLang: string = 'es'): string => {
@@ -67,8 +108,9 @@ export async function translateText(
     const data = await response.json();
     const translatedText = data.data.translations[0].translatedText;
 
-    // Cache the translation
+    // Cache the translation and persist to localStorage
     translationCache.set(cacheKey, translatedText);
+    saveCacheToStorage();
 
     return translatedText;
   } catch (error) {
@@ -160,6 +202,9 @@ export async function translateBatch(
       translationCache.set(cacheKey, translatedText);
     });
 
+    // Persist to localStorage after batch update
+    saveCacheToStorage();
+
     return results;
   } catch (error) {
     console.error('Batch translation error:', error);
@@ -176,6 +221,11 @@ export async function translateBatch(
  */
 export function clearTranslationCache(): void {
   translationCache.clear();
+  try {
+    localStorage.removeItem(CACHE_STORAGE_KEY);
+  } catch (error) {
+    console.warn('Failed to clear translation cache from localStorage:', error);
+  }
 }
 
 /**
@@ -185,5 +235,6 @@ export function getTranslationCacheStats() {
   return {
     size: translationCache.size,
     keys: Array.from(translationCache.keys()),
+    storageKey: CACHE_STORAGE_KEY,
   };
 }
