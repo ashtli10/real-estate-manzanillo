@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Home,
   Building2,
@@ -42,9 +42,20 @@ interface DashboardProps {
   onNavigate: (path: string) => void;
 }
 
+const VALID_TABS: DashboardTab[] = ['overview', 'properties', 'profile', 'billing', 'ai-tools', 'settings', 'invitations'];
+
+function getInitialTab(): DashboardTab {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab');
+  if (tab && VALID_TABS.includes(tab as DashboardTab)) {
+    return tab as DashboardTab;
+  }
+  return 'overview';
+}
+
 export function Dashboard({ onNavigate }: DashboardProps) {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
+  const [activeTab, setActiveTab] = useState<DashboardTab>(getInitialTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Use subscription and credits hooks
@@ -87,6 +98,27 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [loadingInvitations, setLoadingInvitations] = useState(true);
   const [showCreateInvitation, setShowCreateInvitation] = useState(false);
   const [creatingInvitation, setCreatingInvitation] = useState(false);
+
+  // Sync URL query params with active tab
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const currentTab = params.get('tab');
+    const hasCheckout = params.has('checkout');
+    
+    // Clear checkout param after first load/tab change
+    if (hasCheckout) {
+      params.delete('checkout');
+    }
+    
+    // Update tab param
+    if (currentTab !== activeTab) {
+      params.set('tab', activeTab);
+    }
+    
+    // Update URL without reload
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', newUrl);
+  }, [activeTab]);
 
   useEffect(() => {
     if (!authLoading && !user) {
