@@ -415,11 +415,40 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
     setTimeoutError(false);
   }, []);
 
-  // Delete a job from database
+  // Delete a job from database and clean up storage
   const deleteJob = useCallback(async (jobId: string): Promise<boolean> => {
     if (!userId) return false;
     
     try {
+      // First, get the job to find generated image URLs
+      const { data: job } = await supabase
+        .from('video_generation_jobs')
+        .select('image_urls')
+        .eq('id', jobId)
+        .eq('user_id', userId)
+        .single();
+
+      // Delete generated images from storage if they exist
+      if (job?.image_urls && job.image_urls.length > 0) {
+        // Extract storage paths from URLs
+        // URLs are like: https://xxx.supabase.co/storage/v1/object/public/jobs/userId/jobId/image_0.png
+        const storagePaths = job.image_urls
+          .map((url: string) => {
+            try {
+              const match = url.match(/\/jobs\/(.+)$/);
+              return match ? match[1] : null;
+            } catch {
+              return null;
+            }
+          })
+          .filter(Boolean) as string[];
+
+        if (storagePaths.length > 0) {
+          await supabase.storage.from('jobs').remove(storagePaths);
+        }
+      }
+
+      // Delete the job from database
       const { error: deleteError } = await supabase
         .from('video_generation_jobs')
         .delete()

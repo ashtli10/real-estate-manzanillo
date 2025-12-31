@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useCredits } from '../hooks/useCredits';
 import { useVideoGeneration, VIDEO_GENERATION_COSTS, type EligibleProperty, type VideoGenerationJob, type ScriptScene } from '../hooks/useVideoGeneration';
+import { supabase } from '../integrations/supabase/client';
 
 interface AIToolsTabProps {
   userId: string;
@@ -234,7 +235,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     setShowRegenerationNotes(false);
     setWizardStep('generating-images');
     
-    // Use the hook's regenerateImages which handles deleting the old job
+    // Use the hook's regenerateImages which handles deleting the old job and its images
     const success = await regenerateImages(
       selectedProperty.id,
       selectedImages,
@@ -245,6 +246,9 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       setRegenerationNotes('');
       // Credits already deducted by hook
       refreshCredits();
+      // Refresh recent jobs to remove the deleted old job from history
+      const jobs = await fetchRecentJobs();
+      setRecentJobs(jobs);
     }
   };
 
@@ -1060,19 +1064,34 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     </div>
   );
 
-  // Check job status on load
+  // Check job status on load (for timeout detection)
   useEffect(() => {
     const checkJobStatus = async () => {
-      if (currentJob && currentJob.status === 'processing') {
+      if (currentJob && (currentJob.status === 'processing' || currentJob.status === 'pending')) {
         try {
+          // Get auth token
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.access_token) return;
+
           const response = await fetch('/api/video/check-job-status', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
             body: JSON.stringify({ jobId: currentJob.id }),
           });
-          const data = await response.json();
-          console.log(data.message);
-          refreshCredits(); // Refresh credits after potential refund
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Job status check:', data.message);
+            // If job was marked as failed due to timeout, refresh to show updated status
+            if (data.creditsRefunded) {
+              refreshCredits();
+              // Reload job to get updated status
+              fetchRecentJobs();
+            }
+          }
         } catch (error) {
           console.error('Error checking job status:', error);
         }
@@ -1080,7 +1099,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     };
 
     checkJobStatus();
-  }, [currentJob, refreshCredits]);
+  }, [currentJob, refreshCredits, fetchRecentJobs]);
 
   // Render current step content
   const renderCurrentStep = () => {
