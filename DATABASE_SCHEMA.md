@@ -294,7 +294,14 @@ Tracks AI video generation jobs with status, generated images, scripts, and fina
 - `selected_images` (TEXT[]) - 3 images selected by user from property
 - `notes` (TEXT) - Optional custom instructions
 - `image_urls` (TEXT[]) - 3 generated AI images
-- `script` (TEXT[]) - 3 script strings for each scene
+- `script` (JSONB) - Array of 3 script scene objects:
+  ```json
+  [
+    { "dialogue": "spoken text", "action": "presenter action", "emotion": "delivery style" },
+    { "dialogue": "...", "action": "...", "emotion": "..." },
+    { "dialogue": "...", "action": "...", "emotion": "..." }
+  ]
+  ```
 - `video_url` (TEXT) - Final video URL
 - `error_message` (TEXT) - Error details if failed
 - `credits_charged` (INT) - Total credits charged for this job

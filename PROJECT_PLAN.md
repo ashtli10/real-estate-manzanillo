@@ -347,26 +347,46 @@ When subscription is **not active**:
 3. Add optional notes for AI guidance
 4. Generate 3 AI-enhanced frames (5 credits)
 5. Review images with fullscreen viewer
-6. Regenerate if needed (5 credits each) or approve
-7. Approve images → Generate script (30 credits charged)
-8. Edit script (max 25 words per scene for 8 seconds of speech)
-9. Approve script → Generate final video
+6. Regenerate if needed (5 credits each) with optional updated notes
+7. Approve images → Generate script (1 credit)
+8. Edit script dialogue (max 25 words per scene for 8 seconds of speech)
+9. Approve script → Generate final video (30 credits)
 10. Download 9:16 video (24 seconds)
 
+**Credit Costs:**
+- Image generation: 5 credits
+- Image regeneration: 5 credits
+- Script generation: 1 credit
+- Video generation: 30 credits
+- **Total per complete video: 36 credits**
+
+**Script Format (JSONB):**
+```json
+[
+  { "dialogue": "spoken text", "action": "presenter action", "emotion": "delivery style" },
+  { "dialogue": "...", "action": "...", "emotion": "..." },
+  { "dialogue": "...", "action": "...", "emotion": "..." }
+]
+```
+User only edits the `dialogue` field; `action` and `emotion` are AI-generated.
+
 **Features:**
-- Real-time job status tracking via Supabase subscriptions
+- Real-time job status tracking via Supabase subscriptions (optimized for status-only changes)
 - Auto-resume active jobs on page reload
 - Job history with status indicators
 - Fullscreen image viewer with keyboard navigation
+- Collapsible notes editor for regeneration
 - Credit refunds on failure
 - 20-minute timeout protection
+- Credits update instantly in UI after operations
 
 **Implementation Details:**
 - `src/components/AIToolsTab.tsx` - Full wizard UI with step indicator
 - `src/hooks/useVideoGeneration.ts` - Job state management and real-time subscriptions
+- `src/hooks/useCredits.ts` - Credit tracking with real-time updates
 - `api/video/generate-images.ts` - Start image generation (5 credits)
-- `api/video/approve-images.ts` - Approve images, start script gen (30 credits)
-- `api/video/approve-script.ts` - Approve script, start video render
+- `api/video/approve-images.ts` - Approve images, start script gen (1 credit)
+- `api/video/approve-script.ts` - Approve script, start video render (30 credits)
 - `video_generation_jobs` table - Job tracking with status flow
 - `storage:jobs` bucket - User-scoped asset storage
 

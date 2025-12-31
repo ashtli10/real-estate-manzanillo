@@ -18,6 +18,9 @@ import {
   Home,
   X,
   ChevronLeft,
+  Trash2,
+  Play,
+  Clock,
 } from 'lucide-react';
 import { useCredits } from '../hooks/useCredits';
 import { useVideoGeneration, VIDEO_GENERATION_COSTS, type EligibleProperty, type VideoGenerationJob, type ScriptScene } from '../hooks/useVideoGeneration';
@@ -49,7 +52,6 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     eligibleProperties,
     loading,
     error,
-    isWaiting,
     timeoutError,
     fetchEligibleProperties,
     startImageGeneration,
@@ -58,6 +60,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     approveScript,
     retryFromImages,
     clearJob,
+    deleteJob,
     fetchRecentJobs,
     checkForActiveJob,
     loadExistingJob,
@@ -76,13 +79,17 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   const [recentJobs, setRecentJobs] = useState<VideoGenerationJob[]>([]);
   
   // Fullscreen image viewer state
-  const [fullscreenImage, setFullscreenImage] = useState<{ url: string; index: number } | null>(null);
-  const [showRecentJobs, setShowRecentJobs] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState<{ url: string; index: number; images: string[] } | null>(null);
   const [initialCheckDone, setInitialCheckDone] = useState(false);
   
   // Regeneration notes state
   const [showRegenerationNotes, setShowRegenerationNotes] = useState(false);
   const [regenerationNotes, setRegenerationNotes] = useState('');
+
+  // Helper to open fullscreen viewer
+  const openFullscreen = (url: string, index: number, images: string[]) => {
+    setFullscreenImage({ url, index, images });
+  };
 
   // Load eligible properties on mount
   useEffect(() => {
@@ -349,9 +356,6 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       setEditedScript(job.script.map(scene => ({ ...scene })));
     }
     
-    // Hide history panel after selecting
-    setShowRecentJobs(false);
-    
     // The useEffect will update the wizard step based on job status
   }, [eligibleProperties, loadExistingJob]);
 
@@ -384,6 +388,9 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     };
 
     const currentIndex = getCurrentStepIndex();
+    
+    // Check if we're in a generating/processing state
+    const isProcessing = ['generating-images', 'generating-script', 'generating-video'].includes(wizardStep);
 
     return (
       <div className="mb-6">
@@ -417,16 +424,25 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
             );
           })}
         </div>
-        {/* Show "Start New" button when not on property selection */}
-        {wizardStep !== 'select-property' && (
+        {/* Only show cancel option when completed - during process, user must wait */}
+        {wizardStep === 'completed' && (
           <div className="flex justify-center mt-3">
             <button
               onClick={handleReset}
               className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
             >
-              <ArrowLeft className="h-3 w-3" />
-              Volver al inicio
+              <Sparkles className="h-3 w-3" />
+              Crear otro video
             </button>
+          </div>
+        )}
+        {/* Show processing indicator when generating */}
+        {isProcessing && (
+          <div className="flex justify-center mt-3">
+            <span className="text-sm text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Procesando... por favor espera
+            </span>
           </div>
         )}
       </div>
@@ -460,81 +476,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   // Render property selection
   const renderPropertySelection = () => (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Selecciona una propiedad</h3>
-        <button
-          onClick={() => setShowRecentJobs(!showRecentJobs)}
-          className="text-sm text-primary hover:underline flex items-center gap-1"
-        >
-          {showRecentJobs ? 'Ocultar historial' : `Ver historial (${recentJobs.length})`}
-        </button>
-      </div>
-
-      {showRecentJobs && (
-        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-          <h4 className="text-sm font-medium text-muted-foreground">Historial de videos</h4>
-          {recentJobs.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No tienes videos generados aún.
-            </p>
-          ) : (
-            <div className="space-y-2 max-h-80 overflow-y-auto">
-              {recentJobs.map((job) => {
-                // Find property title
-                const property = eligibleProperties.find(p => p.id === job.property_id);
-                const propertyTitle = property?.title || 'Propiedad eliminada';
-                
-                return (
-                  <button
-                    key={job.id}
-                    onClick={() => handleResumeJob(job)}
-                    className="w-full flex items-center gap-3 bg-card p-3 rounded-lg hover:bg-muted transition-colors text-left"
-                  >
-                    {/* Thumbnail */}
-                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
-                      {(job.image_urls?.[0] || job.selected_images?.[0]) && (
-                        <img
-                          src={job.image_urls?.[0] || job.selected_images[0]}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                    </div>
-                    
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{propertyTitle}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatJobDate(job.created_at)}
-                      </p>
-                    </div>
-                    
-                    {/* Status badge */}
-                    <div className={`
-                      flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium
-                      ${job.status === 'completed' ? 'bg-green-100 text-green-700' : ''}
-                      ${job.status === 'failed' ? 'bg-red-100 text-red-700' : ''}
-                      ${['pending', 'processing'].includes(job.status) ? 'bg-amber-100 text-amber-700' : ''}
-                      ${['images_ready', 'script_ready'].includes(job.status) ? 'bg-blue-100 text-blue-700' : ''}
-                    `}>
-                      <div className={`
-                        w-1.5 h-1.5 rounded-full
-                        ${job.status === 'completed' ? 'bg-green-500' : ''}
-                        ${job.status === 'failed' ? 'bg-red-500' : ''}
-                        ${['pending', 'processing'].includes(job.status) ? 'bg-amber-500 animate-pulse' : ''}
-                        ${['images_ready', 'script_ready'].includes(job.status) ? 'bg-blue-500' : ''}
-                      `} />
-                      {getStatusLabel(job.status)}
-                    </div>
-                    
-                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      <h3 className="text-lg font-semibold">Selecciona una propiedad</h3>
 
       {eligibleProperties.length === 0 ? (
         <div className="text-center py-8 bg-muted/50 rounded-lg">
@@ -554,7 +496,13 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
               onClick={() => handleSelectProperty(property)}
               className="flex items-start gap-4 p-4 bg-card border border-border rounded-lg hover:border-primary transition-colors text-left"
             >
-              <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openFullscreen(property.images[0], 0, property.images);
+                }}
+                className="w-20 h-20 bg-muted rounded-lg overflow-hidden flex-shrink-0 hover:ring-2 hover:ring-primary transition-all"
+              >
                 {property.images[0] && (
                   <img
                     src={property.images[0]}
@@ -562,7 +510,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
                     className="w-full h-full object-cover"
                   />
                 )}
-              </div>
+              </button>
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-foreground truncate">{property.title}</h4>
                 <p className="text-sm text-muted-foreground">
@@ -614,9 +562,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
           const isSelected = selectedIndex !== -1;
 
           return (
-            <button
+            <div
               key={index}
-              onClick={() => handleToggleImage(img)}
               className={`
                 relative aspect-video rounded-lg overflow-hidden border-2 transition-all
                 ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-muted-foreground/30'}
@@ -625,17 +572,27 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
               <img
                 src={img}
                 alt={`Imagen ${index + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover cursor-pointer"
+                onClick={() => openFullscreen(img, index, selectedProperty?.images || [])}
               />
-              {isSelected && (
-                <div className="absolute top-2 left-2 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                  {selectedIndex + 1}
-                </div>
-              )}
-              {!isSelected && selectedImages.length >= 3 && (
-                <div className="absolute inset-0 bg-black/50" />
-              )}
-            </button>
+              {/* Selection overlay */}
+              <button
+                onClick={() => handleToggleImage(img)}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                {isSelected && (
+                  <div className="absolute top-2 left-2 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                    {selectedIndex + 1}
+                  </div>
+                )}
+                {!isSelected && selectedImages.length >= 3 && (
+                  <div className="absolute inset-0 bg-black/50" />
+                )}
+                {!isSelected && selectedImages.length < 3 && (
+                  <div className="absolute top-2 right-2 w-6 h-6 border-2 border-white/50 rounded-full bg-black/20" />
+                )}
+              </button>
+            </div>
           );
         })}
       </div>
@@ -735,21 +692,21 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
 
   // Render fullscreen image viewer
   const renderFullscreenViewer = () => {
-    if (!fullscreenImage || !currentJob?.image_urls) return null;
+    if (!fullscreenImage) return null;
     
-    const images = currentJob.image_urls;
+    const images = fullscreenImage.images;
     const canGoPrev = fullscreenImage.index > 0;
     const canGoNext = fullscreenImage.index < images.length - 1;
     
     const goToPrev = () => {
       if (canGoPrev) {
-        setFullscreenImage({ url: images[fullscreenImage.index - 1], index: fullscreenImage.index - 1 });
+        setFullscreenImage({ url: images[fullscreenImage.index - 1], index: fullscreenImage.index - 1, images });
       }
     };
     
     const goToNext = () => {
       if (canGoNext) {
-        setFullscreenImage({ url: images[fullscreenImage.index + 1], index: fullscreenImage.index + 1 });
+        setFullscreenImage({ url: images[fullscreenImage.index + 1], index: fullscreenImage.index + 1, images });
       }
     };
     
@@ -777,7 +734,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         
         {/* Frame indicator */}
         <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/10 text-white rounded-full text-sm">
-          Frame {fullscreenImage.index + 1} de {images.length}
+          {fullscreenImage.index + 1} de {images.length}
         </div>
         
         {/* Previous button */}
@@ -797,7 +754,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         >
           <img
             src={fullscreenImage.url}
-            alt={`Frame ${fullscreenImage.index + 1}`}
+            alt={`Image ${fullscreenImage.index + 1}`}
             className="max-w-full max-h-[90vh] object-contain rounded-lg"
           />
         </div>
@@ -812,20 +769,22 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
           </button>
         )}
         
-        {/* Thumbnails */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-          {images.map((img, idx) => (
-            <button
-              key={idx}
-              onClick={(e) => { e.stopPropagation(); setFullscreenImage({ url: img, index: idx }); }}
-              className={`w-16 h-24 rounded-lg overflow-hidden border-2 transition-all ${
-                idx === fullscreenImage.index ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-75'
-              }`}
-            >
-              <img src={img} alt="" className="w-full h-full object-cover" />
-            </button>
-          ))}
-        </div>
+        {/* Thumbnails - only show if not too many */}
+        {images.length <= 10 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            {images.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={(e) => { e.stopPropagation(); setFullscreenImage({ url: img, index: idx, images }); }}
+                className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                  idx === fullscreenImage.index ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-75'
+                }`}
+              >
+                <img src={img} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -844,7 +803,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         {currentJob?.image_urls?.map((img, index) => (
           <button
             key={index}
-            onClick={() => setFullscreenImage({ url: img, index })}
+            onClick={() => openFullscreen(img, index, currentJob.image_urls || [])}
             className="relative aspect-[9/16] rounded-lg overflow-hidden bg-muted group cursor-pointer"
           >
             <img
@@ -972,13 +931,16 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
               </div>
               <div className="flex gap-3">
                 {currentJob?.image_urls?.[index] && (
-                  <div className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0">
+                  <button
+                    onClick={() => openFullscreen(currentJob.image_urls![index], index, currentJob.image_urls || [])}
+                    className="w-20 h-28 rounded-lg overflow-hidden flex-shrink-0 hover:ring-2 hover:ring-primary transition-all"
+                  >
                     <img
                       src={currentJob.image_urls[index]}
                       alt={`Frame ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
-                  </div>
+                  </button>
                 )}
                 <textarea
                   value={scene.dialogue}
@@ -1178,6 +1140,186 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
             {renderStepIndicator()}
             {renderCurrentStep()}
           </>
+        )}
+      </div>
+
+      {/* History Section */}
+      <div className="bg-card rounded-xl shadow-soft p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-foreground text-lg flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Historial de Videos
+          </h3>
+          <span className="text-sm text-muted-foreground">{recentJobs.length} videos</span>
+        </div>
+
+        {recentJobs.length === 0 ? (
+          <div className="text-center py-8 bg-muted/30 rounded-lg">
+            <Video className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">No tienes videos generados aún.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Tus videos completados y en progreso aparecerán aquí.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {recentJobs.map((job) => {
+              const property = eligibleProperties.find(p => p.id === job.property_id);
+              const propertyTitle = property?.title || 'Propiedad eliminada';
+              const thumbnail = job.image_urls?.[0] || job.selected_images?.[0];
+              const isCurrentJob = currentJob?.id === job.id;
+              const isFailed = job.status === 'failed';
+              const isCompleted = job.status === 'completed';
+              const isInProgress = ['pending', 'processing'].includes(job.status);
+              const needsAction = ['images_ready', 'script_ready'].includes(job.status);
+
+              return (
+                <div
+                  key={job.id}
+                  className={`
+                    flex items-center gap-4 p-4 rounded-lg border transition-all
+                    ${isCurrentJob ? 'bg-primary/5 border-primary' : 'bg-muted/30 border-transparent hover:bg-muted/50'}
+                  `}
+                >
+                  {/* Thumbnail - clickable for fullscreen */}
+                  {thumbnail && (
+                    <button
+                      onClick={() => openFullscreen(thumbnail, 0, job.image_urls || job.selected_images)}
+                      className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted hover:ring-2 hover:ring-primary transition-all"
+                    >
+                      <img src={thumbnail} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  )}
+                  {!thumbnail && (
+                    <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <Image className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{propertyTitle}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatJobDate(job.created_at)}
+                    </p>
+                    
+                    {/* Error message for failed jobs */}
+                    {isFailed && job.error_message && (
+                      <div className="mt-2 flex items-start gap-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+                        <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                        <span className="line-clamp-2">{job.error_message}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status badge */}
+                  <div className={`
+                    flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0
+                    ${isCompleted ? 'bg-green-100 text-green-700' : ''}
+                    ${isFailed ? 'bg-red-100 text-red-700' : ''}
+                    ${isInProgress ? 'bg-amber-100 text-amber-700' : ''}
+                    ${needsAction ? 'bg-blue-100 text-blue-700' : ''}
+                  `}>
+                    <div className={`
+                      w-1.5 h-1.5 rounded-full
+                      ${isCompleted ? 'bg-green-500' : ''}
+                      ${isFailed ? 'bg-red-500' : ''}
+                      ${isInProgress ? 'bg-amber-500 animate-pulse' : ''}
+                      ${needsAction ? 'bg-blue-500' : ''}
+                    `} />
+                    {getStatusLabel(job.status)}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Completed: Download and view */}
+                    {isCompleted && job.video_url && (
+                      <>
+                        <a
+                          href={job.video_url}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 hover:bg-muted rounded-lg transition-colors"
+                          title="Descargar video"
+                        >
+                          <Download className="h-4 w-4" />
+                        </a>
+                        <button
+                          onClick={() => handleResumeJob(job)}
+                          className="p-2 hover:bg-muted rounded-lg transition-colors"
+                          title="Ver detalles"
+                        >
+                          <Play className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Failed: Retry button */}
+                    {isFailed && (
+                      <button
+                        onClick={async () => {
+                          const prop = eligibleProperties.find(p => p.id === job.property_id);
+                          if (prop) {
+                            await deleteJob(job.id);
+                            setSelectedProperty(prop);
+                            setSelectedImages(job.selected_images);
+                            setCustomNotes(job.notes || '');
+                            await startImageGeneration(prop.id, job.selected_images, job.notes || undefined);
+                            refreshCredits();
+                          }
+                        }}
+                        disabled={loading || !hasEnoughCredits(VIDEO_GENERATION_COSTS.generateImages)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Reintentar
+                      </button>
+                    )}
+
+                    {/* Needs action: Continue button */}
+                    {needsAction && !isCurrentJob && (
+                      <button
+                        onClick={() => handleResumeJob(job)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-medium hover:bg-blue-200 transition-colors"
+                      >
+                        Continuar
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+
+                    {/* In progress: Just show processing */}
+                    {isInProgress && !isCurrentJob && (
+                      <button
+                        onClick={() => handleResumeJob(job)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium hover:bg-amber-200 transition-colors"
+                      >
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Ver progreso
+                      </button>
+                    )}
+
+                    {/* Delete button for failed/completed */}
+                    {(isFailed || isCompleted) && (
+                      <button
+                        onClick={async () => {
+                          if (confirm('¿Eliminar este video del historial?')) {
+                            await deleteJob(job.id);
+                            const jobs = await fetchRecentJobs();
+                            setRecentJobs(jobs);
+                          }
+                        }}
+                        className="p-2 hover:bg-red-100 text-muted-foreground hover:text-red-600 rounded-lg transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 

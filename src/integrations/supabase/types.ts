@@ -383,7 +383,7 @@ export type Database = {
           selected_images: string[]
           notes: string | null
           image_urls: string[] | null
-          script: string[] | null
+          script: Array<{ dialogue: string; action: string; emotion: string }> | null
           video_url: string | null
           error_message: string | null
           credits_charged: number
@@ -400,7 +400,7 @@ export type Database = {
           selected_images: string[]
           notes?: string | null
           image_urls?: string[] | null
-          script?: string[] | null
+          script?: Array<{ dialogue: string; action: string; emotion: string }> | null
           video_url?: string | null
           error_message?: string | null
           credits_charged?: number
@@ -417,7 +417,7 @@ export type Database = {
           selected_images?: string[]
           notes?: string | null
           image_urls?: string[] | null
-          script?: string[] | null
+          script?: Array<{ dialogue: string; action: string; emotion: string }> | null
           video_url?: string | null
           error_message?: string | null
           credits_charged?: number

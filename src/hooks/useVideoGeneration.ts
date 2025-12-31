@@ -72,6 +72,7 @@ interface UseVideoGenerationReturn {
   approveScript: (jobId: string, editedScript: ScriptScene[]) => Promise<boolean>;
   retryFromImages: (propertyId: string, selectedImages: string[], notes?: string) => Promise<boolean>;
   clearJob: () => void;
+  deleteJob: (jobId: string) => Promise<boolean>;
   loadExistingJob: (jobId: string) => Promise<void>;
   fetchRecentJobs: () => Promise<VideoGenerationJob[]>;
   checkForActiveJob: () => Promise<VideoGenerationJob | null>;
@@ -292,17 +293,6 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
     }
   }, [userId, subscribeToJob]);
 
-  // Regenerate images (same as start but creates new job)
-  const regenerateImages = useCallback(async (
-    propertyId: string,
-    selectedImages: string[],
-    notes?: string
-  ): Promise<boolean> => {
-    // Clear current job first
-    setCurrentJob(null);
-    return startImageGeneration(propertyId, selectedImages, notes);
-  }, [startImageGeneration]);
-
   // Approve images and start script generation
   const approveImages = useCallback(async (jobId: string): Promise<boolean> => {
     if (!userId) return false;
@@ -425,6 +415,48 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
     setTimeoutError(false);
   }, []);
 
+  // Delete a job from database
+  const deleteJob = useCallback(async (jobId: string): Promise<boolean> => {
+    if (!userId) return false;
+    
+    try {
+      const { error: deleteError } = await supabase
+        .from('video_generation_jobs')
+        .delete()
+        .eq('id', jobId)
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.error('Error deleting job:', deleteError);
+        return false;
+      }
+
+      // If it's the current job, clear it
+      if (currentJob?.id === jobId) {
+        clearJob();
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Error deleting job:', err);
+      return false;
+    }
+  }, [userId, currentJob, clearJob]);
+
+  // Regenerate images (delete old job first, then create new)
+  const regenerateImages = useCallback(async (
+    propertyId: string,
+    selectedImages: string[],
+    notes?: string
+  ): Promise<boolean> => {
+    // Delete the current job first if it exists
+    if (currentJob) {
+      await deleteJob(currentJob.id);
+    }
+    setCurrentJob(null);
+    return startImageGeneration(propertyId, selectedImages, notes);
+  }, [currentJob, deleteJob, startImageGeneration]);
+
   // Load an existing job
   const loadExistingJob = useCallback(async (jobId: string) => {
     if (!userId) return;
@@ -529,6 +561,7 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
     approveScript,
     retryFromImages,
     clearJob,
+    deleteJob,
     loadExistingJob,
     fetchRecentJobs,
     checkForActiveJob,

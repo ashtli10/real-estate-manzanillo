@@ -74,13 +74,15 @@
 │  │ /api/video/approve-images                              │     │
 │  │  • Approves generated images, starts script gen       │     │
 │  │  • Requires authentication (JWT)                      │     │
-│  │  • Charges 30 credits for video generation            │     │
+│  │  • Charges 1 credit for script generation             │     │
 │  │  • Calls n8n webhook for script generation            │     │
 │  └───────────────────────────────────────────────────────┘     │
 │  ┌───────────────────────────────────────────────────────┐     │
 │  │ /api/video/approve-script                              │     │
 │  │  • Approves edited script, starts final video gen     │     │
 │  │  • Requires authentication (JWT)                      │     │
+│  │  • Charges 30 credits for video generation            │     │
+│  │  • Accepts ScriptScene[] with dialogue/action/emotion │     │
 │  │  • Calls n8n webhook for video rendering              │     │
 │  └───────────────────────────────────────────────────────┘     │
 │                                                                  │
