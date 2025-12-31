@@ -10,6 +10,13 @@ export type VideoJobStatus =
   | 'completed' 
   | 'failed';
 
+// Script scene structure
+export interface ScriptScene {
+  dialogue: string;
+  action: string;
+  emotion: string;
+}
+
 // Video generation job interface
 export interface VideoGenerationJob {
   id: string;
@@ -19,7 +26,7 @@ export interface VideoGenerationJob {
   selected_images: string[];
   notes: string | null;
   image_urls: string[] | null;
-  script: string[] | null;
+  script: ScriptScene[] | null;
   video_url: string | null;
   error_message: string | null;
   credits_charged: number;
@@ -62,7 +69,7 @@ interface UseVideoGenerationReturn {
   startImageGeneration: (propertyId: string, selectedImages: string[], notes?: string) => Promise<boolean>;
   regenerateImages: (propertyId: string, selectedImages: string[], notes?: string) => Promise<boolean>;
   approveImages: (jobId: string) => Promise<boolean>;
-  approveScript: (jobId: string, editedScript: string[]) => Promise<boolean>;
+  approveScript: (jobId: string, editedScript: ScriptScene[]) => Promise<boolean>;
   retryFromImages: (propertyId: string, selectedImages: string[], notes?: string) => Promise<boolean>;
   clearJob: () => void;
   loadExistingJob: (jobId: string) => Promise<void>;
@@ -343,7 +350,7 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
   // Approve script and start video generation
   const approveScript = useCallback(async (
     jobId: string, 
-    editedScript: string[]
+    editedScript: ScriptScene[]
   ): Promise<boolean> => {
     if (!userId) return false;
     

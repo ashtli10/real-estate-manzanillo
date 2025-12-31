@@ -20,7 +20,7 @@ import {
   ChevronLeft,
 } from 'lucide-react';
 import { useCredits } from '../hooks/useCredits';
-import { useVideoGeneration, VIDEO_GENERATION_COSTS, type EligibleProperty, type VideoGenerationJob } from '../hooks/useVideoGeneration';
+import { useVideoGeneration, VIDEO_GENERATION_COSTS, type EligibleProperty, type VideoGenerationJob, type ScriptScene } from '../hooks/useVideoGeneration';
 
 interface AIToolsTabProps {
   userId: string;
@@ -68,7 +68,11 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   const [selectedProperty, setSelectedProperty] = useState<EligibleProperty | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [customNotes, setCustomNotes] = useState('');
-  const [editedScript, setEditedScript] = useState<string[]>(['', '', '']);
+  const [editedScript, setEditedScript] = useState<ScriptScene[]>([
+    { dialogue: '', action: '', emotion: '' },
+    { dialogue: '', action: '', emotion: '' },
+    { dialogue: '', action: '', emotion: '' },
+  ]);
   const [recentJobs, setRecentJobs] = useState<VideoGenerationJob[]>([]);
   
   // Fullscreen image viewer state
@@ -141,7 +145,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         break;
       case 'script_ready':
         if (currentJob.script) {
-          setEditedScript([...currentJob.script]);
+          setEditedScript(currentJob.script.map(scene => ({ ...scene })));
         }
         setWizardStep('edit-script');
         break;
@@ -245,11 +249,12 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     }
   };
 
-  // Update script text
+  // Update script dialogue text
   const handleScriptChange = (index: number, value: string) => {
     setEditedScript((prev) => {
-      const newScript = [...prev];
-      newScript[index] = value;
+      const newScript = prev.map((scene, i) => 
+        i === index ? { ...scene, dialogue: value } : scene
+      );
       return newScript;
     });
   };
@@ -259,10 +264,10 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     return text.trim().split(/\s+/).filter(Boolean).length;
   };
 
-  // Validate script
+  // Validate script dialogues
   const isScriptValid = (): boolean => {
-    return editedScript.every((s) => {
-      const wordCount = getWordCount(s);
+    return editedScript.every((scene) => {
+      const wordCount = getWordCount(scene.dialogue);
       return wordCount >= MIN_WORDS_PER_SCRIPT && wordCount <= MAX_WORDS_PER_SCRIPT;
     });
   };
@@ -301,7 +306,11 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     setSelectedProperty(null);
     setSelectedImages([]);
     setCustomNotes('');
-    setEditedScript(['', '', '']);
+    setEditedScript([
+      { dialogue: '', action: '', emotion: '' },
+      { dialogue: '', action: '', emotion: '' },
+      { dialogue: '', action: '', emotion: '' },
+    ]);
   };
 
   // Go back one step
@@ -337,7 +346,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     
     // Set script if available
     if (job.script) {
-      setEditedScript([...job.script]);
+      setEditedScript(job.script.map(scene => ({ ...scene })));
     }
     
     // Hide history panel after selecting
@@ -946,8 +955,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       </div>
 
       <div className="space-y-4">
-        {editedScript.map((script, index) => {
-          const wordCount = getWordCount(script);
+        {editedScript.map((scene, index) => {
+          const wordCount = getWordCount(scene.dialogue);
           const isOverLimit = wordCount > MAX_WORDS_PER_SCRIPT;
           const isEmpty = wordCount < MIN_WORDS_PER_SCRIPT;
 
@@ -972,7 +981,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
                   </div>
                 )}
                 <textarea
-                  value={script}
+                  value={scene.dialogue}
                   onChange={(e) => handleScriptChange(index, e.target.value)}
                   className={`
                     flex-1 px-4 py-3 bg-background border rounded-lg resize-none h-28

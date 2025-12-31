@@ -21,9 +21,16 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   },
 });
 
+// Script scene structure
+interface ScriptScene {
+  dialogue: string;
+  action: string;
+  emotion: string;
+}
+
 interface ApproveScriptRequest {
   jobId: string;
-  script: string[]; // 3 edited script strings
+  script: ScriptScene[]; // 3 edited script scenes
 }
 
 interface JobData {
@@ -33,7 +40,7 @@ interface JobData {
   selected_images: string[];
   notes: string | null;
   image_urls: string[];
-  script: string[];
+  script: ScriptScene[];
   status: string;
   credits_charged: number;
 }
@@ -239,14 +246,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!body.script || body.script.length !== 3) {
-      return res.status(400).json({ error: 'Exactly 3 script strings are required' });
+      return res.status(400).json({ error: 'Exactly 3 script scenes are required' });
     }
 
-    // Validate each script has at least 1 word
+    // Validate each script scene has dialogue with at least 1 word
     for (let i = 0; i < body.script.length; i++) {
-      const scriptText = body.script[i]?.trim();
-      if (!scriptText || scriptText.split(/\s+/).length < 1) {
-        return res.status(400).json({ error: `Script ${i + 1} must have at least 1 word` });
+      const scene = body.script[i];
+      if (!scene || typeof scene.dialogue !== 'string') {
+        return res.status(400).json({ error: `Script scene ${i + 1} must have a dialogue field` });
+      }
+      const dialogueText = scene.dialogue.trim();
+      if (!dialogueText || dialogueText.split(/\s+/).length < 1) {
+        return res.status(400).json({ error: `Script scene ${i + 1} dialogue must have at least 1 word` });
       }
     }
 
