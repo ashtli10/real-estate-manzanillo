@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   CreditCard,
   Sparkles,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useSubscription } from '../hooks/useSubscription';
 import { useCredits, CREDIT_PACKS } from '../hooks/useCredits';
+import { supabase } from '../lib/supabaseClient';
 
 interface BillingTabProps {
   userId: string;
@@ -38,6 +39,8 @@ export function BillingTab({ userId }: BillingTabProps) {
   const [purchasingCredits, setPurchasingCredits] = useState<number | null>(null);
   const [managingSubscription, setManagingSubscription] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [creditTransactions, setCreditTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(true);
 
   const handleSubscribe = async () => {
     setSubscribing(true);
@@ -76,6 +79,28 @@ export function BillingTab({ userId }: BillingTabProps) {
   };
 
   const status = getStatusMessage();
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      setLoadingTransactions(true);
+      try {
+        const { data, error } = await supabase
+          .from('credit_transactions')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setCreditTransactions(data);
+      } catch (err) {
+        console.error('Error fetching credit transactions:', err);
+      } finally {
+        setLoadingTransactions(false);
+      }
+    };
+
+    fetchTransactions();
+  }, [userId]);
 
   if (subLoading || creditsLoading) {
     return (
@@ -250,6 +275,36 @@ export function BillingTab({ userId }: BillingTabProps) {
           </button>
           .
         </p>
+      </div>
+
+      {/* Credit Transactions Section */}
+      <div className="bg-card rounded-xl shadow-soft p-6">
+        <h3 className="font-semibold text-foreground text-lg mb-4">Historial de Créditos</h3>
+        {loadingTransactions ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : creditTransactions.length > 0 ? (
+          <ul className="space-y-3">
+            {creditTransactions.map((transaction) => (
+              <li key={transaction.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                <div>
+                  <p className="font-medium text-sm">{transaction.description}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(transaction.created_at).toLocaleString()}</p>
+                </div>
+                <span
+                  className={`font-medium text-sm ${
+                    transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
+                  {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount} créditos
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">No hay transacciones de créditos registradas.</p>
+        )}
       </div>
     </div>
   );
