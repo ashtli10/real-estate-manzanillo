@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { useCredits } from '../hooks/useCredits';
 import { useVideoGeneration, VIDEO_GENERATION_COSTS, type EligibleProperty, type VideoGenerationJob, type ScriptScene } from '../hooks/useVideoGeneration';
-import axios from 'axios';
 
 interface AIToolsTabProps {
   userId: string;
@@ -230,18 +229,22 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
 
   // Regenerate images
   const handleRegenerateImages = async () => {
-    if (!currentJob) return;
+    if (!currentJob || !selectedProperty) return;
 
-    try {
-      // Delete the old job and its images
-      await axios.delete(`/api/video/jobs/${currentJob.id}`);
-
-      // Start regeneration
-      const response = await startImageGeneration(selectedProperty.id, regenerationNotes);
-      setWizardStep('generating-images');
-      console.log('Regeneration started:', response);
-    } catch (error) {
-      console.error('Error regenerating images:', error);
+    setShowRegenerationNotes(false);
+    setWizardStep('generating-images');
+    
+    // Use the hook's regenerateImages which handles deleting the old job
+    const success = await regenerateImages(
+      selectedProperty.id,
+      selectedImages,
+      regenerationNotes || undefined
+    );
+    
+    if (success) {
+      setRegenerationNotes('');
+      // Credits already deducted by hook
+      refreshCredits();
     }
   };
 
@@ -1062,10 +1065,13 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     const checkJobStatus = async () => {
       if (currentJob && currentJob.status === 'processing') {
         try {
-          const response = await axios.post('/api/edge-functions/check-job-status', {
-            jobId: currentJob.id,
+          const response = await fetch('/api/video/check-job-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jobId: currentJob.id }),
           });
-          console.log(response.data.message);
+          const data = await response.json();
+          console.log(data.message);
           refreshCredits(); // Refresh credits after potential refund
         } catch (error) {
           console.error('Error checking job status:', error);
