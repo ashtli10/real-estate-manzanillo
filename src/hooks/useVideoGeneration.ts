@@ -133,7 +133,23 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
     }
   }, [userId]);
 
-  // Subscribe to job updates
+  // Fetch full job data
+  const fetchJobData = useCallback(async (jobId: string): Promise<VideoGenerationJob | null> => {
+    const { data, error: fetchError } = await supabase
+      .from('video_generation_jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single();
+
+    if (fetchError || !data) {
+      console.error('Error fetching job data:', fetchError);
+      return null;
+    }
+
+    return data as VideoGenerationJob;
+  }, []);
+
+  // Subscribe to job status updates only
   const subscribeToJob = useCallback((jobId: string) => {
     // Unsubscribe from previous
     if (subscriptionRef.current) {
@@ -153,7 +169,7 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
       setError('Operation timed out. Please try again.');
     }, JOB_TIMEOUT_MS);
 
-    // Subscribe to realtime updates
+    // Subscribe to realtime updates - only listen to status changes
     const channel = supabase
       .channel(`video_job:${jobId}`)
       .on(
@@ -164,34 +180,45 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
           table: 'video_generation_jobs',
           filter: `id=eq.${jobId}`,
         },
-        (payload) => {
-          const updatedJob = payload.new as VideoGenerationJob;
-          setCurrentJob(updatedJob);
+        async (payload) => {
+          const newStatus = (payload.new as { status: VideoJobStatus }).status;
+          const oldStatus = (payload.old as { status?: VideoJobStatus })?.status;
 
-          // Check if we should stop waiting
+          // Only react if status actually changed
+          if (newStatus === oldStatus) return;
+
+          // Fetch full job data when status changes to a meaningful state
           if (
-            updatedJob.status === 'images_ready' ||
-            updatedJob.status === 'script_ready' ||
-            updatedJob.status === 'completed' ||
-            updatedJob.status === 'failed'
+            newStatus === 'images_ready' ||
+            newStatus === 'script_ready' ||
+            newStatus === 'completed' ||
+            newStatus === 'failed'
           ) {
+            const fullJob = await fetchJobData(jobId);
+            if (fullJob) {
+              setCurrentJob(fullJob);
+            }
+
             setIsWaiting(false);
             if (timeoutRef.current) {
               clearTimeout(timeoutRef.current);
               timeoutRef.current = null;
             }
-          }
 
-          // Handle failure
-          if (updatedJob.status === 'failed') {
-            setError(updatedJob.error_message || 'An error occurred');
+            // Handle failure
+            if (newStatus === 'failed' && fullJob) {
+              setError(fullJob.error_message || 'An error occurred');
+            }
+          } else if (newStatus === 'processing') {
+            // Just update status without fetching all data
+            setCurrentJob((prev) => prev ? { ...prev, status: newStatus } : null);
           }
         }
       )
       .subscribe();
 
     subscriptionRef.current = channel;
-  }, []);
+  }, [fetchJobData]);
 
   // Start image generation
   const startImageGeneration = useCallback(async (
