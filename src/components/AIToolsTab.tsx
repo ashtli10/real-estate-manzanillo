@@ -91,6 +91,26 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     setFullscreenImage({ url, index, images });
   };
 
+  // Helper to download a file
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
+  };
+
   // Load eligible properties on mount
   useEffect(() => {
     fetchEligibleProperties();
@@ -393,8 +413,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     const isProcessing = ['generating-images', 'generating-script', 'generating-video'].includes(wizardStep);
 
     return (
-      <div className="mb-6">
-        <div className="flex items-center justify-center gap-2">
+      <div className="mb-4 sm:mb-6">
+        <div className="flex items-center justify-center gap-1 sm:gap-2">
           {steps.map((step, index) => {
             const StepIcon = step.icon;
             const isActive = index === currentIndex;
@@ -404,21 +424,21 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
               <div key={step.key} className="flex items-center">
                 <div
                   className={`
-                    flex items-center gap-2 px-3 py-2 rounded-lg transition-colors
+                    flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors
                     ${isActive ? 'bg-primary text-primary-foreground' : ''}
                     ${isCompleted ? 'bg-green-100 text-green-700' : ''}
                     ${!isActive && !isCompleted ? 'bg-muted text-muted-foreground' : ''}
                   `}
                 >
                   {isCompleted ? (
-                    <Check className="h-4 w-4" />
+                    <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   ) : (
-                    <StepIcon className="h-4 w-4" />
+                    <StepIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   )}
-                  <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
+                  <span className="text-xs sm:text-sm font-medium hidden sm:inline">{step.label}</span>
                 </div>
                 {index < steps.length - 1 && (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground mx-1" />
+                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mx-0.5 sm:mx-1" />
                 )}
               </div>
             );
@@ -1032,16 +1052,13 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
 
       <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
         {currentJob?.video_url && (
-          <a
-            href={currentJob.video_url}
-            download
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => handleDownload(currentJob.video_url!, `video-${currentJob.id}.mp4`)}
             className="flex-1 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors flex items-center justify-center gap-2"
           >
             <Download className="h-5 w-5" />
             Descargar video
-          </a>
+          </button>
         )}
         <button
           onClick={handleReset}
@@ -1085,46 +1102,46 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       
       <div className="max-w-4xl space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-6 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 sm:w-64 h-32 sm:h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-16 sm:w-32 h-16 sm:h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
         
         <div className="relative z-10">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2">
             Generador de Videos con IA
           </h2>
-          <p className="text-white/80 max-w-xl">
-            Crea videos profesionales de tus propiedades usando inteligencia artificial. 
-            Perfectos para Instagram, TikTok, Facebook y más.
+          <p className="text-white/80 text-sm sm:text-base max-w-xl">
+            Crea videos profesionales para Instagram, TikTok y más.
           </p>
         </div>
       </div>
 
       {/* Credits Overview */}
-      <div className="bg-card rounded-xl shadow-soft p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-foreground text-lg">Tus Créditos de IA</h3>
+      <div className="bg-card rounded-xl shadow-soft p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className="font-semibold text-foreground text-base sm:text-lg">Créditos de IA</h3>
           <button
             onClick={onNavigateToBilling}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors text-sm"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors text-xs sm:text-sm"
           >
-            <CreditCard className="h-4 w-4" />
-            Comprar más
+            <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Comprar más</span>
+            <span className="sm:hidden">+</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-muted/50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-foreground">{totalCredits}</p>
-            <p className="text-sm text-muted-foreground">Total disponible</p>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="bg-muted/50 rounded-lg p-3 sm:p-4 text-center">
+            <p className="text-2xl sm:text-3xl font-bold text-foreground">{totalCredits}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Total</p>
           </div>
-          <div className="bg-green-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-green-600">{freeCredits}</p>
-            <p className="text-sm text-green-700">Gratis (mensuales)</p>
+          <div className="bg-green-50 rounded-lg p-3 sm:p-4 text-center">
+            <p className="text-2xl sm:text-3xl font-bold text-green-600">{freeCredits}</p>
+            <p className="text-xs sm:text-sm text-green-700">Gratis</p>
           </div>
-          <div className="bg-blue-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-blue-600">{paidCredits}</p>
-            <p className="text-sm text-blue-700">Comprados</p>
+          <div className="bg-blue-50 rounded-lg p-3 sm:p-4 text-center">
+            <p className="text-2xl sm:text-3xl font-bold text-blue-600">{paidCredits}</p>
+            <p className="text-xs sm:text-sm text-blue-700">Comprados</p>
           </div>
         </div>
 
@@ -1137,7 +1154,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       </div>
 
       {/* Wizard */}
-      <div className="bg-card rounded-xl shadow-soft p-6">
+      <div className="bg-card rounded-xl shadow-soft p-4 sm:p-6">
         {!initialCheckDone ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
@@ -1152,13 +1169,13 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       </div>
 
       {/* History Section */}
-      <div className="bg-card rounded-xl shadow-soft p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-foreground text-lg flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Historial de Videos
+      <div className="bg-card rounded-xl shadow-soft p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className="font-semibold text-foreground text-base sm:text-lg flex items-center gap-2">
+            <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+            Historial
           </h3>
-          <span className="text-sm text-muted-foreground">{recentJobs.length} videos</span>
+          <span className="text-xs sm:text-sm text-muted-foreground">{recentJobs.length} videos</span>
         </div>
 
         {recentJobs.length === 0 ? (
@@ -1185,74 +1202,75 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
                 <div
                   key={job.id}
                   className={`
-                    flex items-center gap-4 p-4 rounded-lg border transition-all
+                    flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 rounded-lg border transition-all
                     ${isCurrentJob ? 'bg-primary/5 border-primary' : 'bg-muted/30 border-transparent hover:bg-muted/50'}
                   `}
                 >
-                  {/* Thumbnail - clickable for fullscreen */}
-                  {thumbnail && (
-                    <button
-                      onClick={() => openFullscreen(thumbnail, 0, job.image_urls || job.selected_images)}
-                      className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted hover:ring-2 hover:ring-primary transition-all"
-                    >
-                      <img src={thumbnail} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  )}
-                  {!thumbnail && (
-                    <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <Image className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  )}
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{propertyTitle}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatJobDate(job.created_at)}
-                    </p>
-                    
-                    {/* Error message for failed jobs */}
-                    {isFailed && job.error_message && (
-                      <div className="mt-2 flex items-start gap-2 text-xs text-red-600 bg-red-50 p-2 rounded">
-                        <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-                        <span className="line-clamp-2">{job.error_message}</span>
+                  {/* Top row on mobile: thumbnail + info + status */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Thumbnail - clickable for fullscreen */}
+                    {thumbnail && (
+                      <button
+                        onClick={() => openFullscreen(thumbnail, 0, job.image_urls || job.selected_images)}
+                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted hover:ring-2 hover:ring-primary transition-all"
+                      >
+                        <img src={thumbnail} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    )}
+                    {!thumbnail && (
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                        <Image className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                       </div>
                     )}
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate text-sm sm:text-base">{propertyTitle}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-muted-foreground">
+                          {formatJobDate(job.created_at)}
+                        </p>
+                        {/* Status badge - inline on mobile */}
+                        <div className={`
+                          inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                          ${isCompleted ? 'bg-green-100 text-green-700' : ''}
+                          ${isFailed ? 'bg-red-100 text-red-700' : ''}
+                          ${isInProgress ? 'bg-amber-100 text-amber-700' : ''}
+                          ${needsAction ? 'bg-blue-100 text-blue-700' : ''}
+                        `}>
+                          <div className={`
+                            w-1.5 h-1.5 rounded-full
+                            ${isCompleted ? 'bg-green-500' : ''}
+                            ${isFailed ? 'bg-red-500' : ''}
+                            ${isInProgress ? 'bg-amber-500 animate-pulse' : ''}
+                            ${needsAction ? 'bg-blue-500' : ''}
+                          `} />
+                          {getStatusLabel(job.status)}
+                        </div>
+                      </div>
+                      
+                      {/* Error message for failed jobs */}
+                      {isFailed && job.error_message && (
+                        <div className="mt-2 flex items-start gap-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+                          <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                          <span className="line-clamp-2">{job.error_message}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Status badge */}
-                  <div className={`
-                    flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0
-                    ${isCompleted ? 'bg-green-100 text-green-700' : ''}
-                    ${isFailed ? 'bg-red-100 text-red-700' : ''}
-                    ${isInProgress ? 'bg-amber-100 text-amber-700' : ''}
-                    ${needsAction ? 'bg-blue-100 text-blue-700' : ''}
-                  `}>
-                    <div className={`
-                      w-1.5 h-1.5 rounded-full
-                      ${isCompleted ? 'bg-green-500' : ''}
-                      ${isFailed ? 'bg-red-500' : ''}
-                      ${isInProgress ? 'bg-amber-500 animate-pulse' : ''}
-                      ${needsAction ? 'bg-blue-500' : ''}
-                    `} />
-                    {getStatusLabel(job.status)}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Actions - full width on mobile */}
+                  <div className="flex items-center gap-2 justify-end sm:flex-shrink-0">
                     {/* Completed: Download and view */}
                     {isCompleted && job.video_url && (
                       <>
-                        <a
-                          href={job.video_url}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 hover:bg-muted rounded-lg transition-colors"
-                          title="Descargar video"
+                        <button
+                          onClick={() => handleDownload(job.video_url!, `video-${job.id}.mp4`)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium hover:bg-green-200 transition-colors"
                         >
-                          <Download className="h-4 w-4" />
-                        </a>
+                          <Download className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Descargar</span>
+                        </button>
                         <button
                           onClick={() => handleResumeJob(job)}
                           className="p-2 hover:bg-muted rounded-lg transition-colors"
@@ -1263,26 +1281,41 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
                       </>
                     )}
 
-                    {/* Failed: Retry button */}
+                    {/* Failed: Retry and delete buttons */}
                     {isFailed && (
-                      <button
-                        onClick={async () => {
-                          const prop = eligibleProperties.find(p => p.id === job.property_id);
-                          if (prop) {
-                            await deleteJob(job.id);
-                            setSelectedProperty(prop);
-                            setSelectedImages(job.selected_images);
-                            setCustomNotes(job.notes || '');
-                            await startImageGeneration(prop.id, job.selected_images, job.notes || undefined);
-                            refreshCredits();
-                          }
-                        }}
-                        disabled={loading || !hasEnoughCredits(VIDEO_GENERATION_COSTS.generateImages)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors disabled:opacity-50"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                        Reintentar
-                      </button>
+                      <>
+                        <button
+                          onClick={async () => {
+                            const prop = eligibleProperties.find(p => p.id === job.property_id);
+                            if (prop) {
+                              await deleteJob(job.id);
+                              setSelectedProperty(prop);
+                              setSelectedImages(job.selected_images);
+                              setCustomNotes(job.notes || '');
+                              await startImageGeneration(prop.id, job.selected_images, job.notes || undefined);
+                              refreshCredits();
+                            }
+                          }}
+                          disabled={loading || !hasEnoughCredits(VIDEO_GENERATION_COSTS.generateImages)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Reintentar
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm('¿Eliminar este video del historial?')) {
+                              await deleteJob(job.id);
+                              const jobs = await fetchRecentJobs();
+                              setRecentJobs(jobs);
+                            }
+                          }}
+                          className="p-2 hover:bg-red-100 text-muted-foreground hover:text-red-600 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
                     )}
 
                     {/* Needs action: Continue button */}
@@ -1303,24 +1336,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium hover:bg-amber-200 transition-colors"
                       >
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Ver progreso
-                      </button>
-                    )}
-
-                    {/* Delete button for failed/completed */}
-                    {(isFailed || isCompleted) && (
-                      <button
-                        onClick={async () => {
-                          if (confirm('¿Eliminar este video del historial?')) {
-                            await deleteJob(job.id);
-                            const jobs = await fetchRecentJobs();
-                            setRecentJobs(jobs);
-                          }
-                        }}
-                        className="p-2 hover:bg-red-100 text-muted-foreground hover:text-red-600 rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-4 w-4" />
+                        <span className="hidden sm:inline">Ver progreso</span>
                       </button>
                     )}
                   </div>
@@ -1332,8 +1348,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       </div>
 
       {/* FAQ */}
-      <div className="bg-card rounded-xl shadow-soft p-6">
-        <h3 className="font-semibold text-foreground text-lg mb-4">Preguntas frecuentes</h3>
+      <div className="bg-card rounded-xl shadow-soft p-4 sm:p-6">
+        <h3 className="font-semibold text-foreground text-base sm:text-lg mb-3 sm:mb-4">Preguntas frecuentes</h3>
         
         <div className="space-y-4">
           <div>
