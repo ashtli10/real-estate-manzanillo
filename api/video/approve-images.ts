@@ -7,8 +7,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const VIDEO_WEBHOOK_URL = 'https://n8n.atcraft.cloud/webhook/real-estate/generate-video/approve-images';
 const VIDEO_WEBHOOK_AUTH = process.env.VIDEO_GENERATION_WEBHOOK_AUTH || '';
 
-// Cost in credits for generating video (after images approved)
-const GENERATE_VIDEO_CREDIT_COST = 30;
+// Cost in credits for generating script (after images approved)
+const GENERATE_SCRIPT_CREDIT_COST = 1;
 
 // Timeout for external webhook call (in ms)
 const WEBHOOK_TIMEOUT_MS = 30000;
@@ -273,19 +273,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const propertyData = property as PropertyData;
 
-    // Deduct credits for video generation
+    // Deduct credits for script generation
     const deducted = await deductCredits(
       userId,
-      GENERATE_VIDEO_CREDIT_COST,
-      `AI video generation for property: ${propertyData.title}`
+      GENERATE_SCRIPT_CREDIT_COST,
+      `AI script generation for property: ${propertyData.title}`
     );
 
     if (!deducted) {
       return res.status(402).json({ error: 'Insufficient credits' });
     }
 
-    // Update job: reset fields and add video generation credits
-    const newCreditsCharged = jobData.credits_charged + GENERATE_VIDEO_CREDIT_COST;
+    // Update job: reset fields and add script generation credits
+    const newCreditsCharged = jobData.credits_charged + GENERATE_SCRIPT_CREDIT_COST;
     
     await supabaseAdmin
       .from('video_generation_jobs')
@@ -340,7 +340,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           })
           .eq('id', body.jobId);
 
-        await refundCredits(userId, GENERATE_VIDEO_CREDIT_COST, 'Refund: Video generation webhook failed');
+        await refundCredits(userId, GENERATE_SCRIPT_CREDIT_COST, 'Refund: Script generation webhook failed');
 
         return res.status(500).json({ 
           error: 'Video generation service unavailable',
@@ -366,7 +366,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         .eq('id', body.jobId);
 
-      await refundCredits(userId, GENERATE_VIDEO_CREDIT_COST, 'Refund: Video generation request failed');
+      await refundCredits(userId, GENERATE_SCRIPT_CREDIT_COST, 'Refund: Script generation request failed');
 
       console.error('Webhook fetch error:', fetchError);
       return res.status(500).json({ 

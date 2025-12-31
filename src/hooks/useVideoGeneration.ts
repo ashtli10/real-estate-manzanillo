@@ -41,6 +41,7 @@ export interface EligibleProperty {
 export const VIDEO_GENERATION_COSTS = {
   generateImages: 5,
   regenerateImages: 5,
+  generateScript: 1,
   generateVideo: 30,
 } as const;
 

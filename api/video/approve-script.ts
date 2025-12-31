@@ -7,6 +7,9 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const VIDEO_WEBHOOK_URL = 'https://n8n.atcraft.cloud/webhook/real-estate/generate-video/approve-script';
 const VIDEO_WEBHOOK_AUTH = process.env.VIDEO_GENERATION_WEBHOOK_AUTH || '';
 
+// Cost in credits for generating video (after script approved)
+const GENERATE_VIDEO_CREDIT_COST = 30;
+
 // Timeout for external webhook call (in ms)
 const WEBHOOK_TIMEOUT_MS = 30000;
 
@@ -111,6 +114,65 @@ async function refundCredits(userId: string, amount: number, description: string
   if (txError) {
     console.error('Error recording refund transaction:', txError);
     // Don't fail - credits were already added
+  }
+
+  return true;
+}
+
+// Deduct credits from user (direct table operation - bypasses RPC auth check)
+async function deductCredits(userId: string, amount: number, description: string): Promise<boolean> {
+  // First get current credits
+  const { data: credits, error: fetchError } = await supabaseAdmin
+    .from('credits')
+    .select('balance, free_credits_remaining')
+    .eq('user_id', userId)
+    .single();
+
+  if (fetchError || !credits) {
+    console.error('Error fetching credits:', fetchError);
+    return false;
+  }
+
+  const freeCredits = credits.free_credits_remaining || 0;
+  const paidCredits = credits.balance || 0;
+  const totalCredits = freeCredits + paidCredits;
+
+  if (totalCredits < amount) {
+    console.error('Insufficient credits:', { totalCredits, required: amount });
+    return false;
+  }
+
+  // Calculate deduction: free credits first, then paid
+  const deductFromFree = Math.min(freeCredits, amount);
+  const deductFromPaid = amount - deductFromFree;
+
+  // Update credits
+  const { error: updateError } = await supabaseAdmin
+    .from('credits')
+    .update({
+      free_credits_remaining: freeCredits - deductFromFree,
+      balance: paidCredits - deductFromPaid,
+    })
+    .eq('user_id', userId);
+
+  if (updateError) {
+    console.error('Error updating credits:', updateError);
+    return false;
+  }
+
+  // Record transaction
+  const { error: txError } = await supabaseAdmin
+    .from('credit_transactions')
+    .insert({
+      user_id: userId,
+      amount: -amount,
+      type: 'usage',
+      description,
+    });
+
+  if (txError) {
+    console.error('Error recording transaction:', txError);
+    // Don't fail - credits were already deducted
   }
 
   return true;
@@ -225,7 +287,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const propertyData = property as PropertyData;
 
+    // Deduct credits for video generation
+    const deducted = await deductCredits(
+      userId,
+      GENERATE_VIDEO_CREDIT_COST,
+      `AI video generation for property: ${propertyData.title}`
+    );
+
+    if (!deducted) {
+      return res.status(402).json({ error: 'Insufficient credits' });
+    }
+
     // Update job: save edited script, reset error and video fields, set to processing
+    // Add video generation credits to total
+    const newCreditsCharged = jobData.credits_charged + GENERATE_VIDEO_CREDIT_COST;
+    
     await supabaseAdmin
       .from('video_generation_jobs')
       .update({
@@ -233,6 +309,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         script: body.script,
         video_url: null,
         error_message: null,
+        credits_charged: newCreditsCharged,
       })
       .eq('id', body.jobId);
 
@@ -280,7 +357,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('id', body.jobId);
 
         // Refund the video generation credits (30)
-        await refundCredits(userId, 30, 'Refund: Script approval webhook failed');
+        await refundCredits(userId, GENERATE_VIDEO_CREDIT_COST, 'Refund: Video generation webhook failed');
 
         return res.status(500).json({ 
           error: 'Video generation service unavailable',
@@ -307,7 +384,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('id', body.jobId);
 
       // Refund video generation credits
-      await refundCredits(userId, 30, 'Refund: Script approval request failed');
+      await refundCredits(userId, GENERATE_VIDEO_CREDIT_COST, 'Refund: Video generation request failed');
 
       console.error('Webhook fetch error:', fetchError);
       return res.status(500).json({ 

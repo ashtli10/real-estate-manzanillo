@@ -232,7 +232,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   const handleApproveImages = async () => {
     if (!currentJob) return;
     
-    if (!hasEnoughCredits(VIDEO_GENERATION_COSTS.generateVideo)) {
+    if (!hasEnoughCredits(VIDEO_GENERATION_COSTS.generateScript)) {
       onNavigateToBilling();
       return;
     }
@@ -270,10 +270,17 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   // Approve script and generate video
   const handleApproveScript = async () => {
     if (!currentJob || !isScriptValid()) return;
+    
+    if (!hasEnoughCredits(VIDEO_GENERATION_COSTS.generateVideo)) {
+      onNavigateToBilling();
+      return;
+    }
 
     const success = await approveScript(currentJob.id, editedScript);
     if (success) {
       setWizardStep('generating-video');
+      // Refresh credits after deduction
+      refreshCredits();
     }
   };
 
@@ -908,7 +915,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         </button>
         <button
           onClick={handleApproveImages}
-          disabled={loading || !hasEnoughCredits(VIDEO_GENERATION_COSTS.generateVideo)}
+          disabled={loading || !hasEnoughCredits(VIDEO_GENERATION_COSTS.generateScript)}
           className="flex-1 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
@@ -916,7 +923,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
           ) : (
             <>
               <Check className="h-5 w-5" />
-              Aprobar y generar video ({VIDEO_GENERATION_COSTS.generateVideo} créditos)
+              Aprobar y generar guión ({VIDEO_GENERATION_COSTS.generateScript} crédito)
             </>
           )}
         </button>
@@ -1004,7 +1011,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
 
       <button
         onClick={handleApproveScript}
-        disabled={loading || !isScriptValid()}
+        disabled={loading || !isScriptValid() || !hasEnoughCredits(VIDEO_GENERATION_COSTS.generateVideo)}
         className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {loading ? (
@@ -1012,7 +1019,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         ) : (
           <>
             <Video className="h-5 w-5" />
-            Generar video
+            Generar video ({VIDEO_GENERATION_COSTS.generateVideo} créditos)
           </>
         )}
       </button>
@@ -1145,7 +1152,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
           <Info className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-amber-800">
-            <strong>Costo por video:</strong> {VIDEO_GENERATION_COSTS.generateImages} créditos (imágenes) + {VIDEO_GENERATION_COSTS.generateVideo} créditos (video) = {VIDEO_GENERATION_COSTS.generateImages + VIDEO_GENERATION_COSTS.generateVideo} créditos total
+            <strong>Costo por video:</strong> {VIDEO_GENERATION_COSTS.generateImages} créditos (imágenes) + {VIDEO_GENERATION_COSTS.generateScript} crédito (guión) + {VIDEO_GENERATION_COSTS.generateVideo} créditos (video) = {VIDEO_GENERATION_COSTS.generateImages + VIDEO_GENERATION_COSTS.generateScript + VIDEO_GENERATION_COSTS.generateVideo} créditos total
           </p>
         </div>
       </div>
