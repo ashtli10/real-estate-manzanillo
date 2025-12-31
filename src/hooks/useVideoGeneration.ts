@@ -66,6 +66,7 @@ interface UseVideoGenerationReturn {
   clearJob: () => void;
   loadExistingJob: (jobId: string) => Promise<void>;
   fetchRecentJobs: () => Promise<VideoGenerationJob[]>;
+  checkForActiveJob: () => Promise<VideoGenerationJob | null>;
 }
 
 export function useVideoGeneration(userId: string | undefined): UseVideoGenerationReturn {
@@ -444,6 +445,41 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
     }
   }, [userId]);
 
+  // Check for any active job (pending, processing, images_ready, script_ready)
+  const checkForActiveJob = useCallback(async (): Promise<VideoGenerationJob | null> => {
+    if (!userId) return null;
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('video_generation_jobs')
+        .select('*')
+        .eq('user_id', userId)
+        .in('status', ['pending', 'processing', 'images_ready', 'script_ready'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+
+      if (data) {
+        const job = data as VideoGenerationJob;
+        setCurrentJob(job);
+        
+        // If job is waiting for external process, subscribe to updates
+        if (job.status === 'pending' || job.status === 'processing') {
+          subscribeToJob(job.id);
+        }
+        
+        return job;
+      }
+
+      return null;
+    } catch (err) {
+      console.error('Error checking for active job:', err);
+      return null;
+    }
+  }, [userId, subscribeToJob]);
+
   return {
     currentJob,
     eligibleProperties,
@@ -460,5 +496,6 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
     clearJob,
     loadExistingJob,
     fetchRecentJobs,
+    checkForActiveJob,
   };
 }

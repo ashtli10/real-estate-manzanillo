@@ -57,6 +57,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     retryFromImages,
     clearJob,
     fetchRecentJobs,
+    checkForActiveJob,
+    loadExistingJob,
   } = useVideoGeneration(userId);
 
   // Wizard state
@@ -67,11 +69,36 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   const [editedScript, setEditedScript] = useState<string[]>(['', '', '']);
   const [recentJobs, setRecentJobs] = useState<VideoGenerationJob[]>([]);
   const [showRecentJobs, setShowRecentJobs] = useState(false);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // Load eligible properties on mount
   useEffect(() => {
     fetchEligibleProperties();
   }, [fetchEligibleProperties]);
+
+  // Check for active job on mount (auto-resume)
+  useEffect(() => {
+    if (initialCheckDone) return;
+    
+    const checkActive = async () => {
+      const activeJob = await checkForActiveJob();
+      if (activeJob) {
+        // Find the property to restore context
+        const property = eligibleProperties.find(p => p.id === activeJob.property_id);
+        if (property) {
+          setSelectedProperty(property);
+          setSelectedImages(activeJob.selected_images);
+          setCustomNotes(activeJob.notes || '');
+        }
+      }
+      setInitialCheckDone(true);
+    };
+    
+    // Wait for properties to load first
+    if (eligibleProperties.length > 0 || initialCheckDone) {
+      checkActive();
+    }
+  }, [checkForActiveJob, eligibleProperties, initialCheckDone]);
 
   // Load recent jobs
   useEffect(() => {
@@ -263,9 +290,12 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     }
   };
 
-  // Resume a job
-  const handleResumeJob = useCallback((job: VideoGenerationJob) => {
-    // Find the property
+  // Resume a job (or view a completed/failed job)
+  const handleResumeJob = useCallback(async (job: VideoGenerationJob) => {
+    // Load the job into the hook (this will set currentJob and subscribe if needed)
+    await loadExistingJob(job.id);
+    
+    // Find the property to restore context
     const property = eligibleProperties.find(p => p.id === job.property_id);
     if (property) {
       setSelectedProperty(property);
@@ -273,8 +303,16 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       setCustomNotes(job.notes || '');
     }
     
+    // Set script if available
+    if (job.script) {
+      setEditedScript([...job.script]);
+    }
+    
+    // Hide history panel after selecting
+    setShowRecentJobs(false);
+    
     // The useEffect will update the wizard step based on job status
-  }, [eligibleProperties]);
+  }, [eligibleProperties, loadExistingJob]);
 
   // Render step indicator
   const renderStepIndicator = () => {
@@ -307,37 +345,75 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     const currentIndex = getCurrentStepIndex();
 
     return (
-      <div className="flex items-center justify-center gap-2 mb-6">
-        {steps.map((step, index) => {
-          const StepIcon = step.icon;
-          const isActive = index === currentIndex;
-          const isCompleted = index < currentIndex;
+      <div className="mb-6">
+        <div className="flex items-center justify-center gap-2">
+          {steps.map((step, index) => {
+            const StepIcon = step.icon;
+            const isActive = index === currentIndex;
+            const isCompleted = index < currentIndex;
 
-          return (
-            <div key={step.key} className="flex items-center">
-              <div
-                className={`
-                  flex items-center gap-2 px-3 py-2 rounded-lg transition-colors
-                  ${isActive ? 'bg-primary text-primary-foreground' : ''}
-                  ${isCompleted ? 'bg-green-100 text-green-700' : ''}
-                  ${!isActive && !isCompleted ? 'bg-muted text-muted-foreground' : ''}
-                `}
-              >
-                {isCompleted ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <StepIcon className="h-4 w-4" />
+            return (
+              <div key={step.key} className="flex items-center">
+                <div
+                  className={`
+                    flex items-center gap-2 px-3 py-2 rounded-lg transition-colors
+                    ${isActive ? 'bg-primary text-primary-foreground' : ''}
+                    ${isCompleted ? 'bg-green-100 text-green-700' : ''}
+                    ${!isActive && !isCompleted ? 'bg-muted text-muted-foreground' : ''}
+                  `}
+                >
+                  {isCompleted ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <StepIcon className="h-4 w-4" />
+                  )}
+                  <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
+                </div>
+                {index < steps.length - 1 && (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground mx-1" />
                 )}
-                <span className="text-sm font-medium hidden sm:inline">{step.label}</span>
               </div>
-              {index < steps.length - 1 && (
-                <ChevronRight className="h-4 w-4 text-muted-foreground mx-1" />
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        {/* Show "Start New" button when not on property selection */}
+        {wizardStep !== 'select-property' && (
+          <div className="flex justify-center mt-3">
+            <button
+              onClick={handleReset}
+              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Volver al inicio
+            </button>
+          </div>
+        )}
       </div>
     );
+  };
+
+  // Get status label in Spanish
+  const getStatusLabel = (status: string): string => {
+    const labels: Record<string, string> = {
+      pending: 'Pendiente',
+      processing: 'Procesando',
+      images_ready: 'Imágenes listas',
+      script_ready: 'Guión listo',
+      completed: 'Completado',
+      failed: 'Falló',
+    };
+    return labels[status] || status;
+  };
+
+  // Format date for display
+  const formatJobDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('es-MX', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   // Render property selection
@@ -347,50 +423,75 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         <h3 className="text-lg font-semibold">Selecciona una propiedad</h3>
         <button
           onClick={() => setShowRecentJobs(!showRecentJobs)}
-          className="text-sm text-primary hover:underline"
+          className="text-sm text-primary hover:underline flex items-center gap-1"
         >
-          {showRecentJobs ? 'Ocultar historial' : 'Ver historial'}
+          {showRecentJobs ? 'Ocultar historial' : `Ver historial (${recentJobs.length})`}
         </button>
       </div>
 
-      {showRecentJobs && recentJobs.length > 0 && (
-        <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-          <h4 className="text-sm font-medium text-muted-foreground">Videos recientes</h4>
-          {recentJobs.slice(0, 5).map((job) => (
-            <div
-              key={job.id}
-              className="flex items-center justify-between bg-card p-3 rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`
-                  w-2 h-2 rounded-full
-                  ${job.status === 'completed' ? 'bg-green-500' : ''}
-                  ${job.status === 'failed' ? 'bg-red-500' : ''}
-                  ${['pending', 'processing'].includes(job.status) ? 'bg-amber-500 animate-pulse' : ''}
-                  ${['images_ready', 'script_ready'].includes(job.status) ? 'bg-blue-500' : ''}
-                `} />
-                <span className="text-sm">{job.status}</span>
-              </div>
-              {job.status === 'completed' && job.video_url && (
-                <a
-                  href={job.video_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary text-sm hover:underline"
-                >
-                  Ver video
-                </a>
-              )}
-              {['images_ready', 'script_ready'].includes(job.status) && (
-                <button
-                  onClick={() => handleResumeJob(job)}
-                  className="text-primary text-sm hover:underline"
-                >
-                  Continuar
-                </button>
-              )}
+      {showRecentJobs && (
+        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+          <h4 className="text-sm font-medium text-muted-foreground">Historial de videos</h4>
+          {recentJobs.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No tienes videos generados aún.
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {recentJobs.map((job) => {
+                // Find property title
+                const property = eligibleProperties.find(p => p.id === job.property_id);
+                const propertyTitle = property?.title || 'Propiedad eliminada';
+                
+                return (
+                  <button
+                    key={job.id}
+                    onClick={() => handleResumeJob(job)}
+                    className="w-full flex items-center gap-3 bg-card p-3 rounded-lg hover:bg-muted transition-colors text-left"
+                  >
+                    {/* Thumbnail */}
+                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                      {(job.image_urls?.[0] || job.selected_images?.[0]) && (
+                        <img
+                          src={job.image_urls?.[0] || job.selected_images[0]}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{propertyTitle}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatJobDate(job.created_at)}
+                      </p>
+                    </div>
+                    
+                    {/* Status badge */}
+                    <div className={`
+                      flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium
+                      ${job.status === 'completed' ? 'bg-green-100 text-green-700' : ''}
+                      ${job.status === 'failed' ? 'bg-red-100 text-red-700' : ''}
+                      ${['pending', 'processing'].includes(job.status) ? 'bg-amber-100 text-amber-700' : ''}
+                      ${['images_ready', 'script_ready'].includes(job.status) ? 'bg-blue-100 text-blue-700' : ''}
+                    `}>
+                      <div className={`
+                        w-1.5 h-1.5 rounded-full
+                        ${job.status === 'completed' ? 'bg-green-500' : ''}
+                        ${job.status === 'failed' ? 'bg-red-500' : ''}
+                        ${['pending', 'processing'].includes(job.status) ? 'bg-amber-500 animate-pulse' : ''}
+                        ${['images_ready', 'script_ready'].includes(job.status) ? 'bg-blue-500' : ''}
+                      `} />
+                      {getStatusLabel(job.status)}
+                    </div>
+                    
+                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  </button>
+                );
+              })}
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -878,8 +979,17 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
 
       {/* Wizard */}
       <div className="bg-card rounded-xl shadow-soft p-6">
-        {renderStepIndicator()}
-        {renderCurrentStep()}
+        {!initialCheckDone ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Verificando trabajos activos...</p>
+          </div>
+        ) : (
+          <>
+            {renderStepIndicator()}
+            {renderCurrentStep()}
+          </>
+        )}
       </div>
 
       {/* FAQ */}
