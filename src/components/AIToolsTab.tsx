@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useCredits } from '../hooks/useCredits';
 import { useVideoGeneration, VIDEO_GENERATION_COSTS, type EligibleProperty, type VideoGenerationJob, type ScriptScene } from '../hooks/useVideoGeneration';
+import axios from 'axios';
 
 interface AIToolsTabProps {
   userId: string;
@@ -229,33 +230,18 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
 
   // Regenerate images
   const handleRegenerateImages = async () => {
-    if (!selectedProperty || selectedImages.length !== 3) return;
-    
-    if (!hasEnoughCredits(VIDEO_GENERATION_COSTS.regenerateImages)) {
-      onNavigateToBilling();
-      return;
-    }
+    if (!currentJob) return;
 
-    // Use regeneration notes if provided, otherwise fall back to original notes
-    const notesToUse = regenerationNotes.trim() || customNotes || undefined;
+    try {
+      // Delete the old job and its images
+      await axios.delete(`/api/video/jobs/${currentJob.id}`);
 
-    const success = await regenerateImages(
-      selectedProperty.id,
-      selectedImages,
-      notesToUse
-    );
-
-    if (success) {
-      // Update customNotes if new notes were provided
-      if (regenerationNotes.trim()) {
-        setCustomNotes(regenerationNotes.trim());
-      }
-      // Reset regeneration UI
-      setShowRegenerationNotes(false);
-      setRegenerationNotes('');
+      // Start regeneration
+      const response = await startImageGeneration(selectedProperty.id, regenerationNotes);
       setWizardStep('generating-images');
-      // Refresh credits after deduction
-      refreshCredits();
+      console.log('Regeneration started:', response);
+    } catch (error) {
+      console.error('Error regenerating images:', error);
     }
   };
 
@@ -1070,6 +1056,25 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       </div>
     </div>
   );
+
+  // Check job status on load
+  useEffect(() => {
+    const checkJobStatus = async () => {
+      if (currentJob && currentJob.status === 'processing') {
+        try {
+          const response = await axios.post('/api/edge-functions/check-job-status', {
+            jobId: currentJob.id,
+          });
+          console.log(response.data.message);
+          refreshCredits(); // Refresh credits after potential refund
+        } catch (error) {
+          console.error('Error checking job status:', error);
+        }
+      }
+    };
+
+    checkJobStatus();
+  }, [currentJob, refreshCredits]);
 
   // Render current step content
   const renderCurrentStep = () => {
