@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useSubscription } from '../hooks/useSubscription';
 import { useCredits, CREDIT_PACKS } from '../hooks/useCredits';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../integrations/supabase/client';
 
 interface BillingTabProps {
   userId: string;
