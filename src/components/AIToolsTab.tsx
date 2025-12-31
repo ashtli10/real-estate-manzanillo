@@ -565,33 +565,41 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
             <div
               key={index}
               className={`
-                relative aspect-video rounded-lg overflow-hidden border-2 transition-all
+                relative aspect-[4/3] rounded-lg overflow-hidden border-3 transition-all cursor-pointer
                 ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-muted-foreground/30'}
               `}
+              onClick={() => handleToggleImage(img)}
             >
               <img
                 src={img}
                 alt={`Imagen ${index + 1}`}
-                className="w-full h-full object-cover cursor-pointer"
-                onClick={() => openFullscreen(img, index, selectedProperty?.images || [])}
+                className="w-full h-full object-cover"
               />
-              {/* Selection overlay */}
+              {/* Fullscreen button */}
               <button
-                onClick={() => handleToggleImage(img)}
-                className="absolute inset-0 flex items-center justify-center"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openFullscreen(img, index, selectedProperty?.images || []);
+                }}
+                className="absolute bottom-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                style={{ opacity: 1 }}
               >
-                {isSelected && (
-                  <div className="absolute top-2 left-2 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                    {selectedIndex + 1}
-                  </div>
-                )}
-                {!isSelected && selectedImages.length >= 3 && (
-                  <div className="absolute inset-0 bg-black/50" />
-                )}
-                {!isSelected && selectedImages.length < 3 && (
-                  <div className="absolute top-2 right-2 w-6 h-6 border-2 border-white/50 rounded-full bg-black/20" />
-                )}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                </svg>
               </button>
+              {/* Selection indicator - top right */}
+              {isSelected ? (
+                <div className="absolute top-2 right-2 w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold shadow-lg">
+                  {selectedIndex + 1}
+                </div>
+              ) : (
+                <div className={`absolute top-2 right-2 w-7 h-7 border-2 border-white/70 rounded-full bg-black/30 ${selectedImages.length >= 3 ? 'opacity-30' : ''}`} />
+              )}
+              {/* Disabled overlay when 3 already selected */}
+              {!isSelected && selectedImages.length >= 3 && (
+                <div className="absolute inset-0 bg-black/50" />
+              )}
             </div>
           );
         })}
