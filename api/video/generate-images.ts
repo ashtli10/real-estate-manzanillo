@@ -13,6 +13,13 @@ const GENERATE_IMAGES_CREDIT_COST = 5;
 // Timeout for external webhook call (in ms)
 const WEBHOOK_TIMEOUT_MS = 30000;
 
+// Log environment status on cold start
+console.log('[generate-images] Cold start - env check:', {
+  hasSupabaseUrl: !!SUPABASE_URL,
+  hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY,
+  hasWebhookAuth: !!VIDEO_WEBHOOK_AUTH,
+});
+
 // Initialize Supabase with service role key (bypasses RLS)
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: {
