@@ -43,7 +43,7 @@ const MAX_WORDS_PER_SCRIPT = 25;
 const MIN_WORDS_PER_SCRIPT = 1;
 
 export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
-  const { totalCredits, freeCredits, paidCredits, hasEnoughCredits } = useCredits(userId);
+  const { totalCredits, freeCredits, paidCredits, hasEnoughCredits, refresh: refreshCredits } = useCredits(userId);
   const {
     currentJob,
     eligibleProperties,
@@ -75,6 +75,10 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   const [fullscreenImage, setFullscreenImage] = useState<{ url: string; index: number } | null>(null);
   const [showRecentJobs, setShowRecentJobs] = useState(false);
   const [initialCheckDone, setInitialCheckDone] = useState(false);
+  
+  // Regeneration notes state
+  const [showRegenerationNotes, setShowRegenerationNotes] = useState(false);
+  const [regenerationNotes, setRegenerationNotes] = useState('');
 
   // Load eligible properties on mount
   useEffect(() => {
@@ -187,6 +191,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
 
     if (success) {
       setWizardStep('generating-images');
+      // Refresh credits after deduction
+      refreshCredits();
     }
   };
 
@@ -199,14 +205,26 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       return;
     }
 
+    // Use regeneration notes if provided, otherwise fall back to original notes
+    const notesToUse = regenerationNotes.trim() || customNotes || undefined;
+
     const success = await regenerateImages(
       selectedProperty.id,
       selectedImages,
-      customNotes || undefined
+      notesToUse
     );
 
     if (success) {
+      // Update customNotes if new notes were provided
+      if (regenerationNotes.trim()) {
+        setCustomNotes(regenerationNotes.trim());
+      }
+      // Reset regeneration UI
+      setShowRegenerationNotes(false);
+      setRegenerationNotes('');
       setWizardStep('generating-images');
+      // Refresh credits after deduction
+      refreshCredits();
     }
   };
 
@@ -222,6 +240,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     const success = await approveImages(currentJob.id);
     if (success) {
       setWizardStep('generating-script');
+      // Refresh credits after deduction
+      refreshCredits();
     }
   };
 
@@ -839,6 +859,43 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
           </div>
         </div>
       )}
+
+      {/* Regeneration notes section */}
+      <div className="space-y-2">
+        <button
+          onClick={() => {
+            if (!showRegenerationNotes) {
+              // Pre-fill with current notes when opening
+              setRegenerationNotes(customNotes);
+            }
+            setShowRegenerationNotes(!showRegenerationNotes);
+          }}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronRight className={`h-4 w-4 transition-transform ${showRegenerationNotes ? 'rotate-90' : ''}`} />
+          {showRegenerationNotes ? 'Ocultar notas' : '¿Quieres modificar las notas para regenerar?'}
+        </button>
+        
+        {showRegenerationNotes && (
+          <div className="pl-6 space-y-2">
+            <textarea
+              value={regenerationNotes}
+              onChange={(e) => setRegenerationNotes(e.target.value)}
+              placeholder="Describe qué te gustaría diferente en las imágenes... (ej: más iluminación natural, ángulos más amplios, estilo más moderno)"
+              className="w-full p-3 border border-border rounded-lg text-sm resize-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              Estas notas reemplazarán las anteriores para la regeneración.
+              {customNotes && (
+                <span className="block mt-1">
+                  <strong>Notas anteriores:</strong> {customNotes.length > 100 ? customNotes.slice(0, 100) + '...' : customNotes}
+                </span>
+              )}
+            </p>
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <button
