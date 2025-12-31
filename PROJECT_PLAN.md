@@ -262,9 +262,9 @@ When subscription is **not active**:
 │  🎨 AI Tools │  │ Properties   │ │ Available    │          │
 │  ⚙️ Settings │  └──────────────┘ └──────────────┘          │
 │              │                                              │
-│              │  🆕 AI Video Generator [COMING SOON]         │
+│              │  ✅ AI Video Generator                       │
 │              │  Create stunning property videos with AI!    │
-│              │  [Preview Video]                             │
+│              │  [Select Property] → [Generate] → [Download] │
 │              │                                              │
 └──────────────┴──────────────────────────────────────────────┘
 ```
@@ -340,26 +340,45 @@ When subscription is **not active**:
 - `api/stripe/webhook.ts` - Handles credit purchases and monthly reset
 - Database functions: `add_credits()`, `deduct_credits()`, `get_user_credits()`
 
-### 5.2 AI Video Generator (Coming Soon) ✅ UI Implemented
+### 5.2 AI Video Generator ✅ FULLY IMPLEMENTED
 **User Flow:**
-1. Select property from your listings
-2. Generate 3 starting frames (5 credits)
-3. Regenerate until satisfied (5 credits each)
-4. Generate video from frames (3 frames, 3 videos, clipped together) (30 credits)
-5. Download 9:16 video (24 seconds)
+1. Select property from listings (must have 3+ images)
+2. Select 3 images in order for the video
+3. Add optional notes for AI guidance
+4. Generate 3 AI-enhanced frames (5 credits)
+5. Review images with fullscreen viewer
+6. Regenerate if needed (5 credits each) or approve
+7. Approve images → Generate script (30 credits charged)
+8. Edit script (max 25 words per scene for 8 seconds of speech)
+9. Approve script → Generate final video
+10. Download 9:16 video (24 seconds)
 
-**UI Elements:**
-- "Coming Soon" badge ✅
-- Preview video placeholder ✅
-- Explanation of what it does ✅
-- Credit cost breakdown ✅
-- FAQ section ✅
+**Features:**
+- Real-time job status tracking via Supabase subscriptions
+- Auto-resume active jobs on page reload
+- Job history with status indicators
+- Fullscreen image viewer with keyboard navigation
+- Credit refunds on failure
+- 20-minute timeout protection
 
 **Implementation Details:**
-- `src/components/AIToolsTab.tsx` - Full AI tools UI with credit info
+- `src/components/AIToolsTab.tsx` - Full wizard UI with step indicator
+- `src/hooks/useVideoGeneration.ts` - Job state management and real-time subscriptions
+- `api/video/generate-images.ts` - Start image generation (5 credits)
+- `api/video/approve-images.ts` - Approve images, start script gen (30 credits)
+- `api/video/approve-script.ts` - Approve script, start video render
+- `video_generation_jobs` table - Job tracking with status flow
+- `storage:jobs` bucket - User-scoped asset storage
 
-**Priority:** ✅ Complete (UI placeholder - AI generation to be implemented later)
-**Effort:** Medium
+**External Integrations:**
+- n8n webhooks for AI processing:
+  - `POST /webhook/real-estate/generate-video/generate-images`
+  - `POST /webhook/real-estate/generate-video/approve-images`
+  - `POST /webhook/real-estate/generate-video/approve-script`
+- Uses `VIDEO_GENERATION_WEBHOOK_AUTH` environment variable
+
+**Priority:** ✅ Complete
+**Effort:** Large
 
 ---
 

@@ -9,7 +9,7 @@
 
 ## 📊 Database Overview
 
-The platform uses **9 tables + 1 storage bucket** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
+The platform uses **9 tables + 2 storage buckets** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
 
 ### Tables Summary
 
@@ -24,7 +24,8 @@ The platform uses **9 tables + 1 storage bucket** with comprehensive Row Level S
 | **audit_logs** | 0 | ✅ | System audit trail (admin only) |
 | **properties** | 1 | ✅ | Property listings with full details |
 | **video_generation_jobs** | 0 | ✅ | AI video generation job tracking |
-| **storage.objects** | - | ✅ | Property images (properties bucket) |
+| **storage:properties** | - | ✅ | Property images bucket |
+| **storage:jobs** | - | ✅ | AI video generation assets bucket |
 
 ---
 
@@ -41,7 +42,8 @@ The platform uses **9 tables + 1 storage bucket** with comprehensive Row Level S
 - **user_roles**: 5 policies
 - **audit_logs**: 2 policies (admin-only)
 - **video_generation_jobs**: 4 policies (SELECT, INSERT, UPDATE for own, admin full access)
-- **storage.objects (properties bucket)**: 4 policies (INSERT, UPDATE, DELETE, SELECT)
+- **storage:properties bucket**: 4 policies (INSERT, UPDATE, DELETE, SELECT)
+- **storage:jobs bucket**: 5 policies (SELECT, INSERT, UPDATE, DELETE for own folder, service role full access)
 
 ### Key Security Features
 
@@ -338,6 +340,23 @@ File storage for property images with RLS protection.
 - ✅ **UPDATE** - Authenticated users can update images in properties bucket
 - ✅ **DELETE** - Authenticated users can delete images in properties bucket
 - ✅ **SELECT** - Public read access (anyone can view property images)
+
+---
+
+### 11. **storage.objects (jobs bucket)**
+File storage for AI-generated video assets with user-scoped access.
+
+**Bucket Configuration:**
+- `bucket_id`: 'jobs'
+- `public`: true (for sharing completed video URLs)
+- Files stored at: `jobs/{user_id}/{job_id}/{filename}`
+
+**RLS Policies:**
+- ✅ **SELECT** - Users can read files in their own folder (`jobs/{userId}/*`)
+- ✅ **INSERT** - Users can upload to their own folder
+- ✅ **UPDATE** - Users can update files in their own folder
+- ✅ **DELETE** - Users can delete files in their own folder
+- ✅ **ALL** - Service role has full access (for API/webhooks)
 
 ---
 

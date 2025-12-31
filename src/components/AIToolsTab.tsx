@@ -16,6 +16,8 @@ import {
   Loader2,
   FileText,
   Home,
+  X,
+  ChevronLeft,
 } from 'lucide-react';
 import { useCredits } from '../hooks/useCredits';
 import { useVideoGeneration, VIDEO_GENERATION_COSTS, type EligibleProperty, type VideoGenerationJob } from '../hooks/useVideoGeneration';
@@ -68,6 +70,9 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   const [customNotes, setCustomNotes] = useState('');
   const [editedScript, setEditedScript] = useState<string[]>(['', '', '']);
   const [recentJobs, setRecentJobs] = useState<VideoGenerationJob[]>([]);
+  
+  // Fullscreen image viewer state
+  const [fullscreenImage, setFullscreenImage] = useState<{ url: string; index: number } | null>(null);
   const [showRecentJobs, setShowRecentJobs] = useState(false);
   const [initialCheckDone, setInitialCheckDone] = useState(false);
 
@@ -692,28 +697,135 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     );
   };
 
+  // Render fullscreen image viewer
+  const renderFullscreenViewer = () => {
+    if (!fullscreenImage || !currentJob?.image_urls) return null;
+    
+    const images = currentJob.image_urls;
+    const canGoPrev = fullscreenImage.index > 0;
+    const canGoNext = fullscreenImage.index < images.length - 1;
+    
+    const goToPrev = () => {
+      if (canGoPrev) {
+        setFullscreenImage({ url: images[fullscreenImage.index - 1], index: fullscreenImage.index - 1 });
+      }
+    };
+    
+    const goToNext = () => {
+      if (canGoNext) {
+        setFullscreenImage({ url: images[fullscreenImage.index + 1], index: fullscreenImage.index + 1 });
+      }
+    };
+    
+    // Handle keyboard navigation
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Escape') setFullscreenImage(null);
+      if (e.key === 'ArrowLeft') goToPrev();
+      if (e.key === 'ArrowRight') goToNext();
+    };
+    
+    return (
+      <div 
+        className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+        onClick={() => setFullscreenImage(null)}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+      >
+        {/* Close button */}
+        <button
+          onClick={() => setFullscreenImage(null)}
+          className="absolute top-4 right-4 p-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors z-10"
+        >
+          <X className="h-6 w-6" />
+        </button>
+        
+        {/* Frame indicator */}
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-white/10 text-white rounded-full text-sm">
+          Frame {fullscreenImage.index + 1} de {images.length}
+        </div>
+        
+        {/* Previous button */}
+        {canGoPrev && (
+          <button
+            onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+            className="absolute left-4 p-3 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <ChevronLeft className="h-8 w-8" />
+          </button>
+        )}
+        
+        {/* Image */}
+        <div 
+          className="max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <img
+            src={fullscreenImage.url}
+            alt={`Frame ${fullscreenImage.index + 1}`}
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+          />
+        </div>
+        
+        {/* Next button */}
+        {canGoNext && (
+          <button
+            onClick={(e) => { e.stopPropagation(); goToNext(); }}
+            className="absolute right-4 p-3 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+          >
+            <ChevronRight className="h-8 w-8" />
+          </button>
+        )}
+        
+        {/* Thumbnails */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          {images.map((img, idx) => (
+            <button
+              key={idx}
+              onClick={(e) => { e.stopPropagation(); setFullscreenImage({ url: img, index: idx }); }}
+              className={`w-16 h-24 rounded-lg overflow-hidden border-2 transition-all ${
+                idx === fullscreenImage.index ? 'border-white opacity-100' : 'border-transparent opacity-50 hover:opacity-75'
+              }`}
+            >
+              <img src={img} alt="" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   // Render image review
   const renderImageReview = () => (
     <div className="space-y-6">
       <div className="text-center">
         <h3 className="text-xl font-semibold mb-2">Imágenes generadas</h3>
         <p className="text-muted-foreground">
-          Revisa las imágenes. Puedes regenerarlas o continuar al siguiente paso.
+          Revisa las imágenes. Haz clic para ver en pantalla completa.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {currentJob?.image_urls?.map((img, index) => (
-          <div key={index} className="relative aspect-[9/16] rounded-lg overflow-hidden bg-muted">
+          <button
+            key={index}
+            onClick={() => setFullscreenImage({ url: img, index })}
+            className="relative aspect-[9/16] rounded-lg overflow-hidden bg-muted group cursor-pointer"
+          >
             <img
               src={img}
               alt={`Frame ${index + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform group-hover:scale-105"
             />
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
             <div className="absolute top-2 left-2 px-2 py-1 bg-black/50 text-white text-sm rounded">
               Frame {index + 1}
             </div>
-          </div>
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="px-3 py-1.5 bg-black/70 text-white text-sm rounded-lg">
+                Ver completo
+              </div>
+            </div>
+          </button>
         ))}
       </div>
 
@@ -924,7 +1036,11 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   };
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <>
+      {/* Fullscreen Image Viewer */}
+      {renderFullscreenViewer()}
+      
+      <div className="max-w-4xl space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-6 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -1028,5 +1144,6 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         </div>
       </div>
     </div>
+    </>
   );
 }
