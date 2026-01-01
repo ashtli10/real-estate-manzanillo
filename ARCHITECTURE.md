@@ -1,6 +1,6 @@
 # BN Inmobiliaria - Architecture Overview
 
-**Last Edited: 2025-12-30**
+**Last Edited: 2026-01-01**
 
 ## System Architecture
 
@@ -280,7 +280,7 @@ function canAccessDashboard(subscription) {
 - `SubscriptionGuard`: Route protection wrapper
 - `BillingTab`: Subscription/credits management UI
 - `AIToolsTab`: AI video generation wizard with multi-step workflow
-- `ProfileSettings`: Full profile editing with username validation
+- `ProfileSettings`: Full profile editing with username validation and automatic property slug updates on username change
 - `PropertyForm`: Property CRUD form
 - `PropertyTable`: Property list with actions
 - `LanguageSwitcher`: EN/ES language toggle with persistence

@@ -241,9 +241,13 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
     setError(null);
 
     try {
+      const newUsername = formData.username?.toLowerCase().trim() || null;
+      const oldUsername = profile?.username;
+      const usernameChanged = newUsername && oldUsername && newUsername !== oldUsername;
+
       const updateData: ProfileUpdate = {
         full_name: formData.full_name?.trim() || null,
-        username: formData.username?.toLowerCase().trim() || null,
+        username: newUsername,
         phone_number: formData.phone_number ? normalizePhoneNumber(formData.phone_number) : null,
         whatsapp_number: formData.whatsapp_number ? normalizePhoneNumber(formData.whatsapp_number) : null,
         company_name: formData.company_name?.trim() || null,
@@ -260,6 +264,38 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
         .single();
 
       if (updateError) throw updateError;
+
+      // If username changed, update all property slugs
+      if (usernameChanged) {
+        // Fetch all properties for this user
+        const { data: properties, error: fetchError } = await supabase
+          .from('properties')
+          .select('id, slug')
+          .eq('user_id', userId);
+
+        if (fetchError) {
+          console.error('Error fetching properties for slug update:', fetchError);
+        } else if (properties && properties.length > 0) {
+          // Update each property's slug with the new username
+          const updates = properties.map((property) => {
+            // Replace old username prefix with new username
+            const slugParts = property.slug.split('/');
+            const propertySlugPart = slugParts.length > 1 ? slugParts.slice(1).join('/') : property.slug;
+            const newSlug = `${newUsername}/${propertySlugPart}`;
+
+            return supabase
+              .from('properties')
+              .update({ slug: newSlug, updated_at: new Date().toISOString() })
+              .eq('id', property.id);
+          });
+
+          const results = await Promise.all(updates);
+          const hasSlugError = results.some((result) => result.error);
+          if (hasSlugError) {
+            console.error('Error updating some property slugs');
+          }
+        }
+      }
 
       // Update parent state
       onProfileUpdate(data as Profile);
