@@ -402,6 +402,43 @@ User only edits the `dialogue` field; `action` and `emotion` are AI-generated.
 
 ---
 
+### 5.3 Video Tour Generator ✅ FULLY IMPLEMENTED
+Creates automated video tours from property images with transitions.
+
+**User Flow:**
+1. Select property from listings (must have at least 1 image)
+2. Select 1-30 images in order for the video tour
+3. Configure settings: Clip duration (3s or 6s, default 3s)
+4. Generate video (5 credits per image)
+5. Download final video
+
+**Credit Costs:**
+- **5 credits per image selected**
+- Example: 10 images = 50 credits
+
+**Features:**
+- Real-time job status tracking via Supabase subscriptions
+- Auto-resume active jobs on page reload
+- Job history with status indicators
+- Credit refunds on failure
+- Mobile-friendly wizard interface
+
+**Implementation Details:**
+- `src/components/VideoTourTab.tsx` - Full wizard UI with step indicator
+- `src/hooks/useVideoTourGeneration.ts` - Job state management and real-time subscriptions
+- `api/video/generate-tour.ts` - Start tour generation
+- `tour_generation_jobs` table - Job tracking with status: processing, completed, failed
+
+**External Integrations:**
+- n8n webhook for video generation:
+  - `POST /webhook/real-estate/generate-tour/generate-video`
+- Uses `VIDEO_GENERATION_WEBHOOK_AUTH` environment variable
+
+**Priority:** ✅ Complete
+**Effort:** Medium
+
+---
+
 ## 📋 PHASE 6: Internationalization (i18n) ✅ COMPLETED
 
 ### 6.1 Language Support ✅ Implemented

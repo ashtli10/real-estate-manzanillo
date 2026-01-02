@@ -85,6 +85,15 @@
 │  │  • Accepts ScriptScene[] with dialogue/action/emotion │     │
 │  │  • Calls n8n webhook for video rendering              │     │
 │  └───────────────────────────────────────────────────────┘     │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ /api/video/generate-tour                              │     │
+│  │  • Generates video tour from property images         │     │
+│  │  • Requires authentication (JWT)                      │     │
+│  │  • Charges 5 credits per image selected              │     │
+│  │  • Accepts 1-30 images + clip duration (3s/6s)       │     │
+│  │  • Creates job in tour_generation_jobs table         │     │
+│  │  • Calls n8n webhook for video generation            │     │
+│  └───────────────────────────────────────────────────────┘     │
 │                                                                  │
 │  Static Assets:                                                 │
 │  • /robots.txt                                                  │

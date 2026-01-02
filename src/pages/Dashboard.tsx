@@ -17,6 +17,7 @@ import {
   Shield,
   Menu,
   X,
+  Video,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
@@ -34,15 +35,16 @@ import { BillingTab } from '../components/BillingTab';
 import { ProfileSettings } from '../components/ProfileSettings';
 import { SubscriptionGuard } from '../components/SubscriptionGuard';
 import { AIToolsTab } from '../components/AIToolsTab';
+import { VideoTourTab } from '../components/VideoTourTab';
 import { transformProperty } from '../lib/propertyTransform';
 
-type DashboardTab = 'overview' | 'properties' | 'profile' | 'billing' | 'ai-tools' | 'settings' | 'invitations';
+type DashboardTab = 'overview' | 'properties' | 'profile' | 'billing' | 'ai-tools' | 'video-tour' | 'settings' | 'invitations';
 
 interface DashboardProps {
   onNavigate: (path: string) => void;
 }
 
-const VALID_TABS: DashboardTab[] = ['overview', 'properties', 'profile', 'billing', 'ai-tools', 'settings', 'invitations'];
+const VALID_TABS: DashboardTab[] = ['overview', 'properties', 'profile', 'billing', 'ai-tools', 'video-tour', 'settings', 'invitations'];
 
 function getInitialTab(): DashboardTab {
   const params = new URLSearchParams(window.location.search);
@@ -485,10 +487,18 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             }`}
           >
             <Sparkles className="h-5 w-5" />
-            IA Tools
-            <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-              Pronto
-            </span>
+            IA Video
+          </button>
+          <button
+            onClick={() => setActiveTab('video-tour')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'video-tour'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Video className="h-5 w-5" />
+            Video Tour
           </button>
           
           {/* Admin-only tab */}
@@ -600,10 +610,18 @@ export function Dashboard({ onNavigate }: DashboardProps) {
             }`}
           >
             <Sparkles className="h-5 w-5" />
-            IA Tools
-            <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-              Pronto
-            </span>
+            IA Video
+          </button>
+          <button
+            onClick={() => { setActiveTab('video-tour'); setMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
+              activeTab === 'video-tour'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            <Video className="h-5 w-5" />
+            Video Tour
           </button>
           {isAdmin && (
             <button
@@ -659,7 +677,8 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                 {activeTab === 'properties' && (isAdmin ? 'Todas las Propiedades' : 'Mis Propiedades')}
                 {activeTab === 'profile' && 'Mi Perfil'}
                 {activeTab === 'billing' && 'Facturación'}
-                {activeTab === 'ai-tools' && 'Herramientas de IA'}
+                {activeTab === 'ai-tools' && 'IA Video Generator'}
+                {activeTab === 'video-tour' && 'Video Tour Generator'}
                 {activeTab === 'invitations' && 'Invitaciones'}
               </h2>
               <p className="text-muted-foreground text-sm hidden md:block">
@@ -873,6 +892,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           {/* AI Tools Tab */}
           {activeTab === 'ai-tools' && user && (
             <AIToolsTab 
+              userId={user.id} 
+              onNavigateToBilling={() => setActiveTab('billing')} 
+            />
+          )}
+
+          {/* Video Tour Tab */}
+          {activeTab === 'video-tour' && user && (
+            <VideoTourTab 
               userId={user.id} 
               onNavigateToBilling={() => setActiveTab('billing')} 
             />

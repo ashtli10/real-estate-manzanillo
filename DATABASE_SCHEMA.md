@@ -1,6 +1,6 @@
 # 🗄️ Database Schema Documentation
 
-**Last Edited: 2025-12-30**
+**Last Edited: 2026-01-01**
 
 **Habitex Platform**  
 *Complete Database Setup with Strict RLS Policies*
@@ -9,7 +9,7 @@
 
 ## 📊 Database Overview
 
-The platform uses **9 tables + 2 storage buckets** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
+The platform uses **10 tables + 2 storage buckets** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
 
 ### Tables Summary
 
@@ -24,6 +24,7 @@ The platform uses **9 tables + 2 storage buckets** with comprehensive Row Level 
 | **audit_logs** | 0 | ✅ | System audit trail (admin only) |
 | **properties** | 1 | ✅ | Property listings with full details |
 | **video_generation_jobs** | 0 | ✅ | AI video generation job tracking |
+| **tour_generation_jobs** | 0 | ✅ | Video tour generation job tracking |
 | **storage:properties** | - | ✅ | Property images bucket |
 | **storage:jobs** | - | ✅ | AI video generation assets bucket |
 
@@ -42,6 +43,7 @@ The platform uses **9 tables + 2 storage buckets** with comprehensive Row Level 
 - **user_roles**: 5 policies
 - **audit_logs**: 2 policies (admin-only)
 - **video_generation_jobs**: 4 policies (SELECT, INSERT, UPDATE for own, admin full access)
+- **tour_generation_jobs**: 4 policies (SELECT, INSERT, UPDATE for own, admin full access)
 - **storage:properties bucket**: 4 policies (INSERT, UPDATE, DELETE, SELECT)
 - **storage:jobs bucket**: 5 policies (SELECT, INSERT, UPDATE, DELETE for own folder, service role full access)
 
@@ -334,7 +336,49 @@ processing → completed
 
 ---
 
-### 10. **storage.objects (properties bucket)**
+### 10. **tour_generation_jobs**
+Tracks video tour generation jobs with status and final video URL.
+
+**Key Columns:**
+- `id` (UUID, PK) - Job identifier
+- `user_id` (UUID, FK → auth.users) - Job owner
+- `property_id` (UUID, FK → properties) - Associated property
+- `status` (TEXT) - 'processing', 'completed', 'failed'
+- `selected_images` (TEXT[]) - 1-30 images selected by user from property (in order)
+- `clip_duration` (INT) - Duration per clip in seconds (3 or 6)
+- `video_url` (TEXT) - Final video URL
+- `error_message` (TEXT) - Error details if failed
+- `credits_charged` (INT) - Total credits charged (5 per image)
+- `credits_refunded` (BOOLEAN) - Whether credits were refunded
+- `created_at` (TIMESTAMPTZ) - Job creation timestamp
+- `updated_at` (TIMESTAMPTZ) - Last update timestamp
+- `completed_at` (TIMESTAMPTZ) - Completion timestamp
+
+**RLS Policies:**
+- ✅ Users can view own tour jobs
+- ✅ Users can insert own tour jobs
+- ✅ Users can update own tour jobs
+- ✅ Admins can manage all tour jobs (full CRUD)
+
+**Triggers:**
+- `trigger_update_tour_generation_jobs_updated_at` - Auto-updates updated_at on changes
+
+**Indexes:**
+- `idx_tour_generation_jobs_user_id`
+- `idx_tour_generation_jobs_property_id`
+- `idx_tour_generation_jobs_status`
+- `idx_tour_generation_jobs_created_at`
+
+**Status Flow:**
+```
+processing → completed
+          ↓
+        failed (with refund)
+```
+
+---
+
+### 11. **storage.objects (properties bucket)**
 File storage for property images with RLS protection.
 
 **Bucket Configuration:**
@@ -350,7 +394,7 @@ File storage for property images with RLS protection.
 
 ---
 
-### 11. **storage.objects (jobs bucket)**
+### 12. **storage.objects (jobs bucket)**
 File storage for AI-generated video assets with user-scoped access.
 
 **Bucket Configuration:**

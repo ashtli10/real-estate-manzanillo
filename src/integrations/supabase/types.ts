@@ -212,6 +212,88 @@ export type Database = {
         }
         Relationships: []
       }
+      property_leads: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown
+          lead_type: string
+          metadata: Json | null
+          property_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          lead_type: string
+          metadata?: Json | null
+          property_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          lead_type?: string
+          metadata?: Json | null
+          property_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_leads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      property_views: {
+        Row: {
+          id: string
+          ip_address: unknown
+          property_id: string
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          ip_address?: unknown
+          property_id: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          ip_address?: unknown
+          property_id?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_views_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       subscriptions: {
         Row: {
           id: string
@@ -418,6 +500,54 @@ export type Database = {
           notes?: string | null
           image_urls?: string[] | null
           script?: Array<{ dialogue: string; action: string; emotion: string }> | null
+          video_url?: string | null
+          error_message?: string | null
+          credits_charged?: number
+          credits_refunded?: boolean
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+        }
+        Relationships: []
+      }
+      tour_generation_jobs: {
+        Row: {
+          id: string
+          user_id: string
+          property_id: string
+          status: 'processing' | 'completed' | 'failed'
+          selected_images: string[]
+          clip_duration: number
+          video_url: string | null
+          error_message: string | null
+          credits_charged: number
+          credits_refunded: boolean
+          created_at: string
+          updated_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          property_id: string
+          status?: 'processing' | 'completed' | 'failed'
+          selected_images: string[]
+          clip_duration?: number
+          video_url?: string | null
+          error_message?: string | null
+          credits_charged?: number
+          credits_refunded?: boolean
+          created_at?: string
+          updated_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          property_id?: string
+          status?: 'processing' | 'completed' | 'failed'
+          selected_images?: string[]
+          clip_duration?: number
           video_url?: string | null
           error_message?: string | null
           credits_charged?: number
