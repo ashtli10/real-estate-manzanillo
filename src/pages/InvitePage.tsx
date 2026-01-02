@@ -104,7 +104,7 @@ export function InvitePage({ token, onNavigate }: InvitePageProps) {
           </div>
           <h2 className="text-2xl font-bold text-gray-800">¡Bienvenido!</h2>
           <p className="text-gray-600 mt-2">
-            Has sido invitado a unirte a Inmobiliaria Manzanillo
+            Has sido invitado a unirte a Habitex
           </p>
         </div>
 

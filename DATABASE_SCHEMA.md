@@ -2,7 +2,7 @@
 
 **Last Edited: 2025-12-30**
 
-**Real Estate Manzanillo Platform**  
+**Habitex Platform**  
 *Complete Database Setup with Strict RLS Policies*
 
 ---
@@ -418,7 +418,7 @@ File storage for AI-generated video assets with user-scoped access.
 
 9. **`generate_property_slug()`**
    - Auto-generates unique slug from title + property type + random suffix
-   - Example: "casa-en-manzanillo-departamento-a3b4c5d6"
+   - Example: "casa-en-mexico-departamento-a3b4c5d6"
 
 10. **`update_*_updated_at()`**
     - Triggers for profiles, subscriptions, credits, properties

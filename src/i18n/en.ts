@@ -251,33 +251,33 @@ export const en = {
   // Landing Page
   landing: {
     hero: {
-      title: 'Find Your Dream Property in Manzanillo',
-      subtitle: 'Discover the best properties from trusted local real estate agents. Houses, apartments, and land near the best beaches of the Pacific coast.',
+      title: 'Find Your Dream Property in Mexico',
+      subtitle: 'Discover the best properties from trusted local real estate agents. Houses, apartments, and land across the country.',
       searchPlaceholder: 'Search by location, property type...',
       cta: 'Explore Properties',
     },
     features: {
       location: {
         title: 'Prime Location',
-        description: 'Properties near beaches, shopping centers, and restaurants in Manzanillo, Colima.',
+        description: 'Properties in the best areas of Mexico.',
       },
       trusted: {
         title: 'Trusted Agents',
-        description: 'Connect with verified local agents who know the Manzanillo market.',
+        description: 'Connect with verified local agents who know the Mexico market.',
       },
       investment: {
         title: 'Smart Investment',
-        description: 'Investment opportunities in one of the most attractive areas of the Pacific coast.',
+        description: 'Investment opportunities in the most attractive areas of the country.',
       },
     },
     featured: {
       title: 'Featured Properties',
-      subtitle: 'Discover the best options available in Manzanillo',
+      subtitle: 'Discover the best options available in Mexico',
       empty: 'No featured properties at the moment',
     },
     about: {
-      title: 'About Real Estate Manzanillo',
-      description: 'We are a marketplace connecting property seekers with trusted local real estate agents in Manzanillo. Our platform makes it easy to find your perfect property, whether you\'re looking to buy or rent.',
+      title: 'About Habitex',
+      description: 'We are a marketplace connecting property seekers with trusted local real estate agents in Mexico. Our platform makes it easy to find your perfect property, whether you\'re looking to buy or rent.',
       point1: 'Verified local agents',
       point2: 'Wide variety of properties',
       point3: 'Direct contact with sellers',
@@ -293,7 +293,7 @@ export const en = {
   // Properties Page
   properties: {
     title: 'Properties',
-    subtitle: 'Find your perfect property in Manzanillo',
+    subtitle: 'Find your perfect property in Mexico',
     found: '{{count}} properties found',
     noResults: 'No properties match your criteria',
     adjustFilters: 'Try adjusting your filters',

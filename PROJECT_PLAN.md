@@ -252,7 +252,7 @@ When subscription is **not active**:
 ### 4.1 Dashboard Layout ✅ Implemented
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  🏠 Real Estate Manzanillo                    [ES/EN] [👤]  │
+│  🏠 Habitex                                   [ES/EN] [👤]  │
 ├──────────────┬──────────────────────────────────────────────┤
 │              │                                              │
 │  📊 Overview │  Welcome, Barbara!                          │
@@ -432,8 +432,8 @@ User only edits the `dialogue` field; `action` and `emotion` are AI-generated.
 ## 📋 PHASE 7: SEO & Branding ✅ COMPLETED
 
 ### 7.1 Branding ✅ Configured
-- **Name:** Real Estate Manzanillo / Inmobiliaria Manzanillo
-- **Tagline:** "Your Real Estate Marketplace in Manzanillo"
+- **Name:** Habitex
+- **Tagline:** "Your Real Estate Marketplace in Mexico"
 - **Colors:** Primary teal, secondary blue, accent orange
 - **Logo:** Located in `/public/branding/`
 

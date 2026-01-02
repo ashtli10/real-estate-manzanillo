@@ -311,14 +311,14 @@ export function getAgentProfileSEO(agent: AgentProfile): SEOConfig {
   const fullName = agent.full_name || agent.username;
   const description = agent.bio 
     ? agent.bio.substring(0, 155) + (agent.bio.length > 155 ? '...' : '')
-    : `${fullName} - Agente inmobiliario en Manzanillo. ${agent.properties_count || 0} propiedades disponibles. Encuentra casas, departamentos y terrenos.`;
+    : `${fullName} - Agente inmobiliario en México. ${agent.properties_count || 0} propiedades disponibles. Encuentra casas, departamentos y terrenos.`;
 
   const keywords = [
     fullName,
     'agente inmobiliario',
     'bienes raíces',
-    'Manzanillo',
-    'Colima',
+    'México',
+    'CDMX',
     agent.company_name,
     agent.location,
     'casas en venta',
@@ -335,7 +335,7 @@ export function getAgentProfileSEO(agent: AgentProfile): SEOConfig {
     name: fullName,
     url: `${SITE_URL}/${agent.username}`,
     image: image,
-    description: agent.bio || `Agente inmobiliario en Manzanillo`,
+    description: agent.bio || `Agente inmobiliario en México`,
   };
 
   // Add company affiliation
@@ -356,8 +356,8 @@ export function getAgentProfileSEO(agent: AgentProfile): SEOConfig {
 
   structuredData.address = {
     '@type': 'PostalAddress',
-    addressLocality: agent.location || 'Manzanillo',
-    addressRegion: 'Colima',
+    addressLocality: agent.location || 'México',
+    addressRegion: 'MX',
     addressCountry: 'MX',
   };
 
@@ -391,7 +391,7 @@ export function getAgentProfileSEO(agent: AgentProfile): SEOConfig {
   }
 
   return {
-    title: `${fullName} - Agente Inmobiliario en Manzanillo | ${SITE_NAME}`,
+    title: `${fullName} - Agente Inmobiliario en México | ${SITE_NAME}`,
     description,
     canonical: `${SITE_URL}/${agent.username}`,
     ogImage: image,
@@ -430,7 +430,7 @@ export function getPropertyShareMeta(property: Property): {
 
   return {
     title: `${property.title} - ${price}`,
-    description: `${property.title} en ${location || 'Manzanillo'}. ${details}${property.is_for_sale ? 'En venta' : ''}${property.is_for_rent ? ' En renta' : ''}`,
+    description: `${property.title} en ${location || 'México'}. ${details}${property.is_for_sale ? 'En venta' : ''}${property.is_for_rent ? ' En renta' : ''}`,
     image: property.images?.[0] || DEFAULT_IMAGE,
     url: `${SITE_URL}/propiedad/${property.slug}`,
   };

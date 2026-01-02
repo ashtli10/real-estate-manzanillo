@@ -17,9 +17,6 @@ interface PlacePrediction {
   secondaryText: string;
 }
 
-// Manzanillo center coordinates removed
-// Radius in meters removed
-
 export function LocationAutocomplete({
   value,
   onChange,
@@ -113,9 +110,9 @@ export function LocationAutocomplete({
             secondaryText: pred.structuredFormat?.secondaryText?.text || '',
           };
         })
-        // Filter to only show results that include Manzanillo or Colima in the description
+        // Filter results
         .filter((pred: PlacePrediction) => {
-          // Removed Manzanillo/Colima restriction
+          // No restriction
           return true;
         });
 

@@ -65,7 +65,7 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
     companyName: '',
     username: '',
     bio: '',
-    location: 'Manzanillo, Colima',
+    location: 'Ciudad de México, México',
   });
 
   // Validate token on mount

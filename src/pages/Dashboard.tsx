@@ -780,7 +780,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     <div>
                       <h3 className="font-semibold text-foreground">Tu perfil público</h3>
                       <p className="text-muted-foreground text-sm mt-1">
-                        inmobiliaria-manzanillo.com/{profile.username}
+                        habitex.mx/{profile.username}
                       </p>
                     </div>
                     <button

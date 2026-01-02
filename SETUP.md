@@ -1,10 +1,10 @@
-# BN Inmobiliaria - Setup Guide
+# Habitex - Setup Guide
 
-This document provides instructions for setting up and using the BN Inmobiliaria real estate website.
+This document provides instructions for setting up and using the Habitex real estate website.
 
 ## Overview
 
-BN Inmobiliaria is a modern, responsive real estate website built for showcasing properties in Manzanillo, Colima, Mexico. The site features:
+Habitex is a modern, responsive real estate website built for showcasing properties in Mexico. The site features:
 
 - Beautiful sea-inspired design with blues, whites, and sand colors
 - Fully responsive layout optimized for mobile and desktop
@@ -119,8 +119,8 @@ After logging in, admins can:
 - **Price**: Price in MXN
 
 ### Location
-- **City**: City name (default: Manzanillo)
-- **State**: State name (default: Colima)
+- **City**: City name (default: Ciudad de México)
+- **State**: State name (default: CDMX)
 - **Neighborhood**: Neighborhood or subdivision name
 - **Address**: Full street address
 - **Coordinates**: Latitude and longitude for map display

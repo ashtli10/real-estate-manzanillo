@@ -251,33 +251,33 @@ export const es = {
   // Landing Page
   landing: {
     hero: {
-      title: 'Encuentra Tu Propiedad Ideal en Manzanillo',
-      subtitle: 'Descubre las mejores propiedades de agentes inmobiliarios locales de confianza. Casas, departamentos y terrenos cerca de las mejores playas de la costa del Pacífico.',
+      title: 'Encuentra Tu Propiedad Ideal en México',
+      subtitle: 'Descubre las mejores propiedades de agentes inmobiliarios locales de confianza. Casas, departamentos y terrenos en todo el país.',
       searchPlaceholder: 'Buscar por ubicación, tipo de propiedad...',
       cta: 'Explorar Propiedades',
     },
     features: {
       location: {
         title: 'Ubicación Privilegiada',
-        description: 'Propiedades cerca de playas, centros comerciales y restaurantes en Manzanillo, Colima.',
+        description: 'Propiedades en las mejores zonas de México.',
       },
       trusted: {
         title: 'Agentes de Confianza',
-        description: 'Conecta con agentes locales verificados que conocen el mercado de Manzanillo.',
+        description: 'Conecta con agentes locales verificados que conocen el mercado de México.',
       },
       investment: {
         title: 'Inversión Inteligente',
-        description: 'Oportunidades de inversión en una de las zonas más atractivas de la costa del Pacífico.',
+        description: 'Oportunidades de inversión en las zonas más atractivas del país.',
       },
     },
     featured: {
       title: 'Propiedades Destacadas',
-      subtitle: 'Descubre las mejores opciones disponibles en Manzanillo',
+      subtitle: 'Descubre las mejores opciones disponibles en México',
       empty: 'No hay propiedades destacadas en este momento',
     },
     about: {
-      title: 'Acerca de Inmobiliaria Manzanillo',
-      description: 'Somos un mercado que conecta a buscadores de propiedades con agentes inmobiliarios locales de confianza en Manzanillo. Nuestra plataforma facilita encontrar tu propiedad perfecta, ya sea que busques comprar o rentar.',
+      title: 'Acerca de Habitex',
+      description: 'Somos un mercado que conecta a buscadores de propiedades con agentes inmobiliarios locales de confianza en México. Nuestra plataforma facilita encontrar tu propiedad perfecta, ya sea que busques comprar o rentar.',
       point1: 'Agentes locales verificados',
       point2: 'Amplia variedad de propiedades',
       point3: 'Contacto directo con vendedores',
@@ -293,7 +293,7 @@ export const es = {
   // Properties Page
   properties: {
     title: 'Propiedades',
-    subtitle: 'Encuentra tu propiedad perfecta en Manzanillo',
+    subtitle: 'Encuentra tu propiedad perfecta en México',
     found: '{{count}} propiedades encontradas',
     noResults: 'No hay propiedades que coincidan con tu búsqueda',
     adjustFilters: 'Intenta ajustar tus filtros',

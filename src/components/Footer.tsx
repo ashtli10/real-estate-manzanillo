@@ -89,17 +89,17 @@ export function Footer({ onNavigate }: FooterProps) {
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-cyan-400 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-gray-300 text-sm">Manzanillo, Colima</p>
+                  <p className="text-gray-300 text-sm">Ciudad de México</p>
                   <p className="text-gray-400 text-xs">México</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-cyan-400 flex-shrink-0" />
                 <a
-                  href="mailto:info@inmobiliariamanzanillo.com"
+                  href="mailto:info@habitex.mx"
                   className="text-gray-300 hover:text-white transition-colors text-sm"
                 >
-                  info@inmobiliariamanzanillo.com
+                  info@habitex.mx
                 </a>
               </div>
               
