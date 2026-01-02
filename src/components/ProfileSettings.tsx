@@ -278,6 +278,8 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
         } else if (properties && properties.length > 0) {
           // Update each property's slug with the new username
           const updates = properties.map((property) => {
+            if (!property.slug) return Promise.resolve({ error: null });
+
             // Replace old username prefix with new username
             const slugParts = property.slug.split('/');
             const propertySlugPart = slugParts.length > 1 ? slugParts.slice(1).join('/') : property.slug;

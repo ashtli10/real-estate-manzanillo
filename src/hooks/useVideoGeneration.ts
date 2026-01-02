@@ -49,7 +49,7 @@ export const VIDEO_GENERATION_COSTS = {
   generateImages: 5,
   regenerateImages: 5,
   generateScript: 1,
-  generateVideo: 30,
+  generateVideo: 34,
 } as const;
 
 // Timeout for waiting (20 minutes)
