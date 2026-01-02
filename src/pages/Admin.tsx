@@ -325,7 +325,7 @@ export function Admin({ onNavigate }: AdminProps) {
             <div>
               <h1 className="text-3xl md:text-4xl font-bold">Panel de Administración</h1>
               <p className="text-primary-foreground/80 mt-1">
-                Gestiona la plataforma Inmobiliaria Manzanillo
+                Gestiona la plataforma Habitex
               </p>
             </div>
             <div className="flex items-center gap-3">

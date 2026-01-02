@@ -1,8 +1,8 @@
-# 🏠 Real Estate Manzanillo - Complete Platform Plan
+# 🏠 Habitex - Complete Platform Plan
 
-**Last Edited: 2025-12-30**
+**Last Edited: 2026-01-01**
 
-> **Inmobiliaria Manzanillo** - A marketplace platform for real estate agents in Manzanillo
+> **Habitex** - A marketplace platform for real estate agents in Mexico
 
 ---
 
@@ -27,8 +27,8 @@ The current system is a simple admin panel. You need a full marketplace platform
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    REAL ESTATE MANZANILLO PLATFORM                      │
-│                    (Inmobiliaria Manzanillo)                            │
+│                         HABITEX PLATFORM                                │
+│                         (Habitex.mx)                                    │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  👥 PUBLIC PAGES                    🔐 AGENT DASHBOARD                  │

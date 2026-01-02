@@ -503,7 +503,7 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                   )}
                   {formData.username && !usernameError && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Tu perfil: inmobiliaria-manzanillo.com/{formData.username}
+                      Tu perfil: habitex.mx/{formData.username}
                     </p>
                   )}
                 </div>
@@ -512,7 +512,7 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                   <p className="font-medium text-foreground">@{profile.username || '-'}</p>
                   {profile.username && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      inmobiliaria-manzanillo.com/{profile.username}
+                      habitex.mx/{profile.username}
                     </p>
                   )}
                 </div>
@@ -603,7 +603,7 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                   value={formData.location || ''}
                   onChange={(e) => handleInputChange('location', e.target.value)}
                   className="sm:col-span-2 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Manzanillo, Colima"
+                  placeholder="Ciudad de México, México"
                 />
               ) : (
                 <p className="sm:col-span-2 font-medium text-foreground">{profile.location || '-'}</p>
@@ -678,7 +678,7 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
             <div>
               <h3 className="font-semibold text-foreground">Tu perfil público</h3>
               <p className="text-muted-foreground text-sm mt-1">
-                inmobiliaria-manzanillo.com/{profile.username}
+                habitex.mx/{profile.username}
               </p>
             </div>
             <button

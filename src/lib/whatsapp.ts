@@ -1,6 +1,6 @@
 export const DEFAULT_WHATSAPP_PHONE = '52332831999';
 
-export const DEFAULT_WHATSAPP_MESSAGE = 'Hola, me gustaría recibir información sobre propiedades en Manzanillo.';
+export const DEFAULT_WHATSAPP_MESSAGE = 'Hola, me gustaría recibir información sobre propiedades en México.';
 
 /**
  * Validates a phone number for WhatsApp

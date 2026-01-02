@@ -1,4 +1,4 @@
-# BN Inmobiliaria - Architecture Overview
+# Habitex - Architecture Overview
 
 **Last Edited: 2026-01-01**
 

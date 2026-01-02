@@ -27,7 +27,7 @@ export const es = {
     forRent: 'En Renta',
     allLocations: 'Todas las ubicaciones',
     searchLocation: 'Buscar ubicación...',
-    typeToSearch: 'Escribe para buscar ubicaciones en Manzanillo',
+    typeToSearch: 'Escribe para buscar ubicaciones en México',
     locationSearchError: 'No se pudieron cargar las ubicaciones. Intenta de nuevo.',
   },
 
@@ -43,8 +43,8 @@ export const es = {
 
   // Header/Brand
   brand: {
-    name: 'Inmobiliaria Manzanillo',
-    tagline: 'Tu Mercado Inmobiliario en Manzanillo',
+    name: 'Habitex',
+    tagline: 'Tu Mercado Inmobiliario en México',
   },
 
   // Characteristics
@@ -399,8 +399,8 @@ export const es = {
   // Footer
   footer: {
     about: 'Nosotros',
-    aboutText: 'Inmobiliaria Manzanillo es un mercado que conecta compradores e inquilinos con agentes inmobiliarios locales de confianza.',
-    description: 'Tu plataforma de confianza para encontrar propiedades en Manzanillo. Conectamos compradores e inquilinos con los mejores agentes inmobiliarios locales.',
+    aboutText: 'Habitex es un mercado que conecta compradores e inquilinos con agentes inmobiliarios locales de confianza.',
+    description: 'Tu plataforma de confianza para encontrar propiedades en México. Conectamos compradores e inquilinos con los mejores agentes inmobiliarios locales.',
     quickLinks: 'Enlaces Rápidos',
     neighborhoods: 'Colonias',
     contact: 'Contacto',
@@ -409,14 +409,14 @@ export const es = {
     terms: 'Términos de Servicio',
     privacy: 'Política de Privacidad',
     madeWith: 'Hecho con',
-    inManzanillo: 'en Manzanillo',
+    inManzanillo: 'en México',
   },
 
   // WhatsApp
   whatsapp: {
-    defaultMessage: 'Hola, me gustaría información sobre propiedades en Manzanillo.',
+    defaultMessage: 'Hola, me gustaría información sobre propiedades en México.',
     propertyMessage: 'Hola, me interesa la propiedad: {{title}}',
-    agentMessage: 'Hola, me gustaría contactarlo sobre sus propiedades en Manzanillo.',
+    agentMessage: 'Hola, me gustaría contactarlo sobre sus propiedades en México.',
     propertyDetailMessage: 'Hola, me interesa la {{type}} "{{title}}" en {{location}}. {{price}}. ¿Podemos agendar una visita?',
     priceAskingPrice: 'Precio a consultar',
     saleLabel: 'Venta',
@@ -438,7 +438,7 @@ export const es = {
     inviteInvalid: 'Invitación inválida',
     inviteExpired: 'Este enlace de invitación no es válido o ha expirado.',
     goHome: 'Ir al inicio',
-    invitedTo: 'Has sido invitado a unirte a Inmobiliaria Manzanillo',
+    invitedTo: 'Has sido invitado a unirte a Habitex',
     assignedEmail: 'Email asignado',
     trialPeriod: 'Período de prueba',
     freeDays: '{{days}} días gratis',
@@ -531,7 +531,7 @@ export const es = {
   // Admin
   admin: {
     title: 'Panel de Administración',
-    subtitle: 'Gestiona la plataforma Inmobiliaria Manzanillo',
+    subtitle: 'Gestiona la plataforma Habitex',
     properties: 'Propiedades',
     invitations: 'Invitaciones',
     createInvitation: 'Crear Invitación',

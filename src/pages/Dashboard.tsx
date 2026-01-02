@@ -426,7 +426,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       <aside className="hidden md:flex w-64 bg-card border-r border-border flex-col h-screen sticky top-0">
         {/* Logo/Brand */}
         <div className="p-6 border-b border-border flex-shrink-0">
-          <h1 className="text-xl font-bold text-primary">Inmobiliaria Manzanillo</h1>
+          <h1 className="text-xl font-bold text-primary">Habitex</h1>
           <p className="text-sm text-muted-foreground">Panel de Agente</p>
         </div>
 

@@ -17,14 +17,8 @@ interface PlacePrediction {
   secondaryText: string;
 }
 
-// Manzanillo center coordinates
-const MANZANILLO_CENTER = {
-  latitude: 19.0503,
-  longitude: -104.3153,
-};
-
-// Radius in meters (~25km to cover Manzanillo and surrounding areas)
-const SEARCH_RADIUS = 25000;
+// Manzanillo center coordinates removed
+// Radius in meters removed
 
 export function LocationAutocomplete({
   value,
@@ -82,16 +76,6 @@ export function LocationAutocomplete({
           },
           body: JSON.stringify({
             input: input,
-            // Restrict to a circle around Manzanillo
-            locationRestriction: {
-              circle: {
-                center: {
-                  latitude: MANZANILLO_CENTER.latitude,
-                  longitude: MANZANILLO_CENTER.longitude,
-                },
-                radius: SEARCH_RADIUS,
-              },
-            },
             // Filter for regions/neighborhoods
             includedPrimaryTypes: ['(regions)'],
             // Restrict to Mexico
@@ -131,8 +115,8 @@ export function LocationAutocomplete({
         })
         // Filter to only show results that include Manzanillo or Colima in the description
         .filter((pred: PlacePrediction) => {
-          const fullText = `${pred.text} ${pred.secondaryText}`.toLowerCase();
-          return fullText.includes('manzanillo') || fullText.includes('colima');
+          // Removed Manzanillo/Colima restriction
+          return true;
         });
 
       setPredictions(parsedPredictions);

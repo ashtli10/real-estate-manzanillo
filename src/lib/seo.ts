@@ -1,5 +1,5 @@
 /**
- * SEO Utilities for BN Inmobiliaria
+ * SEO Utilities for Habitex
  * Handles meta tags, structured data, and SEO optimization
  */
 
@@ -31,8 +31,8 @@ export interface AgentProfile {
   properties_count?: number;
 }
 
-const SITE_NAME = 'BN Inmobiliaria';
-const SITE_URL = 'https://www.bninmobiliaria.com';
+const SITE_NAME = 'Habitex';
+const SITE_URL = 'https://www.habitex.mx';
 const DEFAULT_IMAGE = 'https://images.pexels.com/photos/1268871/pexels-photo-1268871.jpeg?auto=compress&cs=tinysrgb&w=1200';
 
 /**
@@ -129,8 +129,8 @@ function updateStructuredData(data: object) {
  */
 export function getHomeSEO(): SEOConfig {
   return {
-    title: `${SITE_NAME} - Tu hogar ideal en Manzanillo, Colima`,
-    description: 'BN Inmobiliaria - Especialistas en bienes raíces en Manzanillo, Colima. Encuentra tu hogar ideal cerca de las playas, plazas comerciales y restaurantes. Casas, departamentos y terrenos en venta y renta.',
+    title: `${SITE_NAME} - Tu hogar ideal en México`,
+    description: 'Habitex - Especialistas en bienes raíces en México. Encuentra tu hogar ideal en todo el país. Casas, departamentos y terrenos en venta y renta.',
     canonical: SITE_URL,
     structuredData: {
       '@context': 'https://schema.org',
@@ -138,17 +138,15 @@ export function getHomeSEO(): SEOConfig {
       name: SITE_NAME,
       url: SITE_URL,
       logo: `${SITE_URL}/favicon.svg`,
-      description: 'Especialistas en bienes raíces en Manzanillo, Colima',
+      description: 'Especialistas en bienes raíces en México',
       address: {
         '@type': 'PostalAddress',
-        addressLocality: 'Manzanillo',
-        addressRegion: 'Colima',
         addressCountry: 'MX'
       },
       areaServed: {
-        '@type': 'City',
-        name: 'Manzanillo',
-        '@id': 'https://www.wikidata.org/wiki/Q1129876'
+        '@type': 'Country',
+        name: 'México',
+        '@id': 'https://www.wikidata.org/wiki/Q96'
       }
     }
   };
@@ -159,13 +157,13 @@ export function getHomeSEO(): SEOConfig {
  */
 export function getPropertiesListSEO(): SEOConfig {
   return {
-    title: `Propiedades en Venta y Renta en Manzanillo - ${SITE_NAME}`,
-    description: 'Explora nuestro catálogo completo de propiedades en Manzanillo, Colima. Casas, departamentos, terrenos y locales comerciales. Filtra por precio, tipo y ubicación.',
+    title: `Propiedades en Venta y Renta en México - ${SITE_NAME}`,
+    description: 'Explora nuestro catálogo completo de propiedades en México. Casas, departamentos, terrenos y locales comerciales. Filtra por precio, tipo y ubicación.',
     canonical: `${SITE_URL}/propiedades`,
     structuredData: {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: 'Propiedades en Manzanillo',
+      name: 'Propiedades en México',
       description: 'Catálogo de propiedades en venta y renta',
       url: `${SITE_URL}/propiedades`
     }
@@ -217,8 +215,8 @@ export function getPropertySEO(property: Property): SEOConfig {
     structuredData.address = {
       '@type': 'PostalAddress',
       streetAddress: property.location_address || '',
-      addressLocality: property.location_city || 'Manzanillo',
-      addressRegion: property.location_state || 'Colima',
+      addressLocality: property.location_city || 'México',
+      addressRegion: property.location_state || 'MX',
       addressCountry: 'MX'
     };
   }

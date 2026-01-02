@@ -706,7 +706,7 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Tu perfil estará en: inmobiliaria-manzanillo.com/{formData.username || 'tunombre'}
+                  Tu perfil estará en: habitex.mx/{formData.username || 'tunombre'}
                 </p>
                 {usernameError && (
                   <p className="text-xs text-red-600 mt-1">{usernameError}</p>
@@ -740,7 +740,7 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
                     value={formData.location}
                     onChange={(e) => updateField('location', e.target.value)}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Manzanillo, Colima"
+                    placeholder="Ciudad de México, México"
                   />
                 </div>
               </div>

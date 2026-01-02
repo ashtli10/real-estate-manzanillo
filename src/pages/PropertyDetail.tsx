@@ -432,7 +432,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
   const buildPageWhatsappMessage = (currentProperty: Property | null) => {
     if (!currentProperty) return t('whatsapp.defaultMessage');
 
-    const location = currentProperty.location_neighborhood || currentProperty.location_city || 'Manzanillo';
+    const location = currentProperty.location_neighborhood || currentProperty.location_city || 'México';
     const priceParts: string[] = [];
 
     if (currentProperty.is_for_sale) {

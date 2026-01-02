@@ -27,7 +27,7 @@ export const en = {
     forRent: 'For Rent',
     allLocations: 'All locations',
     searchLocation: 'Search location...',
-    typeToSearch: 'Type to search for locations in Manzanillo',
+    typeToSearch: 'Type to search for locations in Mexico',
     locationSearchError: 'Could not load locations. Please try again.',
   },
 
@@ -43,8 +43,8 @@ export const en = {
 
   // Header/Brand
   brand: {
-    name: 'Real Estate Manzanillo',
-    tagline: 'Your Real Estate Marketplace in Manzanillo',
+    name: 'Habitex',
+    tagline: 'Your Real Estate Marketplace in Mexico',
   },
 
   // Characteristics
@@ -399,8 +399,8 @@ export const en = {
   // Footer
   footer: {
     about: 'About',
-    aboutText: 'Real Estate Manzanillo is a marketplace connecting buyers and renters with trusted local real estate agents.',
-    description: 'Your trusted platform to find properties in Manzanillo. We connect buyers and renters with the best local real estate agents.',
+    aboutText: 'Habitex is a marketplace connecting buyers and renters with trusted local real estate agents.',
+    description: 'Your trusted platform to find properties in Mexico. We connect buyers and renters with the best local real estate agents.',
     quickLinks: 'Quick Links',
     neighborhoods: 'Neighborhoods',
     contact: 'Contact',
@@ -409,14 +409,14 @@ export const en = {
     terms: 'Terms of Service',
     privacy: 'Privacy Policy',
     madeWith: 'Made with',
-    inManzanillo: 'in Manzanillo',
+    inManzanillo: 'in Mexico',
   },
 
   // WhatsApp
   whatsapp: {
-    defaultMessage: 'Hello, I would like information about properties in Manzanillo.',
+    defaultMessage: 'Hello, I would like information about properties in Mexico.',
     propertyMessage: 'Hello, I\'m interested in the property: {{title}}',
-    agentMessage: 'Hello, I would like to contact you about your properties in Manzanillo.',
+    agentMessage: 'Hello, I would like to contact you about your properties in Mexico.',
     propertyDetailMessage: 'Hello, I\'m interested in the {{type}} "{{title}}" in {{location}}. {{price}}. Can we schedule a visit?',
     priceAskingPrice: 'Price upon request',
     saleLabel: 'Sale',
@@ -438,7 +438,7 @@ export const en = {
     inviteInvalid: 'Invalid invitation',
     inviteExpired: 'This invitation link is not valid or has expired.',
     goHome: 'Go to home',
-    invitedTo: 'You have been invited to join Real Estate Manzanillo',
+    invitedTo: 'You have been invited to join Habitex',
     assignedEmail: 'Assigned email',
     trialPeriod: 'Trial period',
     freeDays: '{{days}} days free',
@@ -531,7 +531,7 @@ export const en = {
   // Admin
   admin: {
     title: 'Admin Panel',
-    subtitle: 'Manage Real Estate Manzanillo platform',
+    subtitle: 'Manage Habitex platform',
     properties: 'Properties',
     invitations: 'Invitations',
     createInvitation: 'Create Invitation',
