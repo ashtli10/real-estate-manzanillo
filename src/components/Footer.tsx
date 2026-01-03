@@ -1,4 +1,4 @@
-import { Building2, MapPin, Heart, Mail, Instagram, Facebook } from 'lucide-react';
+import { Building2, MapPin, Heart, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -100,28 +100,6 @@ export function Footer({ onNavigate }: FooterProps) {
                   className="text-gray-300 hover:text-white transition-colors text-sm"
                 >
                   info@habitex.mx
-                </a>
-              </div>
-              
-              {/* Social Links */}
-              <div className="flex gap-3 pt-2">
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-white/10 hover:bg-blue-600 p-2.5 rounded-lg transition-colors"
-                  aria-label="Facebook"
-                >
-                  <Facebook className="h-5 w-5" />
-                </a>
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-white/10 hover:bg-pink-600 p-2.5 rounded-lg transition-colors"
-                  aria-label="Instagram"
-                >
-                  <Instagram className="h-5 w-5" />
                 </a>
               </div>
             </div>
