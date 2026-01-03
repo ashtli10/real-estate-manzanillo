@@ -1,6 +1,6 @@
 # Habitex - Architecture Overview
 
-**Last Edited: 2026-01-01**
+**Last Edited: 2026-01-03**
 
 ## System Architecture
 
@@ -423,7 +423,9 @@ User logs in → useLanguageSync
 │   │   ├── Breadcrumb.tsx     # Navigation breadcrumbs
 │   │   ├── SubscriptionGuard.tsx # Route protection
 │   │   ├── BillingTab.tsx     # Billing UI component
+│   │   ├── AIToolsContainer.tsx # Unified AI tools with tool selector
 │   │   ├── AIToolsTab.tsx     # AI video generation wizard
+│   │   ├── VideoTourTab.tsx   # Video tour generation wizard
 │   │   ├── ProfileSettings.tsx # Profile editing component
 │   │   ├── LanguageSwitcher.tsx # EN/ES language toggle
 │   │   └── admin/
@@ -437,7 +439,8 @@ User logs in → useLanguageSync
 │   │   ├── useCredits.ts      # Credits state management
 │   │   ├── useDashboardStats.ts # Dashboard statistics hook
 │   │   ├── useLanguageSync.ts # Language preference sync from profile
-│   │   ├── useVideoGeneration.ts # AI video generation workflow
+│   │   ├── useVideoGeneration.ts # AI video generation workflow (10-min job persistence)
+│   │   ├── useVideoTourGeneration.ts # Video tour generation workflow (10-min job persistence)
 │   │   └── useAuth.ts         # Auth context hook
 │   ├── i18n/
 │   │   ├── index.ts           # i18next configuration
@@ -449,7 +452,7 @@ User logs in → useLanguageSync
 │       ├── Home.tsx           # SEO: Home page
 │       ├── Properties.tsx     # SEO: Properties list
 │       ├── PropertyDetail.tsx # SEO: Property detail
-│       ├── Dashboard.tsx      # Agent dashboard (tabs: overview, properties, profile, billing, AI tools)
+│       ├── Dashboard.tsx      # Agent dashboard (tabs: overview, properties, profile, billing, ai-tools)
 │       ├── AgentProfile.tsx   # Public agent profile page (with Schema.org)
 │       └── OnboardingPage.tsx # New user onboarding
 ├── DEPLOYMENT.md              # Deployment guide

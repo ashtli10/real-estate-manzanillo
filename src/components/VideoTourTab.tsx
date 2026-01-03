@@ -507,7 +507,7 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
 
       {selectedProperty && (
         <div className="text-sm text-muted-foreground">
-          <p>{selectedImages.length} imágenes × {clipDuration}s = {selectedImages.length * clipDuration}s de video</p>
+          <p>{selectedImages.length} imágenes seleccionadas</p>
         </div>
       )}
 

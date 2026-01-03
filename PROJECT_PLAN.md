@@ -1,6 +1,6 @@
 # 🏠 Habitex - Complete Platform Plan
 
-**Last Edited: 2026-01-01**
+**Last Edited: 2026-01-03**
 
 > **Habitex** - A marketplace platform for real estate agents in Mexico
 
@@ -373,7 +373,10 @@ User only edits the `dialogue` field; `action` and `emotion` are AI-generated.
 **Features:**
 - Real-time job status tracking via Supabase subscriptions (optimized for status-only changes)
 - Auto-resume active jobs on page reload
-- Job history with status indicators
+- **10-minute completed job persistence** - Completed jobs remain visible as current task for 10 minutes after completion
+- **Unified AI Tools tab** - Accessed via AIToolsContainer with tool selector
+- **Always-visible job history** - Prominent history section visible on all wizard steps
+- Mobile-friendly layout with responsive actions
 - Fullscreen image viewer with keyboard navigation
 - Collapsible notes editor for regeneration
 - Credit refunds on failure
@@ -381,8 +384,9 @@ User only edits the `dialogue` field; `action` and `emotion` are AI-generated.
 - Credits update instantly in UI after operations
 
 **Implementation Details:**
+- `src/components/AIToolsContainer.tsx` - Unified AI tools container with tool selector
 - `src/components/AIToolsTab.tsx` - Full wizard UI with step indicator
-- `src/hooks/useVideoGeneration.ts` - Job state management and real-time subscriptions
+- `src/hooks/useVideoGeneration.ts` - Job state management with 10-min completed job persistence
 - `src/hooks/useCredits.ts` - Credit tracking with real-time updates
 - `api/video/generate-images.ts` - Start image generation (5 credits)
 - `api/video/approve-images.ts` - Approve images, start script gen (1 credit)
@@ -408,9 +412,8 @@ Creates automated video tours from property images with transitions.
 **User Flow:**
 1. Select property from listings (must have at least 1 image)
 2. Select 1-30 images in order for the video tour
-3. Configure settings: Clip duration (3s or 6s, default 3s)
-4. Generate video (5 credits per image)
-5. Download final video
+3. Generate video (5 credits per image)
+4. Download final video
 
 **Credit Costs:**
 - **5 credits per image selected**
@@ -419,13 +422,16 @@ Creates automated video tours from property images with transitions.
 **Features:**
 - Real-time job status tracking via Supabase subscriptions
 - Auto-resume active jobs on page reload
-- Job history with status indicators
+- **10-minute completed job persistence** - Completed jobs remain visible as current task for 10 minutes after completion
+- **Unified AI Tools tab** - Accessed via AIToolsContainer with tool selector (shared with Video Generator)
+- **Always-visible job history** - Prominent history section visible on all wizard steps
+- Mobile-friendly layout with larger thumbnails and action buttons
 - Credit refunds on failure
-- Mobile-friendly wizard interface
 
 **Implementation Details:**
+- `src/components/AIToolsContainer.tsx` - Unified AI tools container with tool selector
 - `src/components/VideoTourTab.tsx` - Full wizard UI with step indicator
-- `src/hooks/useVideoTourGeneration.ts` - Job state management and real-time subscriptions
+- `src/hooks/useVideoTourGeneration.ts` - Job state management with 10-min completed job persistence
 - `api/video/generate-tour.ts` - Start tour generation
 - `tour_generation_jobs` table - Job tracking with status: processing, completed, failed
 
