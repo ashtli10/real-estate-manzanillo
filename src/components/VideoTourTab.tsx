@@ -4,18 +4,18 @@ import {
   Image,
   Zap,
   CreditCard,
-  Info,
   Check,
   AlertCircle,
   Download,
   ArrowLeft,
   Loader2,
   Home,
-  Clock,
   Play,
-  Settings,
   ChevronRight,
   Sparkles,
+  Clock,
+  Trash2,
+  RefreshCw,
 } from 'lucide-react';
 import { useCredits } from '../hooks/useCredits';
 import { 
@@ -34,7 +34,6 @@ interface VideoTourTabProps {
 type WizardStep = 
   | 'select-property'
   | 'select-images'
-  | 'settings'
   | 'generating'
   | 'completed';
 
@@ -62,7 +61,6 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
   const [wizardStep, setWizardStep] = useState<WizardStep>('select-property');
   const [selectedProperty, setSelectedProperty] = useState<TourEligibleProperty | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [clipDuration, setClipDuration] = useState<3 | 6>(3);
   const [recentJobs, setRecentJobs] = useState<TourGenerationJob[]>([]);
   const [initialCheckDone, setInitialCheckDone] = useState(false);
 
@@ -83,7 +81,6 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
         if (property) {
           setSelectedProperty(property);
           setSelectedImages(activeJob.selected_images);
-          setClipDuration(activeJob.clip_duration as 3 | 6);
         }
         setWizardStep('generating');
       }
@@ -156,13 +153,7 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
     setSelectedImages([]);
   };
 
-  // Move to settings step
-  const handleProceedToSettings = () => {
-    if (selectedImages.length < MIN_IMAGES) return;
-    setWizardStep('settings');
-  };
-
-  // Start generation
+  // Start generation directly from image selection
   const handleStartGeneration = async () => {
     if (!selectedProperty || selectedImages.length < MIN_IMAGES) return;
     
@@ -173,8 +164,7 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
 
     const success = await startTourGeneration(
       selectedProperty.id,
-      selectedImages,
-      clipDuration
+      selectedImages
     );
 
     if (success) {
@@ -189,7 +179,6 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
     setWizardStep('select-property');
     setSelectedProperty(null);
     setSelectedImages([]);
-    setClipDuration(3);
   };
 
   // Go back one step
@@ -199,9 +188,6 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
         setWizardStep('select-property');
         setSelectedProperty(null);
         setSelectedImages([]);
-        break;
-      case 'settings':
-        setWizardStep('select-images');
         break;
       default:
         break;
@@ -216,7 +202,6 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
     if (property) {
       setSelectedProperty(property);
       setSelectedImages(job.selected_images);
-      setClipDuration(job.clip_duration as 3 | 6);
     }
   }, [eligibleProperties, loadExistingJob]);
 
@@ -265,7 +250,6 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
     const steps = [
       { key: 'select', label: 'Propiedad', icon: Home },
       { key: 'images', label: 'Imágenes', icon: Image },
-      { key: 'settings', label: 'Opciones', icon: Settings },
       { key: 'video', label: 'Video', icon: Video },
     ];
 
@@ -275,11 +259,9 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
           return 0;
         case 'select-images':
           return 1;
-        case 'settings':
-          return 2;
         case 'generating':
         case 'completed':
-          return 3;
+          return 2;
         default:
           return 0;
       }
@@ -473,144 +455,33 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
         })}
       </div>
 
-      {/* Proceed button */}
+      {/* Generate button */}
       <div className="flex justify-end pt-2">
         <button
-          onClick={handleProceedToSettings}
-          disabled={selectedImages.length < MIN_IMAGES}
+          onClick={handleStartGeneration}
+          disabled={selectedImages.length < MIN_IMAGES || loading || !hasEnoughCredits(creditCost)}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          Continuar
-          <ChevronRight className="h-4 w-4" />
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Iniciando...
+            </>
+          ) : !hasEnoughCredits(creditCost) ? (
+            <>
+              <CreditCard className="h-4 w-4" />
+              Comprar créditos
+            </>
+          ) : (
+            <>
+              <Video className="h-4 w-4" />
+              Generar Video Tour
+            </>
+          )}
         </button>
       </div>
-    </div>
-  );
 
-  // Render settings
-  const renderSettings = () => (
-    <div className="space-y-6">
-      {/* Header with back button */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={handleBack}
-          className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div>
-          <h3 className="text-lg font-semibold">Configuración del video</h3>
-          <p className="text-sm text-muted-foreground">
-            Ajusta las opciones antes de generar
-          </p>
-        </div>
-      </div>
-
-      {/* Summary */}
-      <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Propiedad:</span>
-          <span className="text-sm font-medium truncate max-w-[200px]">{selectedProperty?.title}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">Imágenes:</span>
-          <span className="text-sm font-medium">{selectedImages.length}</span>
-        </div>
-      </div>
-
-      {/* Clip duration setting */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium">Duración por clip</label>
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setClipDuration(3)}
-            className={`p-4 rounded-lg border-2 transition-all ${
-              clipDuration === 3
-                ? 'border-primary bg-primary/5'
-                : 'border-border hover:border-muted-foreground/50'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock className="h-5 w-5" />
-              <span className="font-bold text-lg">3s</span>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Rápido y dinámico
-            </p>
-            {clipDuration === 3 && (
-              <div className="mt-2 text-xs text-primary text-center font-medium">
-                ✓ Seleccionado
-              </div>
-            )}
-          </button>
-          <button
-            onClick={() => setClipDuration(6)}
-            className={`p-4 rounded-lg border-2 transition-all ${
-              clipDuration === 6
-                ? 'border-primary bg-primary/5'
-                : 'border-border hover:border-muted-foreground/50'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock className="h-5 w-5" />
-              <span className="font-bold text-lg">6s</span>
-            </div>
-            <p className="text-xs text-muted-foreground text-center">
-              Más detalle por imagen
-            </p>
-            {clipDuration === 6 && (
-              <div className="mt-2 text-xs text-primary text-center font-medium">
-                ✓ Seleccionado
-              </div>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Video duration estimate */}
-      <div className="flex items-center gap-2 text-sm bg-blue-50 text-blue-700 p-3 rounded-lg">
-        <Info className="h-4 w-4 flex-shrink-0" />
-        <span>
-          Duración estimada del video: <strong>{selectedImages.length * clipDuration} segundos</strong>
-        </span>
-      </div>
-
-      {/* Credit cost */}
-      <div className="flex items-center gap-2 text-sm bg-muted/50 p-3 rounded-lg">
-        <Zap className="h-4 w-4 text-amber-500" />
-        <span>
-          Costo: <strong>{creditCost} créditos</strong>
-        </span>
-        <span className="text-muted-foreground">
-          (Tienes {totalCredits})
-        </span>
-      </div>
-
-      {/* Generate button */}
-      <button
-        onClick={handleStartGeneration}
-        disabled={loading || !hasEnoughCredits(creditCost)}
-        className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Iniciando...
-          </>
-        ) : !hasEnoughCredits(creditCost) ? (
-          <>
-            <CreditCard className="h-4 w-4" />
-            Comprar créditos
-          </>
-        ) : (
-          <>
-            <Video className="h-4 w-4" />
-            Generar Video Tour
-          </>
-        )}
-      </button>
-
-      {!hasEnoughCredits(creditCost) && (
+      {!hasEnoughCredits(creditCost) && selectedImages.length >= MIN_IMAGES && (
         <p className="text-sm text-center text-red-500">
           Necesitas {creditCost - totalCredits} créditos más
         </p>
@@ -732,8 +603,6 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
         return renderPropertySelection();
       case 'select-images':
         return renderImageSelection();
-      case 'settings':
-        return renderSettings();
       case 'generating':
         return renderGenerating();
       case 'completed':
@@ -745,23 +614,26 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-purple-500/10 via-indigo-500/10 to-blue-500/10 rounded-xl p-4 sm:p-6">
-        <div className="flex items-start gap-3 sm:gap-4">
-          <div className="p-2 sm:p-3 rounded-lg bg-purple-100 text-purple-600">
-            <Video className="h-5 w-5 sm:h-6 sm:w-6" />
+      {/* Credits Overview - Compact */}
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-amber-500" />
+              <span className="text-sm text-muted-foreground">Créditos:</span>
+              <span className="font-bold text-foreground">{totalCredits}</span>
+            </div>
+            <div className="text-xs text-muted-foreground hidden sm:block">
+              · {TOUR_CREDITS_PER_IMAGE} crédito por imagen
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg sm:text-xl font-bold">Video Tour Generator</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Crea videos tours automáticos de tus propiedades con transiciones profesionales.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-100 text-amber-700 text-sm font-medium flex-shrink-0">
-            <Zap className="h-4 w-4" />
-            <span className="hidden sm:inline">{totalCredits} créditos</span>
-            <span className="sm:hidden">{totalCredits}</span>
-          </div>
+          <button
+            onClick={onNavigateToBilling}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors text-xs"
+          >
+            <CreditCard className="h-3.5 w-3.5" />
+            Comprar
+          </button>
         </div>
       </div>
 
@@ -791,60 +663,136 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
         )}
       </div>
 
-      {/* Recent jobs */}
-      {recentJobs.length > 0 && wizardStep === 'select-property' && (
-        <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+      {/* History Section - Always visible */}
+      <div className="bg-card rounded-xl border border-border p-4 sm:p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-foreground text-base sm:text-lg flex items-center gap-2">
+            <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
             Historial de Video Tours
           </h3>
+          <span className="text-xs sm:text-sm text-muted-foreground">{recentJobs.length} tours</span>
+        </div>
+
+        {recentJobs.length === 0 ? (
+          <div className="text-center py-8 bg-muted/30 rounded-lg">
+            <Video className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+            <p className="text-muted-foreground">No tienes video tours generados aún.</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Tus video tours completados y en progreso aparecerán aquí.
+            </p>
+          </div>
+        ) : (
           <div className="space-y-3">
-            {recentJobs.slice(0, 5).map((job) => {
+            {recentJobs.map((job) => {
               const property = eligibleProperties.find(p => p.id === job.property_id);
+              const propertyTitle = property?.title || 'Propiedad eliminada';
+              const thumbnail = job.selected_images?.[0] || property?.images[0];
+              const isCurrentJob = currentJob?.id === job.id;
+              const isFailed = job.status === 'failed';
+              const isCompleted = job.status === 'completed';
+              const isInProgress = job.status === 'processing';
+
               return (
                 <div
                   key={job.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted/70 transition-colors"
+                  className={`
+                    flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 rounded-lg border transition-all
+                    ${isCurrentJob ? 'bg-primary/5 border-primary' : 'bg-muted/30 border-transparent hover:bg-muted/50'}
+                  `}
                 >
-                  {property?.images[0] && (
-                    <img
-                      src={property.images[0]}
-                      alt=""
-                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">
-                      {property?.title || 'Propiedad eliminada'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatJobDate(job.created_at)} · {job.selected_images.length} imágenes
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      job.status === 'completed' ? 'bg-green-100 text-green-700' :
-                      job.status === 'failed' ? 'bg-red-100 text-red-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {getStatusLabel(job.status)}
-                    </span>
-                    {job.status === 'completed' && job.video_url && (
-                      <button
-                        onClick={() => handleDownload(job.video_url!, `tour-${property?.title || 'video'}.mp4`)}
-                        className="p-2 rounded-lg hover:bg-muted text-primary"
-                        title="Descargar"
-                      >
-                        <Download className="h-4 w-4" />
-                      </button>
+                  {/* Thumbnail + Info */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {thumbnail ? (
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden flex-shrink-0 bg-muted">
+                        <img src={thumbnail} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                        <Image className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
+                      </div>
                     )}
-                    {job.status === 'processing' && (
+
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate text-sm sm:text-base">{propertyTitle}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-muted-foreground">
+                          {formatJobDate(job.created_at)} · {job.selected_images.length} imágenes
+                        </p>
+                        {/* Status badge */}
+                        <div className={`
+                          inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+                          ${isCompleted ? 'bg-green-100 text-green-700' : ''}
+                          ${isFailed ? 'bg-red-100 text-red-700' : ''}
+                          ${isInProgress ? 'bg-amber-100 text-amber-700' : ''}
+                        `}>
+                          <div className={`
+                            w-1.5 h-1.5 rounded-full
+                            ${isCompleted ? 'bg-green-500' : ''}
+                            ${isFailed ? 'bg-red-500' : ''}
+                            ${isInProgress ? 'bg-amber-500 animate-pulse' : ''}
+                          `} />
+                          {getStatusLabel(job.status)}
+                        </div>
+                      </div>
+                      
+                      {/* Error message for failed jobs */}
+                      {isFailed && job.error_message && (
+                        <div className="mt-2 flex items-start gap-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+                          <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                          <span className="line-clamp-2">{job.error_message}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 justify-end flex-shrink-0">
+                    {/* Completed: Download and view */}
+                    {isCompleted && job.video_url && (
+                      <>
+                        <button
+                          onClick={() => handleDownload(job.video_url!, `tour-${propertyTitle}.mp4`)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs font-medium hover:bg-green-200 transition-colors"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Descargar</span>
+                        </button>
+                        <button
+                          onClick={() => handleResumeJob(job)}
+                          className="p-2 hover:bg-muted rounded-lg transition-colors"
+                          title="Ver detalles"
+                        >
+                          <Play className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+
+                    {/* In progress: Show processing */}
+                    {isInProgress && !isCurrentJob && (
                       <button
                         onClick={() => handleResumeJob(job)}
-                        className="p-2 rounded-lg hover:bg-muted text-primary"
-                        title="Ver progreso"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs font-medium hover:bg-amber-200 transition-colors"
                       >
-                        <Play className="h-4 w-4" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span className="hidden sm:inline">Ver progreso</span>
+                      </button>
+                    )}
+
+                    {/* Failed: retry option */}
+                    {isFailed && (
+                      <button
+                        onClick={() => {
+                          const prop = eligibleProperties.find(p => p.id === job.property_id);
+                          if (prop) {
+                            setSelectedProperty(prop);
+                            setSelectedImages(job.selected_images);
+                            setWizardStep('select-images');
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        Reintentar
                       </button>
                     )}
                   </div>
@@ -852,8 +800,8 @@ export function VideoTourTab({ userId, onNavigateToBilling }: VideoTourTabProps)
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

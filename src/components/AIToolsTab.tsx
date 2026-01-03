@@ -1130,54 +1130,32 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       {/* Fullscreen Image Viewer */}
       {renderFullscreenViewer()}
       
-      <div className="max-w-4xl space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 sm:w-64 h-32 sm:h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-16 sm:w-32 h-16 sm:h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-        
-        <div className="relative z-10">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 sm:mb-2">
-            Generador de Videos con IA
-          </h2>
-          <p className="text-white/80 text-sm sm:text-base max-w-xl">
-            Crea videos profesionales para Instagram, TikTok y más.
-          </p>
-        </div>
-      </div>
-
-      {/* Credits Overview */}
-      <div className="bg-card rounded-xl shadow-soft p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 className="font-semibold text-foreground text-base sm:text-lg">Créditos de IA</h3>
+      <div className="space-y-6">
+      {/* Credits Overview - Compact */}
+      <div className="bg-card rounded-xl shadow-soft p-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-amber-500" />
+              <span className="text-sm text-muted-foreground">Créditos:</span>
+              <span className="font-bold text-foreground">{totalCredits}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              ({freeCredits} gratis + {paidCredits} comprados)
+            </div>
+          </div>
           <button
             onClick={onNavigateToBilling}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors text-xs sm:text-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors text-xs"
           >
-            <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Comprar más</span>
-            <span className="sm:hidden">+</span>
+            <CreditCard className="h-3.5 w-3.5" />
+            Comprar
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-muted/50 rounded-lg p-3 sm:p-4 text-center">
-            <p className="text-2xl sm:text-3xl font-bold text-foreground">{totalCredits}</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Total</p>
-          </div>
-          <div className="bg-green-50 rounded-lg p-3 sm:p-4 text-center">
-            <p className="text-2xl sm:text-3xl font-bold text-green-600">{freeCredits}</p>
-            <p className="text-xs sm:text-sm text-green-700">Gratis</p>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-3 sm:p-4 text-center">
-            <p className="text-2xl sm:text-3xl font-bold text-blue-600">{paidCredits}</p>
-            <p className="text-xs sm:text-sm text-blue-700">Comprados</p>
-          </div>
-        </div>
-
-        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-          <Info className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-800">
+        <div className="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+          <Info className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800">
             <strong>Costo por video:</strong> {VIDEO_GENERATION_COSTS.generateImages} créditos (imágenes) + {VIDEO_GENERATION_COSTS.generateScript} crédito (guión) + {VIDEO_GENERATION_COSTS.generateVideo} créditos (video) = {VIDEO_GENERATION_COSTS.generateImages + VIDEO_GENERATION_COSTS.generateScript + VIDEO_GENERATION_COSTS.generateVideo} créditos total
           </p>
         </div>

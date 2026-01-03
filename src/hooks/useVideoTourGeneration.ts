@@ -11,7 +11,6 @@ export interface TourGenerationJob {
   property_id: string;
   status: TourJobStatus;
   selected_images: string[];
-  clip_duration: number;
   video_url: string | null;
   error_message: string | null;
   credits_charged: number;
@@ -46,7 +45,7 @@ interface UseVideoTourGenerationReturn {
   
   // Actions
   fetchEligibleProperties: () => Promise<void>;
-  startTourGeneration: (propertyId: string, selectedImages: string[], clipDuration: 3 | 6) => Promise<boolean>;
+  startTourGeneration: (propertyId: string, selectedImages: string[]) => Promise<boolean>;
   clearJob: () => void;
   loadExistingJob: (jobId: string) => Promise<void>;
   fetchRecentJobs: () => Promise<TourGenerationJob[]>;
@@ -199,8 +198,7 @@ export function useVideoTourGeneration(userId: string | undefined): UseVideoTour
   // Start tour generation
   const startTourGeneration = useCallback(async (
     propertyId: string, 
-    selectedImages: string[], 
-    clipDuration: 3 | 6
+    selectedImages: string[]
   ): Promise<boolean> => {
     if (!userId) return false;
     
@@ -224,7 +222,6 @@ export function useVideoTourGeneration(userId: string | undefined): UseVideoTour
         body: JSON.stringify({
           propertyId,
           selectedImages,
-          clipDuration,
         }),
       });
 
@@ -332,12 +329,13 @@ export function useVideoTourGeneration(userId: string | undefined): UseVideoTour
     }
   }, [userId]);
 
-  // Check for any active job (processing)
+  // Check for any active job (processing) or recently completed (within 10 min)
   const checkForActiveJob = useCallback(async (): Promise<TourGenerationJob | null> => {
     if (!userId) return null;
 
     try {
-      const { data, error: fetchError } = await supabase
+      // First check for processing jobs
+      const { data: processingJob, error: processingError } = await supabase
         .from('tour_generation_jobs')
         .select('*')
         .eq('user_id', userId)
@@ -346,15 +344,32 @@ export function useVideoTourGeneration(userId: string | undefined): UseVideoTour
         .limit(1)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (processingError) throw processingError;
 
-      if (data) {
-        const job = data as unknown as TourGenerationJob;
+      if (processingJob) {
+        const job = processingJob as unknown as TourGenerationJob;
         setCurrentJob(job);
-        
-        // Subscribe to updates
         subscribeToJob(job.id);
-        
+        return job;
+      }
+
+      // Then check for recently completed jobs (within 10 minutes)
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: recentJob, error: recentError } = await supabase
+        .from('tour_generation_jobs')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .gte('completed_at', tenMinutesAgo)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (recentError) throw recentError;
+
+      if (recentJob) {
+        const job = recentJob as unknown as TourGenerationJob;
+        setCurrentJob(job);
         return job;
       }
 

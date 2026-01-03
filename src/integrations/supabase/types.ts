@@ -517,7 +517,6 @@ export type Database = {
           property_id: string
           status: 'processing' | 'completed' | 'failed'
           selected_images: string[]
-          clip_duration: number
           video_url: string | null
           error_message: string | null
           credits_charged: number
@@ -532,7 +531,6 @@ export type Database = {
           property_id: string
           status?: 'processing' | 'completed' | 'failed'
           selected_images: string[]
-          clip_duration?: number
           video_url?: string | null
           error_message?: string | null
           credits_charged?: number
@@ -547,7 +545,6 @@ export type Database = {
           property_id?: string
           status?: 'processing' | 'completed' | 'failed'
           selected_images?: string[]
-          clip_duration?: number
           video_url?: string | null
           error_message?: string | null
           credits_charged?: number

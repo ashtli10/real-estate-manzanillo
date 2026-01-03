@@ -541,12 +541,13 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
     }
   }, [userId]);
 
-  // Check for any active job (pending, processing, images_ready, script_ready)
+  // Check for any active job (pending, processing, images_ready, script_ready) or recently completed
   const checkForActiveJob = useCallback(async (): Promise<VideoGenerationJob | null> => {
     if (!userId) return null;
 
     try {
-      const { data, error: fetchError } = await supabase
+      // First check for active jobs
+      const { data: activeJob, error: activeError } = await supabase
         .from('video_generation_jobs')
         .select('*')
         .eq('user_id', userId)
@@ -555,10 +556,10 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
         .limit(1)
         .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (activeError) throw activeError;
 
-      if (data) {
-        const job = data as VideoGenerationJob;
+      if (activeJob) {
+        const job = activeJob as VideoGenerationJob;
         setCurrentJob(job);
         
         // If job is waiting for external process, subscribe to updates
@@ -566,6 +567,26 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
           subscribeToJob(job.id);
         }
         
+        return job;
+      }
+
+      // Then check for recently completed jobs (within 10 minutes)
+      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const { data: recentJob, error: recentError } = await supabase
+        .from('video_generation_jobs')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'completed')
+        .gte('completed_at', tenMinutesAgo)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (recentError) throw recentError;
+
+      if (recentJob) {
+        const job = recentJob as VideoGenerationJob;
+        setCurrentJob(job);
         return job;
       }
 

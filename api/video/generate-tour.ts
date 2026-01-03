@@ -31,7 +31,6 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 interface GenerateTourRequest {
   propertyId: string;
   selectedImages: string[]; // 1-30 image URLs
-  clipDuration: 3 | 6; // seconds
 }
 
 interface PropertyData {
@@ -245,8 +244,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Must select between 1 and 30 images' });
     }
 
-    const clipDuration = body.clipDuration === 6 ? 6 : 3; // Default to 3s
-
     // Fetch property data
     const { data: property, error: propertyError } = await supabaseAdmin
       .from('properties')
@@ -282,7 +279,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         user_id: userId,
         property_id: body.propertyId,
         selected_images: body.selectedImages,
-        clip_duration: clipDuration,
         status: 'processing',
         credits_charged: creditCost,
       })
@@ -308,7 +304,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       caracteristics: formatCharacteristics(propertyData.characteristics),
       custom_bonuses: formatCustomBonuses(propertyData.custom_bonuses),
       images: body.selectedImages,
-      clipDuration: clipDuration,
     };
 
     // Call external webhook
