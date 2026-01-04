@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Loader2, Sparkles, ChevronLeft, ChevronRight, Check, AlertCircle, Cloud } from 'lucide-react';
 import type { Property, PropertyInsert, PropertyType, PropertyStatus } from '../../types/property';
-import { generateSlug, propertyTypeLabels, propertyStatusLabels, CHARACTERISTIC_DEFINITIONS } from '../../types/property';
+import { generateSlug, propertyTypeLabels, propertyStatusLabels } from '../../types/property';
 import { ImageUpload } from './ImageUpload';
 import { VideoUpload } from './VideoUpload';
 import { TagInput } from './TagInput';
 import { GoogleMapsInput } from './GoogleMapsInput';
 import { CharacteristicInput, type Characteristic } from './CharacteristicInput';
-import { requestPropertyPrefill } from '../../lib/prefillProperty';
 import { usePropertyDraft } from '../../hooks/usePropertyDraft';
 
 interface PropertyFormProps {
@@ -19,9 +18,10 @@ interface PropertyFormProps {
   userId?: string;
 }
 
-type FormStep = 'basic' | 'price' | 'location' | 'characteristics' | 'media' | 'extras';
+type FormStep = 'ai' | 'basic' | 'price' | 'location' | 'characteristics' | 'media' | 'extras';
 
 const STEPS: { id: FormStep; label: string; shortLabel: string }[] = [
+  { id: 'ai', label: 'IA Prefill', shortLabel: 'IA' },
   { id: 'basic', label: 'Info Básica', shortLabel: 'Info' },
   { id: 'price', label: 'Precio', shortLabel: 'Precio' },
   { id: 'location', label: 'Ubicación', shortLabel: 'Lugar' },
@@ -63,21 +63,23 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     loading: draftLoading,
     saving: draftSaving,
     hasDraft,
+    draftId,
     setFormData,
     setCurrentStep: setSavedStep,
     setAiText,
     updateField,
-    updateFields,
     deleteDraft,
+    saveDraft: forceSaveDraft,
+    loadDraft,
   } = usePropertyDraft({
     userId,
     propertyId: property?.id || null,
   });
 
-  const [currentStep, setCurrentStep] = useState<FormStep>('basic');
+  const [currentStep, setCurrentStep] = useState<FormStep>('ai');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiSuccess, setAiSuccess] = useState(false);
+  const [aiProcessing, setAiProcessing] = useState(false); // Background processing indicator
   const [priceDisplay, setPriceDisplay] = useState('');
   const [rentPriceDisplay, setRentPriceDisplay] = useState('');
   const [autoSlug, setAutoSlug] = useState(true);
@@ -85,19 +87,46 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
 
   // Sync current step with saved step from draft
+  // Also skip AI step if form already has data (AI already processed)
   useEffect(() => {
-    if (savedStep && !draftLoading) {
-      const validStep = STEPS.find(s => s.id === savedStep);
-      if (validStep) {
-        setCurrentStep(validStep.id);
+    if (!draftLoading) {
+      // If form has data (title filled), skip AI step
+      if (formData.title && formData.title.trim()) {
+        const targetStep = savedStep && savedStep !== 'ai' ? savedStep : 'basic';
+        const validStep = STEPS.find(s => s.id === targetStep);
+        if (validStep) {
+          setCurrentStep(validStep.id);
+        }
+      } else if (savedStep) {
+        const validStep = STEPS.find(s => s.id === savedStep);
+        if (validStep) {
+          setCurrentStep(validStep.id);
+        }
       }
     }
-  }, [savedStep, draftLoading]);
+  }, [savedStep, draftLoading, formData.title]);
 
   // Sync step changes to draft
   useEffect(() => {
     setSavedStep(currentStep);
   }, [currentStep, setSavedStep]);
+
+  // Poll for draft updates when AI is processing in background
+  useEffect(() => {
+    if (!aiProcessing || formData.title) {
+      // Stop polling if not processing or data arrived
+      if (formData.title && aiProcessing) {
+        setAiProcessing(false);
+      }
+      return;
+    }
+    
+    const pollInterval = setInterval(() => {
+      loadDraft();
+    }, 3000); // Poll every 3 seconds
+    
+    return () => clearInterval(pollInterval);
+  }, [aiProcessing, formData.title, loadDraft]);
 
   // Initialize form with property data when editing
   useEffect(() => {
@@ -217,48 +246,41 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     setRentPriceDisplay(numericString ? formatPriceValue(numeric) : '');
   };
 
+  // Async AI prefill - fires in background, user can leave
   const applyPrefill = async () => {
-    if (!aiText.trim()) return;
+    if (!aiText.trim() || !userId) return;
     
     setAiError(null);
-    setAiSuccess(false);
     setAiLoading(true);
     
     try {
-      const result = await requestPropertyPrefill(
-        aiText,
-        CHARACTERISTIC_DEFINITIONS,
-        Object.keys(propertyTypeLabels) as PropertyType[],
-        ['MXN', 'USD'],
-        { defaultCurrency: formData.currency as string }
-      );
-
-      // Update form data - this also saves to draft in background
-      updateFields({
-        title: result.title || formData.title,
-        description: result.description || formData.description,
-        is_for_sale: result.is_for_sale,
-        is_for_rent: result.is_for_rent,
-        price: result.is_for_sale ? result.price : null,
-        currency: result.currency || formData.currency,
-        rent_price: result.is_for_rent ? result.rent_price : null,
-        rent_currency: result.rent_currency || formData.rent_currency,
-        property_type: result.property_type || formData.property_type,
-        custom_bonuses: result.custom_bonuses?.length ? result.custom_bonuses : formData.custom_bonuses,
-        characteristics: result.characteristics?.length ? (result.characteristics as Characteristic[]) : formData.characteristics,
-      });
+      // First, save the AI text to the draft immediately
+      setAiText(aiText);
+      await forceSaveDraft();
       
-      setAiSuccess(true);
-      // Clear the AI text after successful prefill
-      setAiText('');
-      // Move to next step after a brief delay
-      setTimeout(() => {
-        setAiSuccess(false);
-        setCurrentStep('price');
-      }, 1500);
+      // Wait for draft to be created/saved
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (!draftId) {
+        throw new Error('No se pudo crear el borrador');
+      }
+
+      // Fire the background API request (don't await completion)
+      fetch('/api/process-draft-prefill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draft_id: draftId, user_id: userId }),
+      }).catch(err => console.error('Background prefill error:', err));
+      
+      // Show processing indicator and move to next step immediately
+      setAiProcessing(true);
+      setAiLoading(false);
+      
+      // Move to basic step - the background process will fill the data
+      setCurrentStep('basic');
+      
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'No se pudo prellenar');
-    } finally {
+      setAiError(err instanceof Error ? err.message : 'No se pudo iniciar el proceso');
       setAiLoading(false);
     }
   };
@@ -278,9 +300,86 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   // Step content components
   const renderStepContent = () => {
     switch (currentStep) {
+      case 'ai':
+        return (
+          <div className="space-y-6">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                <Sparkles className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground">Prellenar con IA</h3>
+              <p className="text-muted-foreground text-sm mt-1 max-w-md mx-auto">
+                Pega el texto de un anuncio y la IA extraerá automáticamente toda la información.
+                <br />
+                <span className="text-primary font-medium">Puedes cerrar la página mientras procesa.</span>
+              </p>
+            </div>
+            
+            <textarea
+              value={aiText}
+              onChange={(e) => setAiText(e.target.value)}
+              placeholder="Pega aquí el texto del anuncio de la propiedad...
+
+Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baños completos, cochera para 2 autos, precio $2,500,000 MXN..."
+              className="w-full min-h-[180px] p-4 rounded-xl border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              disabled={aiLoading}
+            />
+            
+            {aiError && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg text-sm text-destructive">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{aiError}</span>
+              </div>
+            )}
+            
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={applyPrefill}
+                disabled={aiLoading || !aiText.trim()}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {aiLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    Prellenar formulario
+                  </>
+                )}
+              </button>
+              
+              <p className="text-center text-xs text-muted-foreground">
+                Costo: 2 créditos · O puedes{' '}
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep('basic')}
+                  className="text-primary hover:underline"
+                >
+                  llenar manualmente
+                </button>
+              </p>
+            </div>
+          </div>
+        );
+
       case 'basic':
         return (
           <div className="space-y-5">
+            {/* Show processing indicator if AI is working in background */}
+            {aiProcessing && !formData.title && (
+              <div className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl mb-4">
+                <Loader2 className="h-5 w-5 text-primary animate-spin flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">IA procesando en segundo plano...</p>
+                  <p className="text-xs text-muted-foreground">Los datos se llenarán automáticamente cuando termine.</p>
+                </div>
+              </div>
+            )}
+            
             <div className="text-center mb-4">
               <h3 className="text-xl font-semibold text-foreground">Información Básica</h3>
               <p className="text-muted-foreground text-sm">Título y descripción de la propiedad</p>
@@ -581,24 +680,22 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
         {/* Header - Fixed */}
         <div className="flex-shrink-0 border-b border-border">
           <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg sm:text-xl font-bold text-foreground">
-                {property ? 'Editar' : 'Nueva'} Propiedad
-              </h2>
-              {/* Save status indicator */}
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                {draftSaving ? (
-                  <>
-                    <Cloud className="h-3.5 w-3.5 animate-pulse" />
-                    <span className="hidden sm:inline">Guardando...</span>
-                  </>
-                ) : hasDraft ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-green-500" />
-                    <span className="hidden sm:inline text-green-600">Guardado</span>
-                  </>
-                ) : null}
-              </div>
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">
+              {property ? 'Editar' : 'Nueva'} Propiedad
+            </h2>
+            {/* Save status indicator - Centered */}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              {draftSaving ? (
+                <>
+                  <Cloud className="h-3.5 w-3.5 animate-pulse" />
+                  <span className="hidden sm:inline">Guardando...</span>
+                </>
+              ) : hasDraft ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                  <span className="hidden sm:inline text-green-600">Guardado</span>
+                </>
+              ) : null}
             </div>
             <button
               type="button"
@@ -649,77 +746,6 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
 
         {/* Content - Scrollable */}
         <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6">
-          {/* AI Panel - Only on basic step */}
-          {currentStep === 'basic' && (
-            <div className="mb-6">
-              <div className="bg-muted/50 rounded-xl p-4 border border-border">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground text-sm">Prellenar con IA</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Pega el texto de un anuncio y extrae la información automáticamente
-                    </p>
-                  </div>
-                </div>
-                
-                <textarea
-                  value={aiText}
-                  onChange={(e) => setAiText(e.target.value)}
-                  placeholder="Pega aquí el texto del anuncio de la propiedad..."
-                  className="w-full min-h-[80px] p-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                
-                {aiError && (
-                  <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 rounded-lg text-sm text-destructive">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <span>{aiError}</span>
-                  </div>
-                )}
-                
-                {aiSuccess && (
-                  <div className="flex items-center gap-2 mt-2 p-2 bg-green-500/10 rounded-lg text-sm text-green-600">
-                    <Check className="h-4 w-4 flex-shrink-0" />
-                    <span>¡Datos extraídos! Pasando al siguiente paso...</span>
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs text-muted-foreground">Costo: 2 créditos</span>
-                  <button
-                    type="button"
-                    onClick={applyPrefill}
-                    disabled={aiLoading || !aiText.trim()}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {aiLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Procesando...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        Prellenar
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-              
-              <div className="relative my-5">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border"></div>
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-3 text-muted-foreground">o completa manualmente</span>
-                </div>
-              </div>
-            </div>
-          )}
-          
           {renderStepContent()}
         </div>
 
