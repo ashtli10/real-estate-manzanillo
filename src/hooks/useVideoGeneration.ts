@@ -421,49 +421,80 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
     
     try {
       // First, get the job to find generated image URLs
-      const { data: job } = await supabase
+      const { data: job, error: fetchError } = await supabase
         .from('video_generation_jobs')
         .select('image_urls')
         .eq('id', jobId)
         .eq('user_id', userId)
         .single();
 
+      if (fetchError) {
+        console.error('Error fetching job for deletion:', fetchError);
+        return false;
+      }
+
       // Delete generated images from storage if they exist
       if (job?.image_urls && job.image_urls.length > 0) {
         // Extract storage paths from URLs
         // URLs are like: https://xxx.supabase.co/storage/v1/object/public/jobs/userId/jobId/image_0.png
+        // May also have query params like ?t=123 for cache busting
         const storagePaths = job.image_urls
           .map((url: string) => {
             try {
-              const match = url.match(/\/jobs\/(.+)$/);
+              // Use URL class to properly parse and ignore query parameters
+              const urlObj = new URL(url);
+              const pathname = urlObj.pathname;
+              // Match /jobs/{path} from the pathname (no query params)
+              const match = pathname.match(/\/jobs\/(.+)$/);
               return match ? match[1] : null;
             } catch {
-              return null;
+              // Fallback: try simple regex but strip query params first
+              try {
+                const cleanUrl = url.split('?')[0];
+                const match = cleanUrl.match(/\/jobs\/(.+)$/);
+                return match ? match[1] : null;
+              } catch {
+                return null;
+              }
             }
           })
           .filter(Boolean) as string[];
 
+        console.log('[deleteJob] Deleting storage paths:', storagePaths);
+
         if (storagePaths.length > 0) {
-          await supabase.storage.from('jobs').remove(storagePaths);
+          const { data: removeData, error: removeError } = await supabase.storage
+            .from('jobs')
+            .remove(storagePaths);
+
+          if (removeError) {
+            console.error('[deleteJob] Error deleting images from storage:', removeError);
+            // Continue with job deletion even if image deletion fails
+          } else {
+            console.log('[deleteJob] Successfully deleted images:', removeData);
+          }
         }
       }
 
-      // Delete the job from database - RLS handles user access control
+      // Delete the job from database - include user_id for explicit security
       const { error: deleteError, count } = await supabase
         .from('video_generation_jobs')
         .delete({ count: 'exact' })
-        .eq('id', jobId);
+        .eq('id', jobId)
+        .eq('user_id', userId);
 
       if (deleteError) {
-        console.error('Error deleting job:', deleteError);
+        console.error('[deleteJob] Error deleting job:', deleteError);
         return false;
       }
 
       // Verify the row was actually deleted
       if (count === 0) {
-        console.error('Job deletion returned 0 rows affected, job may not exist or RLS denied access');
+        console.error('[deleteJob] Job deletion returned 0 rows affected, job may not exist or RLS denied access');
         return false;
       }
+
+      console.log('[deleteJob] Successfully deleted job:', jobId);
 
       // If it's the current job, clear it
       if (currentJob?.id === jobId) {
@@ -472,7 +503,7 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
 
       return true;
     } catch (err) {
-      console.error('Error deleting job:', err);
+      console.error('[deleteJob] Error deleting job:', err);
       return false;
     }
   }, [userId, currentJob, clearJob]);
@@ -485,7 +516,11 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
   ): Promise<boolean> => {
     // Delete the current job first if it exists
     if (currentJob) {
-      await deleteJob(currentJob.id);
+      console.log('[regenerateImages] Deleting old job:', currentJob.id);
+      const deleted = await deleteJob(currentJob.id);
+      if (!deleted) {
+        console.warn('[regenerateImages] Failed to delete old job, proceeding with new generation anyway');
+      }
     }
     setCurrentJob(null);
     return startImageGeneration(propertyId, selectedImages, notes);
