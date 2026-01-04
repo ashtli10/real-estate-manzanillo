@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Sparkles,
   Video,
@@ -87,6 +87,19 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   const [showRegenerationNotes, setShowRegenerationNotes] = useState(false);
   const [regenerationNotes, setRegenerationNotes] = useState('');
 
+  // Progress bar state for fake loading animation
+  const [progress, setProgress] = useState(0);
+  const [isCompletingProgress, setIsCompletingProgress] = useState(false);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressStartTimeRef = useRef<number | null>(null);
+  
+  // Progress durations in ms (time to go from 1% to 99%)
+  const PROGRESS_DURATIONS = {
+    images: 70000,  // 1m 10s
+    script: 30000,  // 30s
+    video: 130000,  // 2m 10s
+  };
+
   // Helper to open fullscreen viewer
   const openFullscreen = (url: string, index: number, images: string[]) => {
     setFullscreenImage({ url, index, images });
@@ -149,6 +162,95 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     };
     loadRecentJobs();
   }, [fetchRecentJobs, currentJob]);
+
+  // Get current generation type from wizard step
+  const getCurrentGenerationType = useCallback((): 'images' | 'script' | 'video' | null => {
+    switch (wizardStep) {
+      case 'generating-images': return 'images';
+      case 'generating-script': return 'script';
+      case 'generating-video': return 'video';
+      default: return null;
+    }
+  }, [wizardStep]);
+
+  // Progress bar animation effect
+  useEffect(() => {
+    const generationType = getCurrentGenerationType();
+    
+    // If not in a generating state, reset progress
+    if (!generationType) {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+      setProgress(0);
+      setIsCompletingProgress(false);
+      progressStartTimeRef.current = null;
+      return;
+    }
+    
+    // If already completing progress (fast fill to 100%), don't restart
+    if (isCompletingProgress) return;
+    
+    // Start progress animation if not already running
+    if (!progressStartTimeRef.current) {
+      progressStartTimeRef.current = Date.now();
+      setProgress(1);
+    }
+    
+    const duration = PROGRESS_DURATIONS[generationType];
+    const updateInterval = 100; // Update every 100ms for smooth animation
+    
+    progressIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - (progressStartTimeRef.current || Date.now());
+      // Progress from 1% to 99% over the duration
+      const newProgress = Math.min(1 + (elapsed / duration) * 98, 99);
+      setProgress(newProgress);
+      
+      // Stop at 99%
+      if (newProgress >= 99 && progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    }, updateInterval);
+    
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
+  }, [wizardStep, isCompletingProgress, getCurrentGenerationType]);
+
+  // Handle completion: when actual process finishes, fast-fill to 100%
+  useEffect(() => {
+    const generationType = getCurrentGenerationType();
+    const isGenerating = generationType !== null;
+    
+    // Detect when we transition from generating to a non-generating state
+    // This means the real process finished
+    if (!isGenerating && progress > 0 && progress < 100 && !isCompletingProgress) {
+      setIsCompletingProgress(true);
+      
+      // Fast fill to 100%
+      const fastFillInterval = setInterval(() => {
+        setProgress(prev => {
+          const next = prev + 5;
+          if (next >= 100) {
+            clearInterval(fastFillInterval);
+            // Reset after showing 100% briefly
+            setTimeout(() => {
+              setProgress(0);
+              setIsCompletingProgress(false);
+              progressStartTimeRef.current = null;
+            }, 300);
+            return 100;
+          }
+          return next;
+        });
+      }, 20);
+    }
+  }, [wizardStep, progress, isCompletingProgress, getCurrentGenerationType]);
 
   // Update wizard step based on job status
   useEffect(() => {
@@ -681,6 +783,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       },
     };
 
+    const displayProgress = Math.round(progress);
+
     return (
       <div className="text-center py-12">
         <div className="w-20 h-20 mx-auto mb-6 relative">
@@ -691,9 +795,23 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
           {type === 'video' && <Video className="absolute inset-0 m-auto h-8 w-8 text-primary" />}
         </div>
         <h3 className="text-xl font-semibold mb-2">{messages[type].title}</h3>
-        <p className="text-muted-foreground max-w-md mx-auto">
+        <p className="text-muted-foreground max-w-md mx-auto mb-6">
           {messages[type].description}
         </p>
+        
+        {/* Progress bar */}
+        <div className="max-w-md mx-auto mb-2">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-100 ease-linear rounded-full"
+              style={{ width: `${displayProgress}%` }}
+            />
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground font-medium">
+          {displayProgress}%
+        </p>
+        
         {timeoutError && (
           <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg max-w-md mx-auto">
             <p className="text-red-700 text-sm">
