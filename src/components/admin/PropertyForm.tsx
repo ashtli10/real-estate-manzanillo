@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Loader2, Sparkles, ChevronLeft, ChevronRight, Check, Wand2, AlertCircle, Cloud } from 'lucide-react';
+import { X, Save, Loader2, Sparkles, ChevronLeft, ChevronRight, Check, AlertCircle, Cloud } from 'lucide-react';
 import type { Property, PropertyInsert, PropertyType, PropertyStatus } from '../../types/property';
 import { generateSlug, propertyTypeLabels, propertyStatusLabels, CHARACTERISTIC_DEFINITIONS } from '../../types/property';
 import { ImageUpload } from './ImageUpload';
@@ -78,7 +78,6 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiSuccess, setAiSuccess] = useState(false);
-  const [showAiPanel, setShowAiPanel] = useState(false);
   const [priceDisplay, setPriceDisplay] = useState('');
   const [rentPriceDisplay, setRentPriceDisplay] = useState('');
   const [autoSlug, setAutoSlug] = useState(true);
@@ -199,16 +198,8 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   };
 
   const handleCancel = async () => {
-    // Ask for confirmation if there's a draft with data
-    if (hasDraft) {
-      const confirm = window.confirm(
-        '¿Deseas guardar este borrador para continuar después?\n\n' +
-        'Sí = Guardar borrador\nNo = Descartar cambios'
-      );
-      if (!confirm) {
-        await deleteDraft();
-      }
-    }
+    // Silently delete the draft and close
+    await deleteDraft();
     onCancel();
   };
 
@@ -242,6 +233,7 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
         { defaultCurrency: formData.currency as string }
       );
 
+      // Update form data - this also saves to draft in background
       updateFields({
         title: result.title || formData.title,
         description: result.description || formData.description,
@@ -257,11 +249,13 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
       });
       
       setAiSuccess(true);
-      // Auto-hide the AI panel after success
+      // Clear the AI text after successful prefill
+      setAiText('');
+      // Move to next step after a brief delay
       setTimeout(() => {
-        setShowAiPanel(false);
         setAiSuccess(false);
-      }, 2000);
+        setCurrentStep('price');
+      }, 1500);
     } catch (err) {
       setAiError(err instanceof Error ? err.message : 'No se pudo prellenar');
     } finally {
@@ -582,11 +576,11 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-card rounded-xl shadow-strong w-full max-w-2xl max-h-[90vh] flex flex-col my-auto">
-        {/* Header */}
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-card rounded-xl shadow-strong w-full max-w-2xl h-[calc(100vh-1rem)] sm:h-auto sm:max-h-[90vh] flex flex-col">
+        {/* Header - Fixed */}
         <div className="flex-shrink-0 border-b border-border">
-          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center gap-3">
               <h2 className="text-lg sm:text-xl font-bold text-foreground">
                 {property ? 'Editar' : 'Nueva'} Propiedad
@@ -606,94 +600,17 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
                 ) : null}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* AI Magic Button */}
-              <button
-                type="button"
-                onClick={() => setShowAiPanel(!showAiPanel)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-                  showAiPanel 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-gradient-to-r from-violet-500/10 to-purple-500/10 text-purple-600 hover:from-violet-500/20 hover:to-purple-500/20 border border-purple-200'
-                }`}
-              >
-                <Wand2 className="h-4 w-4" />
-                <span className="hidden sm:inline">IA</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="p-2 hover:bg-muted rounded-lg transition-colors -mr-2"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="p-2 hover:bg-muted rounded-lg transition-colors -mr-2"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
           
-          {/* AI Panel - Collapsible */}
-          {showAiPanel && (
-            <div className="px-4 sm:px-6 pb-4 animate-in slide-in-from-top-2 duration-200">
-              <div className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="p-2 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg text-white flex-shrink-0">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground">Prellenar con IA</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Pega el texto de un anuncio y la IA extraerá toda la información automáticamente
-                    </p>
-                  </div>
-                </div>
-                
-                <textarea
-                  value={aiText}
-                  onChange={(e) => setAiText(e.target.value)}
-                  placeholder="Pega aquí el texto del anuncio de la propiedad..."
-                  className="w-full min-h-[100px] p-3 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-                />
-                
-                {aiError && (
-                  <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 rounded-lg text-sm text-destructive">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <span>{aiError}</span>
-                  </div>
-                )}
-                
-                {aiSuccess && (
-                  <div className="flex items-center gap-2 mt-2 p-2 bg-green-500/10 rounded-lg text-sm text-green-600">
-                    <Check className="h-4 w-4 flex-shrink-0" />
-                    <span>¡Datos extraídos correctamente!</span>
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xs text-muted-foreground">Costo: 2 créditos</span>
-                  <button
-                    type="button"
-                    onClick={applyPrefill}
-                    disabled={aiLoading || !aiText.trim()}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {aiLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Procesando...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        Prellenar formulario
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          
           {/* Step Indicators */}
-          <div className="px-3 sm:px-6 pb-4">
+          <div className="px-3 sm:px-6 pb-3">
             <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
               {STEPS.map((step, index) => {
                 const isCompleted = index < currentStepIndex;
@@ -731,12 +648,83 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6">
+          {/* AI Panel - Only on basic step */}
+          {currentStep === 'basic' && (
+            <div className="mb-6">
+              <div className="bg-muted/50 rounded-xl p-4 border border-border">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-foreground text-sm">Prellenar con IA</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Pega el texto de un anuncio y extrae la información automáticamente
+                    </p>
+                  </div>
+                </div>
+                
+                <textarea
+                  value={aiText}
+                  onChange={(e) => setAiText(e.target.value)}
+                  placeholder="Pega aquí el texto del anuncio de la propiedad..."
+                  className="w-full min-h-[80px] p-3 rounded-lg border border-border bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                
+                {aiError && (
+                  <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 rounded-lg text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <span>{aiError}</span>
+                  </div>
+                )}
+                
+                {aiSuccess && (
+                  <div className="flex items-center gap-2 mt-2 p-2 bg-green-500/10 rounded-lg text-sm text-green-600">
+                    <Check className="h-4 w-4 flex-shrink-0" />
+                    <span>¡Datos extraídos! Pasando al siguiente paso...</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-xs text-muted-foreground">Costo: 2 créditos</span>
+                  <button
+                    type="button"
+                    onClick={applyPrefill}
+                    disabled={aiLoading || !aiText.trim()}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {aiLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Prellenar
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="relative my-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border"></div>
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-3 text-muted-foreground">o completa manualmente</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {renderStepContent()}
         </div>
 
         {/* Navigation - Fixed at bottom */}
-        <div className="flex-shrink-0 border-t border-border bg-muted/30 px-4 sm:px-6 py-4">
+        <div className="flex-shrink-0 border-t border-border bg-muted/30 px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"

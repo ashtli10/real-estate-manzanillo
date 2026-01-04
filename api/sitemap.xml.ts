@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
-const SITE_URL = 'https://www.bninmobiliaria.com';
+const SITE_URL = 'https://www.habitex.mx';
 
 interface RequestHandler {
   (req: any, res: any): Promise<void>;

@@ -37,7 +37,7 @@ export function Login({ onNavigate }: LoginProps) {
               <LogIn className="h-8 w-8 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-gray-800">Panel de Administración</h2>
-            <p className="text-gray-600 mt-2">BN Inmobiliaria</p>
+            <p className="text-gray-600 mt-2">Habitex</p>
           </div>
 
           {error && (
@@ -60,7 +60,7 @@ export function Login({ onNavigate }: LoginProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="admin@bninmobiliaria.com"
+                  placeholder="admin@habitex.mx"
                 />
               </div>
             </div>

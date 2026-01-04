@@ -361,15 +361,15 @@ User logs in → useLanguageSync
 ```xml
 <urlset>
   <url>
-    <loc>https://www.bninmobiliaria.com</loc>
+    <loc>https://www.habitex.mx</loc>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.bninmobiliaria.com/propiedades</loc>
+    <loc>https://www.habitex.mx/propiedades</loc>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://www.bninmobiliaria.com/propiedad/[slug]</loc>
+    <loc>https://www.habitex.mx/propiedad/[slug]</loc>
     <priority>0.8</priority>
   </url>
 </urlset>

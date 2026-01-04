@@ -55,7 +55,7 @@ This will create 6 sample properties with realistic data and images.
 ### Public Pages
 
 #### Home Page (`/`)
-- Hero section with description of BN Inmobiliaria
+- Hero section with description of Habitex
 - Three benefit cards highlighting key features
 - Automatic carousel of featured properties
 - Grid of featured properties below the carousel

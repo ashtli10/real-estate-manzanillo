@@ -1,10 +1,10 @@
-# BN Inmobiliaria - Robots.txt
+# Habitex - Robots.txt
 # Allow all crawlers to access all content
 User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://www.bninmobiliaria.com/sitemap.xml
+Sitemap: https://www.habitex.mx/sitemap.xml
 
 # Crawl-delay for polite crawling
 Crawl-delay: 1
