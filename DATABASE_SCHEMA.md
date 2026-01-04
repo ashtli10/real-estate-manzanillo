@@ -400,6 +400,13 @@ processing → completed
                   failed (at any step, with refund)
 ```
 
+**Deletion Behavior:**
+- When regenerating images, the old job is deleted first
+- Deletion cascades to storage: all generated images (in `/jobs/{user_id}/{job_id}/`) are removed
+- Uses proper URL parsing to handle query parameters in image URLs
+- Explicit `user_id` filter ensures only own jobs can be deleted
+- Comprehensive error logging for debugging storage/database failures
+
 ---
 
 ### 10. **tour_generation_jobs**

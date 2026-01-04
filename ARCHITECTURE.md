@@ -242,7 +242,8 @@ n8n processes images → Updates job: status='images_ready'
                      → image_urls populated with 3 AI images
                      
 User reviews images → Approve or Regenerate
-                    → If Regenerate: new job (5 more credits)
+                    → If Regenerate: deletes old job and images from storage
+                    → Creates new job (5 more credits)
                     → If Approve: /api/video/approve-images (30 credits)
                     
 n8n generates script → Updates job: status='script_ready'
