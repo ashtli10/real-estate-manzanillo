@@ -321,7 +321,7 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{t('landing.cta.title')}</h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">{t('landing.cta.subtitle')}</p>
           <button
-            onClick={() => onNavigate('/login')}
+            onClick={() => window.open('https://wa.me/523321831999', '_blank')}
             className="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all hover:shadow-lg"
           >
             {t('landing.cta.button')}

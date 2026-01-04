@@ -71,7 +71,7 @@ async function verifyAndGetUserId(req: VercelRequest): Promise<string | null> {
 }
 
 // Deduct credits from user (direct table operation - bypasses RPC auth check)
-async function deductCredits(userId: string, amount: number, description: string): Promise<boolean> {
+async function deductCredits(userId: string, amount: number): Promise<boolean> {
   // First get current credits
   const { data: credits, error: fetchError } = await supabaseAdmin
     .from('credits')
@@ -117,8 +117,9 @@ async function deductCredits(userId: string, amount: number, description: string
     .insert({
       user_id: userId,
       amount: -amount,
-      type: 'used',
-      description,
+      transaction_type: 'video_tour',
+      service: 'video_tour_generator',
+      description: null,
     });
 
   if (txError) {
@@ -130,7 +131,7 @@ async function deductCredits(userId: string, amount: number, description: string
 }
 
 // Refund credits to user (direct table operation - bypasses RPC auth check)
-async function refundCredits(userId: string, amount: number, description: string): Promise<boolean> {
+async function refundCredits(userId: string, amount: number): Promise<boolean> {
   // Get current credits
   const { data: credits, error: fetchError } = await supabaseAdmin
     .from('credits')
@@ -162,8 +163,9 @@ async function refundCredits(userId: string, amount: number, description: string
     .insert({
       user_id: userId,
       amount: amount,
-      type: 'refund',
-      description,
+      transaction_type: 'refund',
+      service: 'video_tour_generator',
+      description: null,
     });
 
   if (txError) {
@@ -264,8 +266,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Deduct credits first
     const deducted = await deductCredits(
       userId,
-      creditCost,
-      `Video tour generation for property: ${propertyData.title} (${imageCount} images)`
+      creditCost
     );
 
     if (!deducted) {
@@ -287,7 +288,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (jobError || !job) {
       // Refund credits if job creation fails
-      await refundCredits(userId, creditCost, 'Refund: Tour job creation failed');
+      await refundCredits(userId, creditCost);
       console.error('Error creating job:', jobError);
       return res.status(500).json({ error: 'Failed to create job' });
     }
@@ -334,7 +335,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           })
           .eq('id', job.id);
 
-        await refundCredits(userId, creditCost, 'Refund: Tour generation webhook failed');
+        await refundCredits(userId, creditCost);
 
         return res.status(500).json({ 
           error: 'Tour generation service unavailable',
@@ -362,7 +363,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
         .eq('id', job.id);
 
-      await refundCredits(userId, creditCost, 'Refund: Tour generation request failed');
+      await refundCredits(userId, creditCost);
 
       console.error('Webhook fetch error:', fetchError);
       return res.status(500).json({ 

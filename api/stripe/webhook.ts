@@ -182,8 +182,9 @@ async function handlePaymentSucceeded(
       await supabaseAdmin.from('credit_transactions').insert({
         user_id: userId,
         amount: 50,
-        type: 'free_monthly',
-        description: 'Créditos mensuales gratis - renovación de suscripción',
+        transaction_type: 'subscription_grant',
+        service: 'subscription',
+        description: null,
       });
     }
 
@@ -201,8 +202,8 @@ async function handlePaymentSucceeded(
       const { error: addError } = await supabaseAdmin.rpc('add_credits', {
         p_user_id: userId,
         p_amount: creditAmount,
-        p_type: 'purchased',
-        p_description: `Compra de ${creditAmount} créditos`,
+        p_transaction_type: 'purchase',
+        p_service: 'purchase',
       });
 
       if (addError) {
@@ -300,8 +301,8 @@ async function handleCheckoutCompleted(
     const { error: addError } = await supabaseAdmin.rpc('add_credits', {
       p_user_id: userId,
       p_amount: creditAmount,
-      p_type: 'purchased',
-      p_description: `Compra de ${creditAmount} créditos`,
+      p_transaction_type: 'purchase',
+      p_service: 'purchase',
     });
 
     if (addError) {

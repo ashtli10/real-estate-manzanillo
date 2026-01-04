@@ -82,7 +82,7 @@ async function verifyAndGetUserId(req: VercelRequest): Promise<string | null> {
 }
 
 // Refund credits to user (direct table operation - bypasses RPC auth check)
-async function refundCredits(userId: string, amount: number, description: string): Promise<boolean> {
+async function refundCredits(userId: string, amount: number): Promise<boolean> {
   // Get current credits
   const { data: credits, error: fetchError } = await supabaseAdmin
     .from('credits')
@@ -114,8 +114,9 @@ async function refundCredits(userId: string, amount: number, description: string
     .insert({
       user_id: userId,
       amount: amount,
-      type: 'refund',
-      description,
+      transaction_type: 'refund',
+      service: 'ai_video_generator',
+      description: null,
     });
 
   if (txError) {
@@ -127,7 +128,7 @@ async function refundCredits(userId: string, amount: number, description: string
 }
 
 // Deduct credits from user (direct table operation - bypasses RPC auth check)
-async function deductCredits(userId: string, amount: number, description: string): Promise<boolean> {
+async function deductCredits(userId: string, amount: number): Promise<boolean> {
   // First get current credits
   const { data: credits, error: fetchError } = await supabaseAdmin
     .from('credits')
@@ -173,8 +174,9 @@ async function deductCredits(userId: string, amount: number, description: string
     .insert({
       user_id: userId,
       amount: -amount,
-      type: 'usage',
-      description,
+      transaction_type: 'ai_video_render',
+      service: 'ai_video_generator',
+      description: null,
     });
 
   if (txError) {
@@ -301,8 +303,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Deduct credits for video generation
     const deducted = await deductCredits(
       userId,
-      GENERATE_VIDEO_CREDIT_COST,
-      `AI video generation for property: ${propertyData.title}`
+      GENERATE_VIDEO_CREDIT_COST
     );
 
     if (!deducted) {
@@ -368,7 +369,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('id', body.jobId);
 
         // Refund the video generation credits (30)
-        await refundCredits(userId, GENERATE_VIDEO_CREDIT_COST, 'Refund: Video generation webhook failed');
+        await refundCredits(userId, GENERATE_VIDEO_CREDIT_COST);
 
         return res.status(500).json({ 
           error: 'Video generation service unavailable',
@@ -395,7 +396,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq('id', body.jobId);
 
       // Refund video generation credits
-      await refundCredits(userId, GENERATE_VIDEO_CREDIT_COST, 'Refund: Video generation request failed');
+      await refundCredits(userId, GENERATE_VIDEO_CREDIT_COST);
 
       console.error('Webhook fetch error:', fetchError);
       return res.status(500).json({ 

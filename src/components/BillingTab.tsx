@@ -285,27 +285,92 @@ export function BillingTab({ userId }: BillingTabProps) {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : creditTransactions.length > 0 ? (
-          <ul className="space-y-3">
-            {creditTransactions.map((transaction) => (
-              <li key={transaction.id} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">{transaction.description}</p>
-                  <p className="text-xs text-muted-foreground">{new Date(transaction.created_at).toLocaleString()}</p>
-                </div>
-                <span
-                  className={`font-medium text-sm ${
-                    transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                  }`}
-                >
-                  {transaction.amount > 0 ? `+${transaction.amount}` : transaction.amount} créditos
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider py-3 px-2">
+                    Fecha
+                  </th>
+                  <th className="text-left text-xs font-medium text-muted-foreground uppercase tracking-wider py-3 px-2">
+                    Concepto
+                  </th>
+                  <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider py-3 px-2">
+                    Créditos
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {creditTransactions.map((transaction) => {
+                  const concept = getTransactionConcept(transaction.transaction_type);
+                  return (
+                    <tr key={transaction.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="py-3 px-2 text-sm text-muted-foreground whitespace-nowrap">
+                        {new Date(transaction.created_at).toLocaleDateString('es-MX', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </td>
+                      <td className="py-3 px-2">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                            transaction.amount > 0 ? 'bg-green-500' : 'bg-red-400'
+                          }`} />
+                          <span className="text-sm font-medium text-foreground">
+                            {concept}
+                          </span>
+                        </div>
+                      </td>
+                      <td className={`py-3 px-2 text-sm font-semibold text-right whitespace-nowrap ${
+                        transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {transaction.amount > 0 ? '+' : ''}{transaction.amount}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground">No hay transacciones de créditos registradas.</p>
         )}
       </div>
     </div>
   );
+}
+
+// Helper function to get Spanish concept based on transaction type
+function getTransactionConcept(transactionType: string): string {
+  // Map new enum values to Spanish labels
+  const concepts: Record<string, string> = {
+    // Purchases
+    'purchase': 'Compra de créditos',
+    
+    // Subscription
+    'subscription_grant': 'Créditos mensuales (suscripción)',
+    
+    // AI Video Generator
+    'ai_video_images': 'Video IA - Generación de imágenes',
+    'ai_video_script': 'Video IA - Generación de guión',
+    'ai_video_render': 'Video IA - Renderizado de video',
+    
+    // Video Tour
+    'video_tour': 'Video Tour - Generación',
+    
+    // AI Prefill
+    'ai_prefill': 'IA - Autocompletado de propiedad',
+    
+    // Refunds
+    'refund': 'Reembolso de créditos',
+    
+    // Bonus
+    'bonus': 'Bonificación',
+    
+    // Adjustments
+    'adjustment': 'Ajuste de créditos',
+  };
+
+  return concepts[transactionType] || 'Transacción de créditos';
 }

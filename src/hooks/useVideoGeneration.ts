@@ -448,15 +448,20 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
         }
       }
 
-      // Delete the job from database
-      const { error: deleteError } = await supabase
+      // Delete the job from database - RLS handles user access control
+      const { error: deleteError, count } = await supabase
         .from('video_generation_jobs')
-        .delete()
-        .eq('id', jobId)
-        .eq('user_id', userId);
+        .delete({ count: 'exact' })
+        .eq('id', jobId);
 
       if (deleteError) {
         console.error('Error deleting job:', deleteError);
+        return false;
+      }
+
+      // Verify the row was actually deleted
+      if (count === 0) {
+        console.error('Job deletion returned 0 rows affected, job may not exist or RLS denied access');
         return false;
       }
 

@@ -146,7 +146,7 @@ async function getUserFromToken(authHeader: string | undefined): Promise<{ userI
  * Deducts from free credits first, then from paid balance.
  * Creates a transaction record for audit trail.
  */
-async function deductCredits(userId: string, amount: number, description: string): Promise<boolean> {
+async function deductCredits(userId: string, amount: number): Promise<boolean> {
   try {
     // 1. Get current credits
     const { data: credits, error: fetchError } = await supabaseAdmin
@@ -204,8 +204,9 @@ async function deductCredits(userId: string, amount: number, description: string
       .insert({
         user_id: userId,
         amount: -amount, // Negative for deduction
-        type: 'used',
-        description,
+        transaction_type: 'ai_prefill',
+        service: 'ai_prefill',
+        description: null,
         metadata: {
           free_deducted: freeDeduction,
           paid_deducted: paidDeduction,
@@ -304,7 +305,7 @@ export default async function handler(
     }
 
     // 4. Deduct credits BEFORE calling the external service
-    const deducted = await deductCredits(userId, PREFILL_CREDIT_COST, 'AI Property Prefill');
+    const deducted = await deductCredits(userId, PREFILL_CREDIT_COST);
     if (!deducted) {
       return res.status(402).json({ 
         error: 'No se pudieron descontar los créditos. Verifica tu saldo.',
