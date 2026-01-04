@@ -86,14 +86,21 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
 
   // Sync current step with saved step from draft
+  // When editing, skip AI tab and start at basic
   useEffect(() => {
-    if (!draftLoading && savedStep) {
-      const validStep = STEPS.find(s => s.id === savedStep);
-      if (validStep) {
-        setCurrentStep(validStep.id);
+    if (!draftLoading) {
+      if (property) {
+        // Editing mode: skip AI, go to basic
+        setCurrentStep('basic');
+      } else if (savedStep) {
+        // New property: use saved step from draft
+        const validStep = STEPS.find(s => s.id === savedStep);
+        if (validStep) {
+          setCurrentStep(validStep.id);
+        }
       }
     }
-  }, [savedStep, draftLoading]);
+  }, [savedStep, draftLoading, property]);
 
   // Sync step changes to draft
   useEffect(() => {
