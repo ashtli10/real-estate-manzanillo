@@ -178,8 +178,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .insert({
           user_id,
           amount: -PREFILL_CREDIT_COST,
-          type: 'ai_prefill',
-          description: 'AI property prefill (background)',
+          product: 'IA Autocompletado',
+          description: 'Prellenado automático de propiedad con IA',
           metadata: { draft_id },
         });
 
