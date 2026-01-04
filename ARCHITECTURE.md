@@ -87,14 +87,6 @@
 │  │  • Calls n8n webhook for video rendering              │     │
 │  └───────────────────────────────────────────────────────┘     │
 │  ┌───────────────────────────────────────────────────────┐     │
-│  │ /api/video/generate-tour                              │     │
-│  │  • Generates video tour from property images         │     │
-│  │  • Requires authentication (JWT)                      │     │
-│  │  • Charges 5 credits per image selected              │     │
-│  │  • Accepts 1-30 images + clip duration (3s/6s)       │     │
-│  │  • Creates job in tour_generation_jobs table         │     │
-│  │  • Calls n8n webhook for video generation            │     │
-│  └───────────────────────────────────────────────────────┘     │  ┌───────────────────────────────────────────────────────┐     │
   │ /api/process-draft-prefill                            │     │
   │  • Background AI property prefill processing         │     │
   │  • Requires authentication (JWT)                      │     │
@@ -432,9 +424,8 @@ User logs in → useLanguageSync
 │   │   ├── Breadcrumb.tsx     # Navigation breadcrumbs
 │   │   ├── SubscriptionGuard.tsx # Route protection
 │   │   ├── BillingTab.tsx     # Billing UI component
-│   │   ├── AIToolsContainer.tsx # Unified AI tools with tool selector
+│   │   ├── AIToolsContainer.tsx # AI tools container
 │   │   ├── AIToolsTab.tsx     # AI video generation wizard
-│   │   ├── VideoTourTab.tsx   # Video tour generation wizard
 │   │   ├── ProfileSettings.tsx # Profile editing component
 │   │   ├── LanguageSwitcher.tsx # EN/ES language toggle
 │   │   └── admin/
@@ -449,7 +440,6 @@ User logs in → useLanguageSync
 │   │   ├── useDashboardStats.ts # Dashboard statistics hook
 │   │   ├── useLanguageSync.ts # Language preference sync from profile
 │   │   ├── useVideoGeneration.ts # AI video generation workflow (10-min job persistence)
-│   │   ├── useVideoTourGeneration.ts # Video tour generation workflow (10-min job persistence)
 │   │   └── useAuth.ts         # Auth context hook
 │   ├── i18n/
 │   │   ├── index.ts           # i18next configuration

@@ -476,59 +476,6 @@ export type Database = {
         }
         Relationships: []
       }
-      tour_generation_jobs: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          credits_charged: number
-          credits_refunded: boolean
-          error_message: string | null
-          id: string
-          property_id: string
-          selected_images: string[]
-          status: string
-          updated_at: string
-          user_id: string
-          video_url: string | null
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          credits_charged?: number
-          credits_refunded?: boolean
-          error_message?: string | null
-          id?: string
-          property_id: string
-          selected_images: string[]
-          status?: string
-          updated_at?: string
-          user_id: string
-          video_url?: string | null
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          credits_charged?: number
-          credits_refunded?: boolean
-          error_message?: string | null
-          id?: string
-          property_id?: string
-          selected_images?: string[]
-          status?: string
-          updated_at?: string
-          user_id?: string
-          video_url?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tour_generation_jobs_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string
