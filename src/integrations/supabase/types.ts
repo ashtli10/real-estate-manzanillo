@@ -435,6 +435,39 @@ export type Database = {
         }
         Relationships: []
       }
+      property_drafts: {
+        Row: {
+          id: string
+          user_id: string
+          property_id: string | null
+          form_data: Json
+          current_step: string
+          ai_text: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          property_id?: string | null
+          form_data?: Json
+          current_step?: string
+          ai_text?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          property_id?: string | null
+          form_data?: Json
+          current_step?: string
+          ai_text?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

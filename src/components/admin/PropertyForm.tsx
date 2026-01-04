@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Loader2, Sparkles, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { X, Save, Loader2, Sparkles, ChevronLeft, ChevronRight, Check, Wand2, AlertCircle, Cloud } from 'lucide-react';
 import type { Property, PropertyInsert, PropertyType, PropertyStatus } from '../../types/property';
 import { generateSlug, propertyTypeLabels, propertyStatusLabels, CHARACTERISTIC_DEFINITIONS } from '../../types/property';
 import { ImageUpload } from './ImageUpload';
@@ -8,6 +8,7 @@ import { TagInput } from './TagInput';
 import { GoogleMapsInput } from './GoogleMapsInput';
 import { CharacteristicInput, type Characteristic } from './CharacteristicInput';
 import { requestPropertyPrefill } from '../../lib/prefillProperty';
+import { usePropertyDraft } from '../../hooks/usePropertyDraft';
 
 interface PropertyFormProps {
   property?: Property | null;
@@ -15,12 +16,12 @@ interface PropertyFormProps {
   onCancel: () => void;
   loading?: boolean;
   username?: string;
+  userId?: string;
 }
 
-type FormStep = 'ai' | 'basic' | 'price' | 'location' | 'characteristics' | 'media' | 'extras';
+type FormStep = 'basic' | 'price' | 'location' | 'characteristics' | 'media' | 'extras';
 
 const STEPS: { id: FormStep; label: string; shortLabel: string }[] = [
-  { id: 'ai', label: 'IA Prellenar', shortLabel: 'IA' },
   { id: 'basic', label: 'Info Básica', shortLabel: 'Info' },
   { id: 'price', label: 'Precio', shortLabel: 'Precio' },
   { id: 'location', label: 'Ubicación', shortLabel: 'Lugar' },
@@ -29,117 +30,79 @@ const STEPS: { id: FormStep; label: string; shortLabel: string }[] = [
   { id: 'extras', label: 'Extras', shortLabel: 'Extras' },
 ];
 
-
 // Expanded bonus tags - strategic highlights
 const BONUS_SUGGESTIONS = [
-  // Location Benefits
-  'Vista al mar',
-  'Vista a la montaña',
-  'Vista panorámica',
-  'Frente al mar',
-  'A pasos de la playa',
-  'Zona turística',
-  'Zona exclusiva',
-  'Zona residencial',
-  'Barrio tranquilo',
-  'Privacidad garantizada',
-  'Calle cerrada',
-  'Acceso a plazas comerciales',
-  'Cerca de escuelas',
-  'Cerca de hospitales',
-  'Cerca de supermercados',
-  'Cerca de restaurantes',
-  'Cerca de bancos',
-  'Cerca del centro',
-  'Transporte público cercano',
-  'Fácil acceso carretero',
-  // Investment
-  'Oportunidad de inversión',
-  'Alta plusvalía',
-  'Precio de remate',
-  'Por debajo de avalúo',
-  'Ideal para Airbnb',
-  'Ideal para renta',
-  'Ideal para negocio',
-  'Escrituras en orden',
-  'Libre de gravamen',
-  // Condition
-  'Recién remodelada',
-  'Como nueva',
-  'Construcción de lujo',
-  'Materiales premium',
-  'Arquitectura moderna',
-  'Estilo colonial',
-  'Estilo minimalista',
-  'Entrega inmediata',
-  'Pre-venta',
-  'En desarrollo',
-  // Lifestyle
-  'Club de playa incluido',
-  'Acceso a campo de golf',
-  'Marina cercana',
-  'Palapa incluida',
-  'Muelle privado',
-  'Lifestyle de playa',
-  'Ideal para familias',
-  'Pet friendly',
-  'Comunidad cerrada',
+  'Vista al mar', 'Vista a la montaña', 'Vista panorámica', 'Frente al mar',
+  'A pasos de la playa', 'Zona turística', 'Zona exclusiva', 'Zona residencial',
+  'Barrio tranquilo', 'Privacidad garantizada', 'Calle cerrada',
+  'Acceso a plazas comerciales', 'Cerca de escuelas', 'Cerca de hospitales',
+  'Cerca de supermercados', 'Cerca de restaurantes', 'Cerca de bancos',
+  'Cerca del centro', 'Transporte público cercano', 'Fácil acceso carretero',
+  'Oportunidad de inversión', 'Alta plusvalía', 'Precio de remate',
+  'Por debajo de avalúo', 'Ideal para Airbnb', 'Ideal para renta',
+  'Ideal para negocio', 'Escrituras en orden', 'Libre de gravamen',
+  'Recién remodelada', 'Como nueva', 'Construcción de lujo',
+  'Materiales premium', 'Arquitectura moderna', 'Estilo colonial',
+  'Estilo minimalista', 'Entrega inmediata', 'Pre-venta', 'En desarrollo',
+  'Club de playa incluido', 'Acceso a campo de golf', 'Marina cercana',
+  'Palapa incluida', 'Muelle privado', 'Lifestyle de playa',
+  'Ideal para familias', 'Pet friendly', 'Comunidad cerrada',
 ];
-
 
 const formatPriceValue = (value: number | null | undefined) =>
   value && value > 0
     ? new Intl.NumberFormat('es-MX', { maximumFractionDigits: 0 }).format(value)
     : '';
 
-export function PropertyForm({ property, onSave, onCancel, loading = false, username }: PropertyFormProps) {
-  const [formData, setFormData] = useState<PropertyInsert>({
-    title: '',
-    slug: '',
-    description: '',
-    price: null,
-    currency: 'MXN',
-    is_for_sale: true,
-    is_for_rent: false,
-    rent_price: null,
-    rent_currency: 'MXN',
-    location_city: 'Ciudad de México',
-    location_state: 'CDMX',
-    location_neighborhood: '',
-    location_address: '',
-    location_lat: null,
-    location_lng: null,
-    property_type: 'casa',
-    custom_bonuses: [],
-    images: [],
-    videos: [],
-    is_featured: false,
-    status: 'active',
-    display_order: 0,
-    show_map: true,
-    characteristics: [],
+export function PropertyForm({ property, onSave, onCancel, loading = false, username, userId }: PropertyFormProps) {
+  // Use draft hook for persistent state
+  const {
+    formData,
+    currentStep: savedStep,
+    aiText,
+    loading: draftLoading,
+    saving: draftSaving,
+    hasDraft,
+    setFormData,
+    setCurrentStep: setSavedStep,
+    setAiText,
+    updateField,
+    updateFields,
+    deleteDraft,
+  } = usePropertyDraft({
+    userId,
+    propertyId: property?.id || null,
   });
-  const [currentStep, setCurrentStep] = useState<FormStep>('ai');
-  const [aiText, setAiText] = useState('');
+
+  const [currentStep, setCurrentStep] = useState<FormStep>('basic');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [priceDisplay, setPriceDisplay] = useState(() => formatPriceValue(formData.price));
-  const [rentPriceDisplay, setRentPriceDisplay] = useState(() => formatPriceValue(formData.rent_price));
+  const [aiSuccess, setAiSuccess] = useState(false);
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [priceDisplay, setPriceDisplay] = useState('');
+  const [rentPriceDisplay, setRentPriceDisplay] = useState('');
+  const [autoSlug, setAutoSlug] = useState(true);
 
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
 
+  // Sync current step with saved step from draft
   useEffect(() => {
-    setPriceDisplay(formatPriceValue(formData.price));
-  }, [formData.price]);
+    if (savedStep && !draftLoading) {
+      const validStep = STEPS.find(s => s.id === savedStep);
+      if (validStep) {
+        setCurrentStep(validStep.id);
+      }
+    }
+  }, [savedStep, draftLoading]);
 
+  // Sync step changes to draft
   useEffect(() => {
-    setRentPriceDisplay(formatPriceValue(formData.rent_price));
-  }, [formData.rent_price]);
+    setSavedStep(currentStep);
+  }, [currentStep, setSavedStep]);
 
-  const [autoSlug, setAutoSlug] = useState(true);
-
+  // Initialize form with property data when editing
   useEffect(() => {
-    if (property) {
+    if (property && !draftLoading) {
       setFormData({
         title: property.title,
         slug: property.slug,
@@ -166,63 +129,87 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
         show_map: property.show_map ?? true,
         characteristics: property.characteristics || [],
       });
-      setAutoSlug(false); // Keep existing slug when editing
-    } else {
-      // Reset to auto-generate for new properties
-      setAutoSlug(true);
+      setAutoSlug(false);
     }
-  }, [property]);
+  }, [property, draftLoading, setFormData]);
+
+  // Update price displays
+  useEffect(() => {
+    setPriceDisplay(formatPriceValue(formData.price));
+  }, [formData.price]);
+
+  useEffect(() => {
+    setRentPriceDisplay(formatPriceValue(formData.rent_price));
+  }, [formData.rent_price]);
 
   // Auto-generate slug from title with username prefix
   useEffect(() => {
-    if (autoSlug && formData.title) {
+    if (autoSlug && formData.title && !property) {
       const baseSlug = generateSlug(formData.title);
-      // Prefix with username if provided
       const prefixedSlug = username ? `${username}/${baseSlug}` : baseSlug;
-      setFormData((prev) => ({
-        ...prev,
-        slug: prefixedSlug,
-      }));
+      updateField('slug', prefixedSlug);
     }
-  }, [formData.title, autoSlug, username]);
+  }, [formData.title, autoSlug, username, property, updateField]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
     if (!formData.title.trim()) {
       alert('El título es requerido');
+      setCurrentStep('basic');
       return;
     }
     if (!formData.slug.trim()) {
       alert('El slug es requerido');
+      setCurrentStep('basic');
       return;
     }
 
     if (!formData.is_for_sale && !formData.is_for_rent) {
       alert('Selecciona si la propiedad es para venta, renta o ambas');
+      setCurrentStep('price');
       return;
     }
 
     if (formData.is_for_sale && (!formData.price || formData.price <= 0)) {
       alert('El precio de venta debe ser mayor a 0');
+      setCurrentStep('price');
       return;
     }
 
     if (formData.is_for_rent && (!formData.rent_price || formData.rent_price <= 0)) {
       alert('La renta debe ser mayor a 0');
+      setCurrentStep('price');
       return;
     }
 
     if (!formData.images || formData.images.length === 0) {
       alert('Debes subir al menos una imagen de la propiedad');
+      setCurrentStep('media');
       return;
     }
 
-    await onSave(formData);
+    try {
+      await onSave(formData);
+      // Delete draft after successful save
+      await deleteDraft();
+    } catch (err) {
+      console.error('Error saving property:', err);
+    }
   };
 
-  const updateField = <K extends keyof PropertyInsert>(key: K, value: PropertyInsert[K]) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
+  const handleCancel = async () => {
+    // Ask for confirmation if there's a draft with data
+    if (hasDraft) {
+      const confirm = window.confirm(
+        '¿Deseas guardar este borrador para continuar después?\n\n' +
+        'Sí = Guardar borrador\nNo = Descartar cambios'
+      );
+      if (!confirm) {
+        await deleteDraft();
+      }
+    }
+    onCancel();
   };
 
   const handlePriceInput = (value: string) => {
@@ -240,8 +227,12 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   };
 
   const applyPrefill = async () => {
+    if (!aiText.trim()) return;
+    
     setAiError(null);
+    setAiSuccess(false);
     setAiLoading(true);
+    
     try {
       const result = await requestPropertyPrefill(
         aiText,
@@ -251,20 +242,26 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
         { defaultCurrency: formData.currency as string }
       );
 
-      setFormData((prev) => ({
-        ...prev,
-        title: result.title || prev.title,
-        description: result.description || prev.description,
+      updateFields({
+        title: result.title || formData.title,
+        description: result.description || formData.description,
         is_for_sale: result.is_for_sale,
         is_for_rent: result.is_for_rent,
         price: result.is_for_sale ? result.price : null,
-        currency: result.currency || prev.currency,
+        currency: result.currency || formData.currency,
         rent_price: result.is_for_rent ? result.rent_price : null,
-        rent_currency: result.rent_currency || prev.rent_currency,
-        property_type: result.property_type || prev.property_type,
-        custom_bonuses: result.custom_bonuses?.length ? result.custom_bonuses : prev.custom_bonuses,
-        characteristics: result.characteristics?.length ? (result.characteristics as Characteristic[]) : prev.characteristics,
-      }));
+        rent_currency: result.rent_currency || formData.rent_currency,
+        property_type: result.property_type || formData.property_type,
+        custom_bonuses: result.custom_bonuses?.length ? result.custom_bonuses : formData.custom_bonuses,
+        characteristics: result.characteristics?.length ? (result.characteristics as Characteristic[]) : formData.characteristics,
+      });
+      
+      setAiSuccess(true);
+      // Auto-hide the AI panel after success
+      setTimeout(() => {
+        setShowAiPanel(false);
+        setAiSuccess(false);
+      }, 2000);
     } catch (err) {
       setAiError(err instanceof Error ? err.message : 'No se pudo prellenar');
     } finally {
@@ -272,41 +269,21 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     }
   };
 
+  // Loading state while draft loads
+  if (draftLoading) {
+    return (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="bg-card rounded-xl shadow-strong p-8 flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-foreground font-medium">Cargando borrador...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Step content components
   const renderStepContent = () => {
     switch (currentStep) {
-      case 'ai':
-        return (
-          <div className="space-y-4">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
-                <Sparkles className="h-8 w-8 text-primary" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground">Llenar con IA</h3>
-              <p className="text-muted-foreground mt-1">Pega el texto del anuncio y prellena automáticamente</p>
-            </div>
-            <textarea
-              value={aiText}
-              onChange={(e) => setAiText(e.target.value)}
-              placeholder="Pega aquí el texto del anuncio de la propiedad..."
-              className="input-field min-h-[200px] resize-none text-base"
-            />
-            {aiError && <p className="text-sm text-red-600 text-center">{aiError}</p>}
-            <div className="flex flex-col items-center gap-3">
-              <button
-                type="button"
-                onClick={applyPrefill}
-                disabled={aiLoading || !aiText.trim()}
-                className="w-full sm:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold shadow hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {aiLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                Llenar con IA (2 créditos)
-              </button>
-              <p className="text-xs text-muted-foreground">Opcional - puedes saltar este paso</p>
-            </div>
-          </div>
-        );
-
       case 'basic':
         return (
           <div className="space-y-5">
@@ -610,17 +587,110 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
         {/* Header */}
         <div className="flex-shrink-0 border-b border-border">
           <div className="flex items-center justify-between px-4 sm:px-6 py-4">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground">
-              {property ? 'Editar' : 'Nueva'} Propiedad
-            </h2>
-            <button
-              type="button"
-              onClick={onCancel}
-              className="p-2 hover:bg-muted rounded-lg transition-colors -mr-2"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg sm:text-xl font-bold text-foreground">
+                {property ? 'Editar' : 'Nueva'} Propiedad
+              </h2>
+              {/* Save status indicator */}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {draftSaving ? (
+                  <>
+                    <Cloud className="h-3.5 w-3.5 animate-pulse" />
+                    <span className="hidden sm:inline">Guardando...</span>
+                  </>
+                ) : hasDraft ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-green-500" />
+                    <span className="hidden sm:inline text-green-600">Guardado</span>
+                  </>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* AI Magic Button */}
+              <button
+                type="button"
+                onClick={() => setShowAiPanel(!showAiPanel)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
+                  showAiPanel 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-gradient-to-r from-violet-500/10 to-purple-500/10 text-purple-600 hover:from-violet-500/20 hover:to-purple-500/20 border border-purple-200'
+                }`}
+              >
+                <Wand2 className="h-4 w-4" />
+                <span className="hidden sm:inline">IA</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="p-2 hover:bg-muted rounded-lg transition-colors -mr-2"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
+          
+          {/* AI Panel - Collapsible */}
+          {showAiPanel && (
+            <div className="px-4 sm:px-6 pb-4 animate-in slide-in-from-top-2 duration-200">
+              <div className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="p-2 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg text-white flex-shrink-0">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground">Prellenar con IA</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Pega el texto de un anuncio y la IA extraerá toda la información automáticamente
+                    </p>
+                  </div>
+                </div>
+                
+                <textarea
+                  value={aiText}
+                  onChange={(e) => setAiText(e.target.value)}
+                  placeholder="Pega aquí el texto del anuncio de la propiedad..."
+                  className="w-full min-h-[100px] p-3 rounded-lg border border-purple-200 dark:border-purple-700 bg-white dark:bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                />
+                
+                {aiError && (
+                  <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 rounded-lg text-sm text-destructive">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <span>{aiError}</span>
+                  </div>
+                )}
+                
+                {aiSuccess && (
+                  <div className="flex items-center gap-2 mt-2 p-2 bg-green-500/10 rounded-lg text-sm text-green-600">
+                    <Check className="h-4 w-4 flex-shrink-0" />
+                    <span>¡Datos extraídos correctamente!</span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-xs text-muted-foreground">Costo: 2 créditos</span>
+                  <button
+                    type="button"
+                    onClick={applyPrefill}
+                    disabled={aiLoading || !aiText.trim()}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {aiLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Prellenar formulario
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Step Indicators */}
           <div className="px-3 sm:px-6 pb-4">
@@ -672,7 +742,7 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
               type="button"
               onClick={() => {
                 if (currentStepIndex === 0) {
-                  onCancel();
+                  handleCancel();
                 } else {
                   setCurrentStep(STEPS[currentStepIndex - 1].id);
                 }

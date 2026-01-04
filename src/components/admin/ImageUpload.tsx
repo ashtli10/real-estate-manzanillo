@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2, GripVertical } from 'lucide-react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Upload, X, Image as ImageIcon, Loader2, GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
 
 interface ImageUploadProps {
@@ -11,9 +11,7 @@ interface ImageUploadProps {
 export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const dragNode = useRef<HTMLDivElement | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const uploadImage = async (file: File): Promise<string | null> => {
     // Validate file type
@@ -79,7 +77,8 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
     e.preventDefault();
     setDragOver(false);
     handleFileSelect(e.dataTransfer.files);
-  }, [images]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images, maxImages]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -95,48 +94,53 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
     const newImages = [...images];
     newImages.splice(index, 1);
     onChange(newImages);
+    setSelectedIndex(null);
   };
 
-  // Drag and drop reordering handlers
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
-    dragNode.current = e.target as HTMLDivElement;
-    e.dataTransfer.effectAllowed = 'move';
-    // Add a slight delay to allow the drag image to be created
-    setTimeout(() => {
-      if (dragNode.current) {
-        dragNode.current.style.opacity = '0.5';
+  // Move image left (towards position 0)
+  const moveImageLeft = (index: number) => {
+    if (index <= 0) return;
+    const newImages = [...images];
+    [newImages[index - 1], newImages[index]] = [newImages[index], newImages[index - 1]];
+    onChange(newImages);
+    setSelectedIndex(index - 1);
+  };
+
+  // Move image right (towards end)
+  const moveImageRight = (index: number) => {
+    if (index >= images.length - 1) return;
+    const newImages = [...images];
+    [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
+    onChange(newImages);
+    setSelectedIndex(index + 1);
+  };
+
+  // Make this image the main (first) image
+  const makeMain = (index: number) => {
+    if (index === 0) return;
+    const newImages = [...images];
+    const [movedImage] = newImages.splice(index, 1);
+    newImages.unshift(movedImage);
+    onChange(newImages);
+    setSelectedIndex(0);
+  };
+
+  // Toggle selection on tap
+  const handleImageClick = (index: number) => {
+    setSelectedIndex(selectedIndex === index ? null : index);
+  };
+
+  // Close selection when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.image-grid-item') && !target.closest('.image-actions-bar')) {
+        setSelectedIndex(null);
       }
-    }, 0);
-  };
-
-  const handleDragEnter = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
-    setDragOverIndex(index);
-  };
-
-  const handleDragEnd = () => {
-    if (dragNode.current) {
-      dragNode.current.style.opacity = '1';
-    }
-    
-    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
-      const newImages = [...images];
-      const [movedImage] = newImages.splice(draggedIndex, 1);
-      newImages.splice(dragOverIndex, 0, movedImage);
-      onChange(newImages);
-    }
-    
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-    dragNode.current = null;
-  };
-
-  const handleImageDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -145,7 +149,7 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-colors ${
           dragOver
             ? 'border-primary bg-primary/5'
             : 'border-border hover:border-primary/50'
@@ -166,64 +170,110 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
         >
           {uploading ? (
             <>
-              <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
-              <p className="text-foreground font-medium">Subiendo imágenes...</p>
+              <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 text-primary animate-spin mb-3" />
+              <p className="text-foreground font-medium text-sm sm:text-base">Subiendo imágenes...</p>
             </>
           ) : (
             <>
-              <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-foreground font-medium mb-1">
-                Arrastra imágenes aquí o haz clic para seleccionar
+              <Upload className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3" />
+              <p className="text-foreground font-medium mb-1 text-sm sm:text-base">
+                Toca para seleccionar imágenes
               </p>
-              <p className="text-sm text-muted-foreground">
-                PNG, JPG o WEBP. Máximo 5MB por imagen. ({images.length}/{maxImages})
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                PNG, JPG o WEBP. Máx 5MB. ({images.length}/{maxImages})
               </p>
             </>
           )}
         </label>
       </div>
 
+      {/* Selected Image Actions Bar - Shows when an image is selected */}
+      {selectedIndex !== null && images.length > 0 && (
+        <div className="image-actions-bar flex items-center justify-center gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <span className="text-sm text-foreground font-medium mr-2">
+            Imagen {selectedIndex + 1}
+          </span>
+          
+          {selectedIndex !== 0 && (
+            <button
+              type="button"
+              onClick={() => makeMain(selectedIndex)}
+              className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Hacer principal
+            </button>
+          )}
+          
+          <button
+            type="button"
+            onClick={() => moveImageLeft(selectedIndex)}
+            disabled={selectedIndex <= 0}
+            className="p-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            title="Mover izquierda"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => moveImageRight(selectedIndex)}
+            disabled={selectedIndex >= images.length - 1}
+            className="p-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            title="Mover derecha"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => removeImage(selectedIndex)}
+            className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
+            title="Eliminar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Image Preview Grid */}
       {images.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
           {images.map((url, index) => (
             <div
               key={url}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragEnter={(e) => handleDragEnter(e, index)}
-              onDragOver={handleImageDragOver}
-              onDragEnd={handleDragEnd}
-              className={`relative group rounded-lg overflow-hidden bg-muted aspect-square cursor-grab active:cursor-grabbing transition-all ${
-                dragOverIndex === index ? 'ring-2 ring-primary ring-offset-2 scale-105' : ''
-              } ${draggedIndex === index ? 'opacity-50' : ''}`}
+              onClick={() => handleImageClick(index)}
+              className={`image-grid-item relative rounded-lg overflow-hidden bg-muted aspect-square cursor-pointer transition-all duration-200 ${
+                selectedIndex === index 
+                  ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-lg' 
+                  : 'hover:ring-1 hover:ring-primary/50'
+              }`}
             >
               <img
                 src={url}
                 alt={`Imagen ${index + 1}`}
-                className="w-full h-full object-cover pointer-events-none"
+                className="w-full h-full object-cover"
+                draggable={false}
               />
               
-              {/* Drag handle indicator */}
-              <div className="absolute top-2 right-2 p-1.5 bg-black/50 rounded text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                <GripVertical className="h-4 w-4" />
+              {/* Position number badge */}
+              <div className={`absolute bottom-1 left-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold ${
+                index === 0 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-black/60 text-white'
+              }`}>
+                {index + 1}
               </div>
 
-              {/* Delete button */}
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute bottom-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
-                title="Eliminar"
-              >
-                <X className="h-4 w-4" />
-              </button>
-
-              {/* Badge for main image */}
+              {/* Main image badge */}
               {index === 0 && (
-                <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded font-medium">
+                <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-medium">
                   Principal
                 </div>
+              )}
+              
+              {/* Selection indicator */}
+              {selectedIndex === index && (
+                <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
               )}
             </div>
           ))}
@@ -232,15 +282,15 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
 
       {images.length > 1 && (
         <p className="text-xs text-muted-foreground text-center">
-          Arrastra las imágenes para reordenarlas. La primera será la imagen principal.
+          Toca una imagen para seleccionarla y usa los botones para reordenar.
         </p>
       )}
 
       {images.length === 0 && (
-        <div className="flex items-center justify-center py-8 bg-muted rounded-lg">
+        <div className="flex items-center justify-center py-6 sm:py-8 bg-muted rounded-lg">
           <div className="text-center text-muted-foreground">
-            <ImageIcon className="h-8 w-8 mx-auto mb-2" />
-            <p className="text-sm">No hay imágenes cargadas</p>
+            <ImageIcon className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2" />
+            <p className="text-xs sm:text-sm">No hay imágenes cargadas</p>
           </div>
         </div>
       )}

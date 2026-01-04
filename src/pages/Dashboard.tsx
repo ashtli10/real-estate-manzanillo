@@ -267,6 +267,59 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
     setDeleting(true);
     try {
+      // First, delete images from storage
+      if (deletingProperty.images && deletingProperty.images.length > 0) {
+        const imagePaths = deletingProperty.images
+          .map((url) => {
+            // Extract path from URL: https://xxx.supabase.co/storage/v1/object/public/properties/properties/filename.jpg
+            // We need just: properties/filename.jpg
+            try {
+              const urlObj = new URL(url);
+              const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/properties\/(.+)/);
+              return pathMatch ? pathMatch[1] : null;
+            } catch {
+              return null;
+            }
+          })
+          .filter((path): path is string => path !== null);
+
+        if (imagePaths.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from('properties')
+            .remove(imagePaths);
+
+          if (storageError) {
+            console.error('Error deleting images from storage:', storageError);
+            // Continue with property deletion even if image deletion fails
+          }
+        }
+      }
+
+      // Delete videos from storage if any
+      if (deletingProperty.videos && deletingProperty.videos.length > 0) {
+        const videoPaths = deletingProperty.videos
+          .map((url) => {
+            try {
+              const urlObj = new URL(url);
+              const pathMatch = urlObj.pathname.match(/\/storage\/v1\/object\/public\/properties\/(.+)/);
+              return pathMatch ? pathMatch[1] : null;
+            } catch {
+              return null;
+            }
+          })
+          .filter((path): path is string => path !== null);
+
+        if (videoPaths.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from('properties')
+            .remove(videoPaths);
+
+          if (storageError) {
+            console.error('Error deleting videos from storage:', storageError);
+          }
+        }
+      }
+
       // Admins can delete any property, regular users only their own (RLS enforces this)
       const { error } = await supabase
         .from('properties')
@@ -923,13 +976,14 @@ export function Dashboard({ onNavigate }: DashboardProps) {
       </main>
 
       {/* Property Form Modal */}
-      {showForm && (
+      {showForm && user && (
         <PropertyForm
           property={editingProperty}
           onSave={handleSave}
           onCancel={() => { setShowForm(false); setEditingProperty(null); }}
           loading={saving}
           username={profile?.username || undefined}
+          userId={user.id}
         />
       )}
 

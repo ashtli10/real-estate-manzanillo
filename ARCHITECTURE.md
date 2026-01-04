@@ -1,6 +1,6 @@
 # Habitex - Architecture Overview
 
-**Last Edited: 2026-01-03**
+**Last Edited: 2026-01-04**
 
 ## System Architecture
 
@@ -19,6 +19,7 @@
 │  ┌───────────────────────────────────────────────────────┐     │
 │  │ Hooks & Utils:                                        │     │
 │  │  • useRealtimeProperties (WebSocket subscriptions)    │     │
+│  │  • usePropertyDraft (persistent form drafts)          │     │
 │  │  • SEO utilities (meta tags, structured data)         │     │
 │  └───────────────────────────────────────────────────────┘     │
 └─────────────────────────────────────────────────────────────────┘

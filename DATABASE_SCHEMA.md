@@ -1,6 +1,6 @@
 # 🗄️ Database Schema Documentation
 
-**Last Edited: 2025-01-14**
+**Last Edited: 2026-01-04**
 
 **Habitex Platform**  
 *Complete Database Setup with Strict RLS Policies*
@@ -9,7 +9,7 @@
 
 ## 📊 Database Overview
 
-The platform uses **10 tables + 2 storage buckets** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
+The platform uses **11 tables + 2 storage buckets** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
 
 ### Tables Summary
 
@@ -23,6 +23,7 @@ The platform uses **10 tables + 2 storage buckets** with comprehensive Row Level
 | **credit_transactions** | 0 | ✅ | Credit usage and purchase history |
 | **audit_logs** | 0 | ✅ | System audit trail (admin only) |
 | **properties** | 1 | ✅ | Property listings with full details |
+| **property_drafts** | 0 | ✅ | Persistent property form drafts |
 | **video_generation_jobs** | 0 | ✅ | AI video generation job tracking |
 | **tour_generation_jobs** | 0 | ✅ | Video tour generation job tracking |
 | **storage:properties** | - | ✅ | Property images bucket |
@@ -36,6 +37,7 @@ The platform uses **10 tables + 2 storage buckets** with comprehensive Row Level
 
 - **profiles**: 4 policies (SELECT, INSERT, UPDATE, DELETE)
 - **properties**: 6 policies (3 SELECT variants, INSERT, UPDATE, DELETE)
+- **property_drafts**: 5 policies (CRUD for own, admin full access)
 - **subscriptions**: 5 policies
 - **credits**: 4 policies
 - **credit_transactions**: 4 policies
@@ -296,7 +298,41 @@ Property listings with full details.
 
 ---
 
-### 9. **video_generation_jobs**
+### 9. **property_drafts**
+Persistent storage for property form drafts, allowing users to save progress and resume later.
+
+**Key Columns:**
+- `id` (UUID, PK) - Draft identifier
+- `user_id` (UUID, FK → auth.users) - Draft owner
+- `property_id` (UUID, FK → properties, NULLABLE) - NULL for new properties, set when editing existing
+- `form_data` (JSONB) - Complete form state as PropertyInsert
+- `current_step` (TEXT) - Current wizard step ('basic', 'price', 'location', etc.)
+- `ai_text` (TEXT, NULLABLE) - AI prefill input text
+- `created_at`, `updated_at` (TIMESTAMPTZ)
+
+**Unique Constraint:**
+- `(user_id, property_id)` - One draft per property per user
+
+**RLS Policies:**
+- ✅ Users can view own drafts
+- ✅ Users can insert own drafts
+- ✅ Users can update own drafts
+- ✅ Users can delete own drafts
+- ✅ Admins can manage all drafts
+
+**Triggers:**
+- `trigger_update_property_drafts_updated_at` - Auto-updates updated_at on changes
+
+**Helper Functions:**
+- `cleanup_old_property_drafts()` - Deletes drafts older than 7 days
+
+**Indexes:**
+- `idx_property_drafts_user_id`
+- `idx_property_drafts_updated_at`
+
+---
+
+### 10. **video_generation_jobs**
 Tracks AI video generation jobs with status, generated images, scripts, and final video URLs.
 
 **Key Columns:**
