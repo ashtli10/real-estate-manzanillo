@@ -94,8 +94,15 @@
 │  │  • Accepts 1-30 images + clip duration (3s/6s)       │     │
 │  │  • Creates job in tour_generation_jobs table         │     │
 │  │  • Calls n8n webhook for video generation            │     │
-│  └───────────────────────────────────────────────────────┘     │
-│                                                                  │
+│  └───────────────────────────────────────────────────────┘     │  ┌───────────────────────────────────────────────────────┐     │
+  │ /api/process-draft-prefill                            │     │
+  │  • Background AI property prefill processing         │     │
+  │  • Requires authentication (JWT)                      │     │
+  │  • Charges 2 credits for AI prefill                  │     │
+  │  • Updates draft with filled form data               │     │
+  │  • Logs credit transaction as 'IA Autocompletado'    │     │
+  │  • Uses webhook pattern for AI processing            │     │
+  └───────────────────────────────────────────────────────┘     ││                                                                  │
 │  Static Assets:                                                 │
 │  • /robots.txt                                                  │
 │  • /seo-validator.html                                          │
@@ -462,6 +469,51 @@ User logs in → useLanguageSync
 ├── DATABASE_SCHEMA.md         # Database documentation
 └── vercel.json               # Vercel configuration
 ```
+
+## Recent Component Updates (January 2026)
+
+### Property Form Enhancement
+
+#### PropertyForm.tsx
+- **7-step wizard**: AI → Info → Precio → Lugar → Características → Fotos → Extras
+- **Step navigation**: Centered progress indicators with connecting lines
+- **Auto-saving**: Form state persisted in `property_drafts` table
+- **Background AI**: Async processing via `/api/process-draft-prefill.ts`
+- **Mobile optimization**: Responsive design with proper touch targets
+
+#### ImageUpload.tsx  
+- **Mobile-first**: Tap-to-select interface (no drag-drop on mobile)
+- **Grid layout**: Responsive image grid with proper spacing
+- **File validation**: Size, type, and count limitations
+
+#### usePropertyDraft.ts Hook
+- **Auto-save**: Debounced form state persistence
+- **Draft management**: Create, update, delete operations
+- **Step tracking**: Current wizard step preservation
+- **AI text storage**: Temporary storage for AI prefill input
+
+### Data Flow: AI Property Prefill
+
+```
+User inputs text → PropertyForm
+                → Save to draft (ai_text field)
+                → Call /api/process-draft-prefill
+                → Background webhook processing
+                → Update draft with filled form_data
+                → Deduct 2 credits
+                → Log transaction ('IA Autocompletado')
+                → Return to form with data filled
+```
+
+### Mobile UX Improvements
+
+1. **Touch-friendly**: Large tap targets for all interactive elements
+2. **No drag-drop**: Image upload uses file picker on mobile
+3. **Responsive design**: Adapts to screen sizes with proper spacing
+4. **Progress indicators**: Clear visual feedback on form completion
+5. **Silent operations**: No confirmation dialogs for draft management
+
+---
 
 ## Testing Checklist
 

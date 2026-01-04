@@ -7,7 +7,26 @@
 
 ---
 
-## 📊 Database Overview
+## � Recent Changes (January 2026)
+
+### Property Form Improvements
+- Added `property_drafts` table for persistent form state
+- New API endpoint: `/api/process-draft-prefill.ts` for background AI processing
+- Updated `credit_transactions.product` field to use Spanish names:
+  - `IA Autocompletado` for AI property prefill
+- Enhanced mobile image upload with tap-to-select interface
+- Step-by-step wizard with progress indicators and connecting lines
+
+### Key Features Added
+1. **Auto-saving drafts** - Form state preserved across sessions
+2. **Background AI processing** - User can leave page while AI works
+3. **Mobile-first design** - Touch-friendly image selection
+4. **Credit tracking** - Proper transaction logging for AI usage
+5. **Silent UX** - No confirmation dialogs for draft deletion
+
+---
+
+## �📊 Database Overview
 
 The platform uses **11 tables + 2 storage buckets** with comprehensive Row Level Security (RLS) policies, performance indexes, and helper functions for secure and efficient data access.
 
@@ -23,7 +42,7 @@ The platform uses **11 tables + 2 storage buckets** with comprehensive Row Level
 | **credit_transactions** | 0 | ✅ | Credit usage and purchase history |
 | **audit_logs** | 0 | ✅ | System audit trail (admin only) |
 | **properties** | 1 | ✅ | Property listings with full details |
-| **property_drafts** | 0 | ✅ | Persistent property form drafts |
+| **property_drafts** | 1+ | ✅ | Persistent property form drafts with AI prefill support |
 | **video_generation_jobs** | 0 | ✅ | AI video generation job tracking |
 | **tour_generation_jobs** | 0 | ✅ | Video tour generation job tracking |
 | **storage:properties** | - | ✅ | Property images bucket |

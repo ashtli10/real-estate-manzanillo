@@ -77,6 +77,7 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   });
 
   const [currentStep, setCurrentStep] = useState<FormStep>('ai');
+  const [initialStepSet, setInitialStepSet] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [priceDisplay, setPriceDisplay] = useState('');
@@ -85,10 +86,10 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
 
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
 
-  // Sync current step with saved step from draft
+  // Sync current step with saved step from draft (only once on load)
   // When editing, skip AI tab and start at basic
   useEffect(() => {
-    if (!draftLoading) {
+    if (!draftLoading && !initialStepSet) {
       if (property) {
         // Editing mode: skip AI, go to basic
         setCurrentStep('basic');
@@ -99,8 +100,9 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
           setCurrentStep(validStep.id);
         }
       }
+      setInitialStepSet(true);
     }
-  }, [savedStep, draftLoading, property]);
+  }, [savedStep, draftLoading, property, initialStepSet]);
 
   // Sync step changes to draft
   useEffect(() => {

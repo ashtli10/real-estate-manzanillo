@@ -66,7 +66,7 @@ export type Database = {
           description?: string | null
           id?: string
           metadata?: Json | null
-          product: string
+          product?: string
           user_id: string
         }
         Update: {
@@ -191,154 +191,24 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          email?: string
-          full_name?: string | null
-          phone_number?: string | null
-          whatsapp_number?: string | null
-          username?: string | null
-          company_name?: string | null
           bio?: string | null
-          location?: string | null
-          profile_image?: string | null
+          company_name?: string | null
           cover_image?: string | null
-          is_visible?: boolean | null
-          onboarding_completed?: boolean | null
-          stripe_customer_id?: string | null
-          language_preference?: string | null
+          created_at?: string
+          email?: string
           email_verified?: boolean | null
-        }
-        Relationships: []
-      }
-      property_leads: {
-        Row: {
-          created_at: string
-          id: string
-          ip_address: unknown
-          lead_type: string
-          metadata: Json | null
-          property_id: string
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
+          full_name?: string | null
           id?: string
-          ip_address?: unknown
-          lead_type: string
-          metadata?: Json | null
-          property_id: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          ip_address?: unknown
-          lead_type?: string
-          metadata?: Json | null
-          property_id?: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_leads_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      property_views: {
-        Row: {
-          id: string
-          ip_address: unknown
-          property_id: string
-          referrer: string | null
-          session_id: string | null
-          user_agent: string | null
-          user_id: string | null
-          viewed_at: string
-        }
-        Insert: {
-          id?: string
-          ip_address?: unknown
-          property_id: string
-          referrer?: string | null
-          session_id?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-          viewed_at?: string
-        }
-        Update: {
-          id?: string
-          ip_address?: unknown
-          property_id?: string
-          referrer?: string | null
-          session_id?: string | null
-          user_agent?: string | null
-          user_id?: string | null
-          viewed_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "property_views_property_id_fkey"
-            columns: ["property_id"]
-            isOneToOne: false
-            referencedRelation: "properties"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      subscriptions: {
-        Row: {
-          id: string
-          created_at: string
-          updated_at: string
-          user_id: string
-          stripe_customer_id: string | null
-          stripe_subscription_id: string | null
-          status: string | null
-          plan_type: string | null
-          trial_ends_at: string | null
-          current_period_start: string | null
-          current_period_end: string | null
-          cancel_at_period_end: boolean | null
-          canceled_at: string | null
-        }
-        Insert: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          user_id: string
+          is_visible?: boolean | null
+          language_preference?: string | null
+          location?: string | null
+          onboarding_completed?: boolean | null
+          phone_number?: string | null
+          profile_image?: string | null
           stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          status?: string | null
-          plan_type?: string | null
-          trial_ends_at?: string | null
-          current_period_start?: string | null
-          current_period_end?: string | null
-          cancel_at_period_end?: boolean | null
-          canceled_at?: string | null
-        }
-        Update: {
-          id?: string
-          created_at?: string
           updated_at?: string
-          user_id?: string
-          stripe_customer_id?: string | null
-          stripe_subscription_id?: string | null
-          status?: string | null
-          plan_type?: string | null
-          trial_ends_at?: string | null
-          current_period_start?: string | null
-          current_period_end?: string | null
-          cancel_at_period_end?: boolean | null
-          canceled_at?: string | null
+          username?: string | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -437,36 +307,227 @@ export type Database = {
       }
       property_drafts: {
         Row: {
-          id: string
-          user_id: string
-          property_id: string | null
-          form_data: Json
-          current_step: string
           ai_text: string | null
           created_at: string
+          current_step: string
+          form_data: Json
+          id: string
+          property_id: string | null
           updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_text?: string | null
+          created_at?: string
+          current_step?: string
+          form_data?: Json
+          id?: string
+          property_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_text?: string | null
+          created_at?: string
+          current_step?: string
+          form_data?: Json
+          id?: string
+          property_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_drafts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_leads: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown
+          lead_type: string
+          metadata: Json | null
+          property_id: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          lead_type: string
+          metadata?: Json | null
+          property_id: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          lead_type?: string
+          metadata?: Json | null
+          property_id?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_leads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_views: {
+        Row: {
+          id: string
+          ip_address: unknown
+          property_id: string
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          viewed_at: string
         }
         Insert: {
           id?: string
-          user_id: string
-          property_id?: string | null
-          form_data?: Json
-          current_step?: string
-          ai_text?: string | null
-          created_at?: string
-          updated_at?: string
+          ip_address?: unknown
+          property_id: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          viewed_at?: string
         }
         Update: {
           id?: string
-          user_id?: string
-          property_id?: string | null
-          form_data?: Json
-          current_step?: string
-          ai_text?: string | null
+          ip_address?: unknown
+          property_id?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_views_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_type: string | null
+          status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_ends_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
           created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: string | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: string | null
+          status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
+      }
+      tour_generation_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          credits_charged: number
+          credits_refunded: boolean
+          error_message: string | null
+          id: string
+          property_id: string
+          selected_images: string[]
+          status: string
+          updated_at: string
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          credits_charged?: number
+          credits_refunded?: boolean
+          error_message?: string | null
+          id?: string
+          property_id: string
+          selected_images: string[]
+          status?: string
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          credits_charged?: number
+          credits_refunded?: boolean
+          error_message?: string | null
+          id?: string
+          property_id?: string
+          selected_images?: string[]
+          status?: string
+          updated_at?: string
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_generation_jobs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -491,102 +552,65 @@ export type Database = {
       }
       video_generation_jobs: {
         Row: {
+          completed_at: string | null
+          created_at: string
+          credits_charged: number
+          credits_refunded: boolean | null
+          error_message: string | null
           id: string
-          user_id: string
-          property_id: string
-          status: 'pending' | 'processing' | 'images_ready' | 'script_ready' | 'completed' | 'failed'
-          selected_images: string[]
-          notes: string | null
           image_urls: string[] | null
-          script: Array<{ dialogue: string; action: string; emotion: string }> | null
-          video_url: string | null
-          error_message: string | null
-          credits_charged: number
-          credits_refunded: boolean
-          created_at: string
+          notes: string | null
+          property_id: string
+          script: Json | null
+          selected_images: string[]
+          status: string
           updated_at: string
-          completed_at: string | null
+          user_id: string
+          video_url: string | null
         }
         Insert: {
-          id?: string
-          user_id: string
-          property_id: string
-          status?: 'pending' | 'processing' | 'images_ready' | 'script_ready' | 'completed' | 'failed'
-          selected_images: string[]
-          notes?: string | null
-          image_urls?: string[] | null
-          script?: Array<{ dialogue: string; action: string; emotion: string }> | null
-          video_url?: string | null
-          error_message?: string | null
-          credits_charged?: number
-          credits_refunded?: boolean
-          created_at?: string
-          updated_at?: string
           completed_at?: string | null
+          created_at?: string
+          credits_charged?: number
+          credits_refunded?: boolean | null
+          error_message?: string | null
+          id?: string
+          image_urls?: string[] | null
+          notes?: string | null
+          property_id: string
+          script?: Json | null
+          selected_images: string[]
+          status?: string
+          updated_at?: string
+          user_id: string
+          video_url?: string | null
         }
         Update: {
+          completed_at?: string | null
+          created_at?: string
+          credits_charged?: number
+          credits_refunded?: boolean | null
+          error_message?: string | null
           id?: string
-          user_id?: string
-          property_id?: string
-          status?: 'pending' | 'processing' | 'images_ready' | 'script_ready' | 'completed' | 'failed'
-          selected_images?: string[]
-          notes?: string | null
           image_urls?: string[] | null
-          script?: Array<{ dialogue: string; action: string; emotion: string }> | null
-          video_url?: string | null
-          error_message?: string | null
-          credits_charged?: number
-          credits_refunded?: boolean
-          created_at?: string
-          updated_at?: string
-          completed_at?: string | null
-        }
-        Relationships: []
-      }
-      tour_generation_jobs: {
-        Row: {
-          id: string
-          user_id: string
-          property_id: string
-          status: 'processing' | 'completed' | 'failed'
-          selected_images: string[]
-          video_url: string | null
-          error_message: string | null
-          credits_charged: number
-          credits_refunded: boolean
-          created_at: string
-          updated_at: string
-          completed_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          property_id: string
-          status?: 'processing' | 'completed' | 'failed'
-          selected_images: string[]
-          video_url?: string | null
-          error_message?: string | null
-          credits_charged?: number
-          credits_refunded?: boolean
-          created_at?: string
-          updated_at?: string
-          completed_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
+          notes?: string | null
           property_id?: string
-          status?: 'processing' | 'completed' | 'failed'
+          script?: Json | null
           selected_images?: string[]
-          video_url?: string | null
-          error_message?: string | null
-          credits_charged?: number
-          credits_refunded?: boolean
-          created_at?: string
+          status?: string
           updated_at?: string
-          completed_at?: string | null
+          user_id?: string
+          video_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "video_generation_jobs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -594,53 +618,44 @@ export type Database = {
     }
     Functions: {
       add_credits: {
-        Args: {
-          p_user_id: string
-          p_amount: number
-          p_product?: string
-        }
+        Args: { p_amount: number; p_product?: string; p_user_id: string }
         Returns: boolean
       }
+      cleanup_old_property_drafts: { Args: never; Returns: number }
       deduct_credits: {
-        Args: {
-          p_user_id: string
-          p_amount: number
-          p_product?: string
-        }
+        Args: { p_amount: number; p_product?: string; p_user_id: string }
         Returns: boolean
       }
       get_agent_dashboard_stats: {
-        Args: {
-          agent_user_id?: string
-        }
+        Args: { agent_user_id?: string }
         Returns: {
-          user_id: string
-          total_properties: number
           active_properties: number
+          leads_this_month: number
+          total_leads: number
+          total_properties: number
+          total_views: number
+          user_id: string
+          views_this_week: number
         }[]
       }
       get_subscription_status: {
-        Args: {
-          check_user_id: string
-        }
+        Args: { check_user_id: string }
         Returns: {
-          status: string
-          plan_type: string
-          trial_ends_at: string | null
-          current_period_end: string | null
+          current_period_end: string
           is_active: boolean
-          stripe_subscription_id: string | null
-          stripe_customer_id: string | null
+          plan_type: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          trial_ends_at: string
         }[]
       }
       get_user_credits: {
-        Args: {
-          check_user_id: string
-        }
+        Args: { check_user_id: string }
         Returns: {
           balance: number
           free_credits_remaining: number
-          last_free_credits_reset: string | null
+          last_free_credits_reset: string
         }[]
       }
       has_active_subscription: {
@@ -657,7 +672,11 @@ export type Database = {
       }
       validate_invitation_token: {
         Args: { invite_token: string }
-        Returns: { is_valid: boolean; token_email: string | null; token_trial_days: number }[]
+        Returns: {
+          is_valid: boolean
+          token_email: string
+          token_trial_days: number
+        }[]
       }
     }
     Enums: {
@@ -751,3 +770,43 @@ export type TablesUpdate<
       ? U
       : never
     : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
