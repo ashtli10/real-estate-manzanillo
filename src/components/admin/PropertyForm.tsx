@@ -65,7 +65,6 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     hasDraft,
     draftId,
     setFormData,
-    setCurrentStep: setSavedStep,
     setAiText,
     updateField,
     deleteDraft,
@@ -76,7 +75,10 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     propertyId: property?.id || null,
   });
 
-  const [currentStep, setCurrentStep] = useState<FormStep>('ai');
+  const [currentStep, setCurrentStep] = useState<FormStep>(() => {
+    // If editing, start at basic (skip AI). Otherwise start at AI.
+    return property ? 'basic' : 'ai';
+  });
   const [initialStepSet, setInitialStepSet] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -86,28 +88,19 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
 
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
 
-  // Sync current step with saved step from draft (only once on load)
-  // When editing, skip AI tab and start at basic
+  // When resuming a draft (new property only), restore the saved step
   useEffect(() => {
-    if (!draftLoading && !initialStepSet) {
-      if (property) {
-        // Editing mode: skip AI, go to basic
-        setCurrentStep('basic');
-      } else if (savedStep) {
-        // New property: use saved step from draft
-        const validStep = STEPS.find(s => s.id === savedStep);
-        if (validStep) {
-          setCurrentStep(validStep.id);
-        }
+    if (!property && !draftLoading && !initialStepSet && savedStep) {
+      const validStep = STEPS.find(s => s.id === savedStep);
+      if (validStep) {
+        setCurrentStep(validStep.id);
       }
       setInitialStepSet(true);
+    } else if (!draftLoading && !initialStepSet) {
+      // Mark as initialized even if no savedStep
+      setInitialStepSet(true);
     }
-  }, [savedStep, draftLoading, property, initialStepSet]);
-
-  // Sync step changes to draft
-  useEffect(() => {
-    setSavedStep(currentStep);
-  }, [currentStep, setSavedStep]);
+  }, [property, draftLoading, initialStepSet, savedStep]);
 
   // Initialize form with property data when editing
   useEffect(() => {
