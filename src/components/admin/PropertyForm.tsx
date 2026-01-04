@@ -79,7 +79,6 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   const [currentStep, setCurrentStep] = useState<FormStep>('ai');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiProcessing, setAiProcessing] = useState(false); // Background processing indicator
   const [priceDisplay, setPriceDisplay] = useState('');
   const [rentPriceDisplay, setRentPriceDisplay] = useState('');
   const [autoSlug, setAutoSlug] = useState(true);
@@ -87,46 +86,19 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
 
   // Sync current step with saved step from draft
-  // Also skip AI step if form already has data (AI already processed)
   useEffect(() => {
-    if (!draftLoading) {
-      // If form has data (title filled), skip AI step
-      if (formData.title && formData.title.trim()) {
-        const targetStep = savedStep && savedStep !== 'ai' ? savedStep : 'basic';
-        const validStep = STEPS.find(s => s.id === targetStep);
-        if (validStep) {
-          setCurrentStep(validStep.id);
-        }
-      } else if (savedStep) {
-        const validStep = STEPS.find(s => s.id === savedStep);
-        if (validStep) {
-          setCurrentStep(validStep.id);
-        }
+    if (!draftLoading && savedStep) {
+      const validStep = STEPS.find(s => s.id === savedStep);
+      if (validStep) {
+        setCurrentStep(validStep.id);
       }
     }
-  }, [savedStep, draftLoading, formData.title]);
+  }, [savedStep, draftLoading]);
 
   // Sync step changes to draft
   useEffect(() => {
     setSavedStep(currentStep);
   }, [currentStep, setSavedStep]);
-
-  // Poll for draft updates when AI is processing in background
-  useEffect(() => {
-    if (!aiProcessing || formData.title) {
-      // Stop polling if not processing or data arrived
-      if (formData.title && aiProcessing) {
-        setAiProcessing(false);
-      }
-      return;
-    }
-    
-    const pollInterval = setInterval(() => {
-      loadDraft();
-    }, 3000); // Poll every 3 seconds
-    
-    return () => clearInterval(pollInterval);
-  }, [aiProcessing, formData.title, loadDraft]);
 
   // Initialize form with property data when editing
   useEffect(() => {
@@ -246,7 +218,7 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     setRentPriceDisplay(numericString ? formatPriceValue(numeric) : '');
   };
 
-  // Async AI prefill - fires in background, user can leave
+  // AI prefill - waits for completion before advancing
   const applyPrefill = async () => {
     if (!aiText.trim() || !userId) return;
     
@@ -265,22 +237,28 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
         throw new Error('No se pudo crear el borrador');
       }
 
-      // Fire the background API request (don't await completion)
-      fetch('/api/process-draft-prefill', {
+      // Call the API and wait for completion
+      const response = await fetch('/api/process-draft-prefill', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ draft_id: draftId, user_id: userId }),
-      }).catch(err => console.error('Background prefill error:', err));
+      });
       
-      // Show processing indicator and move to next step immediately
-      setAiProcessing(true);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Error al procesar con IA');
+      }
+      
+      // Reload draft to get the filled data
+      await loadDraft();
+      
       setAiLoading(false);
       
-      // Move to basic step - the background process will fill the data
+      // Move to basic step after successful prefill
       setCurrentStep('basic');
       
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'No se pudo iniciar el proceso');
+      setAiError(err instanceof Error ? err.message : 'No se pudo procesar el texto');
       setAiLoading(false);
     }
   };
@@ -310,8 +288,6 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
               <h3 className="text-xl font-semibold text-foreground">Prellenar con IA</h3>
               <p className="text-muted-foreground text-sm mt-1 max-w-md mx-auto">
                 Pega el texto de un anuncio y la IA extraerá automáticamente toda la información.
-                <br />
-                <span className="text-primary font-medium">Puedes cerrar la página mientras procesa.</span>
               </p>
             </div>
             
@@ -342,7 +318,7 @@ Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baño
                 {aiLoading ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Guardando...
+                    Procesando con IA...
                   </>
                 ) : (
                   <>
@@ -369,16 +345,6 @@ Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baño
       case 'basic':
         return (
           <div className="space-y-5">
-            {/* Show processing indicator if AI is working in background */}
-            {aiProcessing && !formData.title && (
-              <div className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl mb-4">
-                <Loader2 className="h-5 w-5 text-primary animate-spin flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">IA procesando en segundo plano...</p>
-                  <p className="text-xs text-muted-foreground">Los datos se llenarán automáticamente cuando termine.</p>
-                </div>
-              </div>
-            )}
             
             <div className="text-center mb-4">
               <h3 className="text-xl font-semibold text-foreground">Información Básica</h3>
@@ -706,38 +672,48 @@ Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baño
             </button>
           </div>
           
-          {/* Step Indicators */}
-          <div className="px-3 sm:px-6 pb-3">
-            <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
+          {/* Step Indicators - Centered with connecting lines */}
+          <div className="px-3 sm:px-6 pb-3 overflow-x-auto">
+            <div className="flex items-center justify-center">
               {STEPS.map((step, index) => {
                 const isCompleted = index < currentStepIndex;
                 const isCurrent = step.id === currentStep;
+                const isLast = index === STEPS.length - 1;
+                const nextCompleted = index < currentStepIndex;
                 return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={() => setCurrentStep(step.id)}
-                    className={`flex-shrink-0 flex flex-col items-center gap-1 py-1.5 px-2 sm:px-3 rounded-lg transition-all ${
-                      isCurrent ? 'bg-primary/10' : 'hover:bg-muted/50'
-                    }`}
-                  >
-                    <div
-                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
-                        isCompleted
-                          ? 'bg-green-500 text-white'
-                          : isCurrent
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
+                  <div key={step.id} className="flex items-center">
+                    {/* Step button */}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(step.id)}
+                      className="flex flex-col items-center gap-1 py-1.5 px-1 sm:px-2 transition-all hover:opacity-80"
                     >
-                      {isCompleted ? <Check className="h-3.5 w-3.5" /> : index + 1}
-                    </div>
-                    <span className={`text-[9px] sm:text-[10px] leading-tight whitespace-nowrap ${
-                      isCurrent ? 'text-primary font-medium' : 'text-muted-foreground'
-                    }`}>
-                      {step.shortLabel}
-                    </span>
-                  </button>
+                      <div
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
+                          isCompleted
+                            ? 'bg-green-500 text-white'
+                            : isCurrent
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {isCompleted ? <Check className="h-3.5 w-3.5" /> : index + 1}
+                      </div>
+                      <span className={`text-[9px] sm:text-[10px] leading-tight whitespace-nowrap ${
+                        isCurrent ? 'text-primary font-medium' : 'text-muted-foreground'
+                      }`}>
+                        {step.shortLabel}
+                      </span>
+                    </button>
+                    {/* Connecting line */}
+                    {!isLast && (
+                      <div 
+                        className={`w-4 sm:w-6 h-0.5 -mt-4 ${
+                          nextCompleted ? 'bg-green-500' : 'bg-muted'
+                        }`}
+                      />
+                    )}
+                  </div>
                 );
               })}
             </div>
