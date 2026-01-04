@@ -646,22 +646,24 @@ Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baño
         {/* Header - Fixed */}
         <div className="flex-shrink-0 border-b border-border">
           <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground">
-              {property ? 'Editar' : 'Nueva'} Propiedad
-            </h2>
-            {/* Save status indicator - Centered */}
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              {draftSaving ? (
-                <>
-                  <Cloud className="h-3.5 w-3.5 animate-pulse" />
-                  <span className="hidden sm:inline">Guardando...</span>
-                </>
-              ) : hasDraft ? (
-                <>
-                  <Check className="h-3.5 w-3.5 text-green-500" />
-                  <span className="hidden sm:inline text-green-600">Guardado</span>
-                </>
-              ) : null}
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-bold text-foreground">
+                {property ? 'Editar' : 'Nueva'} Propiedad
+              </h2>
+              {/* Save status indicator - Next to title */}
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                {draftSaving ? (
+                  <>
+                    <Cloud className="h-3.5 w-3.5 animate-pulse" />
+                    <span className="hidden sm:inline">Guardando...</span>
+                  </>
+                ) : hasDraft ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-green-500" />
+                    <span className="hidden sm:inline text-green-600">Guardado</span>
+                  </>
+                ) : null}
+              </div>
             </div>
             <button
               type="button"
