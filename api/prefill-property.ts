@@ -204,9 +204,7 @@ async function deductCredits(userId: string, amount: number): Promise<boolean> {
       .insert({
         user_id: userId,
         amount: -amount, // Negative for deduction
-        transaction_type: 'ai_prefill',
-        service: 'ai_prefill',
-        description: null,
+        product: 'IA Autocompletado',
         metadata: {
           free_deducted: freeDeduction,
           paid_deducted: paidDeduction,

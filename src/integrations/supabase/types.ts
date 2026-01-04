@@ -57,8 +57,7 @@ export type Database = {
           description: string | null
           id: string
           metadata: Json | null
-          transaction_type: Database['public']['Enums']['credit_transaction_type']
-          service: Database['public']['Enums']['credit_service'] | null
+          product: string
           user_id: string
         }
         Insert: {
@@ -67,8 +66,7 @@ export type Database = {
           description?: string | null
           id?: string
           metadata?: Json | null
-          transaction_type: Database['public']['Enums']['credit_transaction_type']
-          service?: Database['public']['Enums']['credit_service'] | null
+          product: string
           user_id: string
         }
         Update: {
@@ -77,8 +75,7 @@ export type Database = {
           description?: string | null
           id?: string
           metadata?: Json | null
-          transaction_type?: Database['public']['Enums']['credit_transaction_type']
-          service?: Database['public']['Enums']['credit_service'] | null
+          product?: string
           user_id?: string
         }
         Relationships: []
@@ -567,8 +564,7 @@ export type Database = {
         Args: {
           p_user_id: string
           p_amount: number
-          p_transaction_type: Database['public']['Enums']['credit_transaction_type']
-          p_service?: Database['public']['Enums']['credit_service']
+          p_product?: string
         }
         Returns: boolean
       }
@@ -576,8 +572,7 @@ export type Database = {
         Args: {
           p_user_id: string
           p_amount: number
-          p_transaction_type: Database['public']['Enums']['credit_transaction_type']
-          p_service?: Database['public']['Enums']['credit_service']
+          p_product?: string
         }
         Returns: boolean
       }
@@ -633,25 +628,7 @@ export type Database = {
       }
     }
     Enums: {
-      credit_transaction_type: 
-        | 'purchase'
-        | 'subscription_grant'
-        | 'refund'
-        | 'ai_video_images'
-        | 'ai_video_script'
-        | 'ai_video_render'
-        | 'video_tour'
-        | 'ai_prefill'
-        | 'bonus'
-        | 'adjustment'
-      credit_service:
-        | 'ai_video_generator'
-        | 'video_tour_generator'
-        | 'ai_prefill'
-        | 'subscription'
-        | 'purchase'
-        | 'admin'
-        | 'other'
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never

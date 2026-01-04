@@ -182,9 +182,7 @@ async function handlePaymentSucceeded(
       await supabaseAdmin.from('credit_transactions').insert({
         user_id: userId,
         amount: 50,
-        transaction_type: 'subscription_grant',
-        service: 'subscription',
-        description: null,
+        product: 'Créditos mensuales',
       });
     }
 
@@ -202,8 +200,7 @@ async function handlePaymentSucceeded(
       const { error: addError } = await supabaseAdmin.rpc('add_credits', {
         p_user_id: userId,
         p_amount: creditAmount,
-        p_transaction_type: 'purchase',
-        p_service: 'purchase',
+        p_product: 'Compra de créditos',
       });
 
       if (addError) {
@@ -301,8 +298,7 @@ async function handleCheckoutCompleted(
     const { error: addError } = await supabaseAdmin.rpc('add_credits', {
       p_user_id: userId,
       p_amount: creditAmount,
-      p_transaction_type: 'purchase',
-      p_service: 'purchase',
+      p_product: 'Compra de créditos',
     });
 
     if (addError) {

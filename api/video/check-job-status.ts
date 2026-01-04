@@ -108,8 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { error: refundError } = await supabaseAdmin.rpc('add_credits', { 
         p_user_id: userId, 
         p_amount: creditsToRefund,
-        p_transaction_type: 'refund',
-        p_service: 'ai_video_generator',
+        p_product: 'Reembolso - Video IA',
       });
 
       if (refundError) {

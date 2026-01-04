@@ -1,6 +1,6 @@
 # 🗄️ Database Schema Documentation
 
-**Last Edited: 2026-01-03**
+**Last Edited: 2025-01-14**
 
 **Habitex Platform**  
 *Complete Database Setup with Strict RLS Policies*
@@ -197,32 +197,20 @@ Audit trail for all credit changes.
 - `id` (UUID, PK)
 - `user_id` (UUID, FK → auth.users)
 - `amount` (INT) - Positive for add, negative for deduct
-- `transaction_type` (ENUM: credit_transaction_type) - See enum values below
-- `service` (ENUM: credit_service, NULLABLE) - The service that triggered the transaction
+- `product` (TEXT, NOT NULL, DEFAULT 'Créditos') - Human-readable Spanish product/service name
 - `description` (TEXT, NULLABLE) - Optional additional notes
 - `metadata` (JSONB)
 - `created_at` (TIMESTAMPTZ)
 
-**Enum: credit_transaction_type:**
-- `purchase` - Credits purchased
-- `subscription_grant` - Monthly free credits from subscription
-- `refund` - Credits refunded
-- `ai_video_images` - AI Video: Image generation
-- `ai_video_script` - AI Video: Script generation
-- `ai_video_render` - AI Video: Final video render
-- `video_tour` - Video tour generation
-- `ai_prefill` - AI property prefill
-- `bonus` - Promotional bonus
-- `adjustment` - Admin adjustment
-
-**Enum: credit_service:**
-- `ai_video_generator` - AI Video Generator tool
-- `video_tour_generator` - Video Tour Generator tool
-- `ai_prefill` - AI Property Prefill tool
-- `subscription` - Subscription-related
-- `purchase` - Credit purchases
-- `admin` - Admin operations
-- `other` - Other/misc
+**Product Values (Spanish, human-readable):**
+- `Créditos mensuales` - Monthly subscription credits
+- `Compra de créditos` - Credit purchase
+- `Video IA - Imágenes` - AI Video: Image generation
+- `Video IA - Guión` - AI Video: Script generation
+- `Video IA - Renderizado` - AI Video: Final video render
+- `Video Tour` - Video tour generation
+- `IA Autocompletado` - AI property prefill
+- `Reembolso - Video IA` - AI Video refund
 
 **RLS Policies:**
 - ✅ Users can view own transactions
@@ -234,8 +222,7 @@ Audit trail for all credit changes.
 **Indexes:**
 - `idx_credit_transactions_user_id`
 - `idx_credit_transactions_created_at`
-- `idx_credit_transactions_transaction_type`
-- `idx_credit_transactions_service`
+- `idx_credit_transactions_product`
 
 ---
 
@@ -450,14 +437,14 @@ File storage for AI-generated video assets with user-scoped access.
 
 ### Credit Management Functions
 
-3. **`add_credits(user_id UUID, amount INT, transaction_type credit_transaction_type, service credit_service DEFAULT 'other')`**
+3. **`add_credits(user_id UUID, amount INT, product TEXT DEFAULT 'Créditos')`**
    - Adds credits to user balance
-   - Creates transaction record with typed transaction_type and service
-   - Transaction types: `purchase`, `subscription_grant`, `refund`, `bonus`, `adjustment`
+   - Creates transaction record with product name
+   - Used for: subscription grants, purchases, refunds, bonuses
 
-4. **`deduct_credits(user_id UUID, amount INT, transaction_type credit_transaction_type, service credit_service DEFAULT 'other')`**
+4. **`deduct_credits(user_id UUID, amount INT, product TEXT DEFAULT 'Créditos')`**
    - Deducts credits (free first, then paid)
-   - Creates transaction record with typed transaction_type and service
+   - Creates transaction record with product name
    - Returns false if insufficient balance
    - Security: Only user can deduct own credits
 

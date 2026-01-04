@@ -117,9 +117,7 @@ async function deductCredits(userId: string, amount: number): Promise<boolean> {
     .insert({
       user_id: userId,
       amount: -amount,
-      transaction_type: 'video_tour',
-      service: 'video_tour_generator',
-      description: null,
+      product: 'Video Tour',
     });
 
   if (txError) {
@@ -163,9 +161,7 @@ async function refundCredits(userId: string, amount: number): Promise<boolean> {
     .insert({
       user_id: userId,
       amount: amount,
-      transaction_type: 'refund',
-      service: 'video_tour_generator',
-      description: null,
+      product: 'Reembolso - Video Tour',
     });
 
   if (txError) {
