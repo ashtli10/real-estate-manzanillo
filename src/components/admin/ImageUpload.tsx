@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { useState, useCallback, useRef } from 'react';
+import { Upload, X, Image as ImageIcon, Loader2, GripVertical } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
 
 interface ImageUploadProps {
@@ -11,6 +11,9 @@ interface ImageUploadProps {
 export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragNode = useRef<HTMLDivElement | null>(null);
 
   const uploadImage = async (file: File): Promise<string | null> => {
     // Validate file type
@@ -94,12 +97,45 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
     onChange(newImages);
   };
 
-  const moveImage = (fromIndex: number, toIndex: number) => {
-    if (toIndex < 0 || toIndex >= images.length) return;
-    const newImages = [...images];
-    const [movedImage] = newImages.splice(fromIndex, 1);
-    newImages.splice(toIndex, 0, movedImage);
-    onChange(newImages);
+  // Drag and drop reordering handlers
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    dragNode.current = e.target as HTMLDivElement;
+    e.dataTransfer.effectAllowed = 'move';
+    // Add a slight delay to allow the drag image to be created
+    setTimeout(() => {
+      if (dragNode.current) {
+        dragNode.current.style.opacity = '0.5';
+      }
+    }, 0);
+  };
+
+  const handleDragEnter = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    if (dragNode.current) {
+      dragNode.current.style.opacity = '1';
+    }
+    
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newImages = [...images];
+      const [movedImage] = newImages.splice(draggedIndex, 1);
+      newImages.splice(dragOverIndex, 0, movedImage);
+      onChange(newImages);
+    }
+    
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    dragNode.current = null;
+  };
+
+  const handleImageDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
   return (
@@ -149,59 +185,55 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
 
       {/* Image Preview Grid */}
       {images.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {images.map((url, index) => (
             <div
               key={url}
-              className="relative group rounded-lg overflow-hidden bg-muted aspect-square"
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragEnter={(e) => handleDragEnter(e, index)}
+              onDragOver={handleImageDragOver}
+              onDragEnd={handleDragEnd}
+              className={`relative group rounded-lg overflow-hidden bg-muted aspect-square cursor-grab active:cursor-grabbing transition-all ${
+                dragOverIndex === index ? 'ring-2 ring-primary ring-offset-2 scale-105' : ''
+              } ${draggedIndex === index ? 'opacity-50' : ''}`}
             >
               <img
                 src={url}
                 alt={`Imagen ${index + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover pointer-events-none"
               />
               
-              {/* Overlay with controls */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
-                {index > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => moveImage(index, index - 1)}
-                    className="p-2 bg-white rounded-full text-foreground hover:bg-gray-100"
-                    title="Mover a la izquierda"
-                  >
-                    ←
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="p-2 bg-destructive text-destructive-foreground rounded-full hover:opacity-90"
-                  title="Eliminar"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-                {index < images.length - 1 && (
-                  <button
-                    type="button"
-                    onClick={() => moveImage(index, index + 1)}
-                    className="p-2 bg-white rounded-full text-foreground hover:bg-gray-100"
-                    title="Mover a la derecha"
-                  >
-                    →
-                  </button>
-                )}
+              {/* Drag handle indicator */}
+              <div className="absolute top-2 right-2 p-1.5 bg-black/50 rounded text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                <GripVertical className="h-4 w-4" />
               </div>
+
+              {/* Delete button */}
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                className="absolute bottom-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+                title="Eliminar"
+              >
+                <X className="h-4 w-4" />
+              </button>
 
               {/* Badge for main image */}
               {index === 0 && (
-                <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded font-medium">
                   Principal
                 </div>
               )}
             </div>
           ))}
         </div>
+      )}
+
+      {images.length > 1 && (
+        <p className="text-xs text-muted-foreground text-center">
+          Arrastra las imágenes para reordenarlas. La primera será la imagen principal.
+        </p>
       )}
 
       {images.length === 0 && (

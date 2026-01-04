@@ -127,16 +127,6 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   const [rentPriceDisplay, setRentPriceDisplay] = useState(() => formatPriceValue(formData.rent_price));
 
   const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
-  const isFirstStep = currentStepIndex === 0;
-  const isLastStep = currentStepIndex === STEPS.length - 1;
-
-  const goToStep = (step: FormStep) => setCurrentStep(step);
-  const nextStep = () => {
-    if (!isLastStep) setCurrentStep(STEPS[currentStepIndex + 1].id);
-  };
-  const prevStep = () => {
-    if (!isFirstStep) setCurrentStep(STEPS[currentStepIndex - 1].id);
-  };
 
   useEffect(() => {
     setPriceDisplay(formatPriceValue(formData.price));
@@ -196,8 +186,8 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     }
   }, [formData.title, autoSlug, username]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     
     if (!formData.title.trim()) {
       alert('El título es requerido');
@@ -615,118 +605,121 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex flex-col">
-      {/* Header - Fixed */}
-      <div className="flex-shrink-0 bg-card border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h2 className="text-lg font-bold text-foreground truncate">
-            {property ? 'Editar' : 'Nueva'} Propiedad
-          </h2>
-          <button
-            onClick={onCancel}
-            className="p-2 hover:bg-muted rounded-lg transition-colors -mr-2"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        
-        {/* Step Indicators */}
-        <div className="px-2 pb-3">
-          <div className="flex items-center justify-between gap-1">
-            {STEPS.map((step, index) => {
-              const isCompleted = index < currentStepIndex;
-              const isCurrent = step.id === currentStep;
-              return (
-                <button
-                  key={step.id}
-                  type="button"
-                  onClick={() => goToStep(step.id)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-lg transition-all ${
-                    isCurrent
-                      ? 'bg-primary/10'
-                      : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
-                      isCompleted
-                        ? 'bg-green-500 text-white'
-                        : isCurrent
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-card rounded-xl shadow-strong w-full max-w-2xl max-h-[90vh] flex flex-col my-auto">
+        {/* Header */}
+        <div className="flex-shrink-0 border-b border-border">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">
+              {property ? 'Editar' : 'Nueva'} Propiedad
+            </h2>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="p-2 hover:bg-muted rounded-lg transition-colors -mr-2"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          
+          {/* Step Indicators */}
+          <div className="px-3 sm:px-6 pb-4">
+            <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
+              {STEPS.map((step, index) => {
+                const isCompleted = index < currentStepIndex;
+                const isCurrent = step.id === currentStep;
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => setCurrentStep(step.id)}
+                    className={`flex-shrink-0 flex flex-col items-center gap-1 py-1.5 px-2 sm:px-3 rounded-lg transition-all ${
+                      isCurrent ? 'bg-primary/10' : 'hover:bg-muted/50'
                     }`}
                   >
-                    {isCompleted ? <Check className="h-4 w-4" /> : index + 1}
-                  </div>
-                  <span className={`text-[10px] leading-tight text-center ${
-                    isCurrent ? 'text-primary font-medium' : 'text-muted-foreground'
-                  }`}>
-                    {step.shortLabel}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto bg-card">
-        <form onSubmit={handleSubmit} className="h-full flex flex-col">
-          <div className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full">
-            {renderStepContent()}
-          </div>
-
-          {/* Navigation - Fixed at bottom */}
-          <div className="flex-shrink-0 border-t border-border bg-card p-4 safe-area-inset-bottom">
-            <div className="flex items-center justify-between gap-3 max-w-2xl mx-auto">
-              <button
-                type="button"
-                onClick={isFirstStep ? onCancel : prevStep}
-                className="flex items-center gap-1 px-4 py-2.5 text-foreground bg-muted hover:bg-muted/80 rounded-lg font-medium transition-colors"
-                disabled={loading}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">{isFirstStep ? 'Cancelar' : 'Anterior'}</span>
-              </button>
-
-              <span className="text-sm text-muted-foreground">
-                {currentStepIndex + 1} / {STEPS.length}
-              </span>
-
-              {isLastStep ? (
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold shadow hover:opacity-90 transition-all disabled:opacity-50"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="hidden sm:inline">Guardando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      <span>{property ? 'Actualizar' : 'Crear'}</span>
-                    </>
-                  )}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="flex items-center gap-1 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold shadow hover:opacity-90 transition-all"
-                >
-                  <span className="hidden sm:inline">Siguiente</span>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              )}
+                    <div
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
+                        isCompleted
+                          ? 'bg-green-500 text-white'
+                          : isCurrent
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {isCompleted ? <Check className="h-3.5 w-3.5" /> : index + 1}
+                    </div>
+                    <span className={`text-[9px] sm:text-[10px] leading-tight whitespace-nowrap ${
+                      isCurrent ? 'text-primary font-medium' : 'text-muted-foreground'
+                    }`}>
+                      {step.shortLabel}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        </form>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {renderStepContent()}
+        </div>
+
+        {/* Navigation - Fixed at bottom */}
+        <div className="flex-shrink-0 border-t border-border bg-muted/30 px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (currentStepIndex === 0) {
+                  onCancel();
+                } else {
+                  setCurrentStep(STEPS[currentStepIndex - 1].id);
+                }
+              }}
+              className="flex items-center gap-1 px-3 sm:px-4 py-2 text-foreground bg-muted hover:bg-muted/80 rounded-lg font-medium transition-colors"
+              disabled={loading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span className="text-sm">{currentStepIndex === 0 ? 'Cancelar' : 'Anterior'}</span>
+            </button>
+
+            <span className="text-xs sm:text-sm text-muted-foreground">
+              {currentStepIndex + 1} de {STEPS.length}
+            </span>
+
+            {currentStepIndex === STEPS.length - 1 ? (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 sm:px-5 py-2 bg-primary text-primary-foreground rounded-lg font-semibold shadow hover:opacity-90 transition-all disabled:opacity-50"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span className="text-sm">{property ? 'Actualizar' : 'Crear'}</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCurrentStep(STEPS[currentStepIndex + 1].id)}
+                className="flex items-center gap-1 px-4 sm:px-5 py-2 bg-primary text-primary-foreground rounded-lg font-semibold shadow hover:opacity-90 transition-all"
+              >
+                <span className="text-sm">Siguiente</span>
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-
