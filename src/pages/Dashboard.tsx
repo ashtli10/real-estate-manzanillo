@@ -28,6 +28,7 @@ import type { Profile, InvitationToken } from '../types/user';
 import { PropertyTable } from '../components/admin/PropertyTable';
 import { PropertyForm } from '../components/admin/PropertyForm';
 import { DeleteConfirmModal } from '../components/admin/DeleteConfirmModal';
+import { SuccessModal } from '../components/admin/SuccessModal';
 import { CreateInvitationModal } from '../components/admin/CreateInvitationModal';
 import { InvitationTable } from '../components/admin/InvitationTable';
 import { BillingTab } from '../components/BillingTab';
@@ -98,6 +99,23 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   const [loadingInvitations, setLoadingInvitations] = useState(true);
   const [showCreateInvitation, setShowCreateInvitation] = useState(false);
   const [creatingInvitation, setCreatingInvitation] = useState(false);
+
+  // Success modal state
+  const [showCreditsSuccess, setShowCreditsSuccess] = useState(false);
+
+  // Check for checkout success on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkoutStatus = params.get('checkout');
+    
+    if (checkoutStatus === 'credits-success') {
+      setShowCreditsSuccess(true);
+      // Clear the param from URL
+      params.delete('checkout');
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, []);
 
   // Sync URL query params with active tab
   useEffect(() => {
@@ -932,6 +950,15 @@ export function Dashboard({ onNavigate }: DashboardProps) {
           onCreate={handleCreateInvitation}
           onClose={() => setShowCreateInvitation(false)}
           loading={creatingInvitation}
+        />
+      )}
+
+      {/* Credits Purchase Success Modal */}
+      {showCreditsSuccess && (
+        <SuccessModal
+          title="¡Compra exitosa!"
+          message="Tus créditos han sido añadidos a tu cuenta. ¡Gracias por tu compra!"
+          onClose={() => setShowCreditsSuccess(false)}
         />
       )}
     </div>
