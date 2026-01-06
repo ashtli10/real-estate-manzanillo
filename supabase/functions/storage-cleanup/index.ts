@@ -267,19 +267,23 @@ serve(async (req) => {
   }
 
   try {
-    // Verify this is an internal call (from database trigger or service role)
-    // The database trigger uses pg_net which doesn't have auth headers,
-    // but we can verify by checking the origin or using a shared secret
+    // Verify this is an internal call (from database trigger with service role key)
     const authHeader = req.headers.get('Authorization');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    // Allow calls with service role key or from database triggers (no auth)
-    // In production, you might want to add a shared secret for trigger calls
-    if (authHeader && !authHeader.includes(serviceRoleKey || '')) {
-      // If there's an auth header but it's not the service role, reject
-      // (This allows trigger calls which have no auth header to pass)
-      console.log('Auth header present but not service role');
+    // Extract bearer token from header
+    const token = authHeader?.replace('Bearer ', '');
+    
+    // Require service role key for all calls - this is a sensitive internal endpoint
+    if (!token || token !== serviceRoleKey) {
+      console.error('Unauthorized: Invalid or missing service role key');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - service role key required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    console.log('Authorized with service role key');
 
     // Parse request body
     const body: CleanupRequest = await req.json();

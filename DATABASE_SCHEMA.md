@@ -9,22 +9,28 @@
 
 ---
 
-## � Recent Changes (January 2026)
+## 🆕 Recent Changes (January 6, 2026)
 
-### Property Form Improvements
-- Added `property_drafts` table for persistent form state
-- New API endpoint: `/api/process-draft-prefill.ts` for background AI processing
-- Updated `credit_transactions.product` field to use Spanish names:
-  - `IA Autocompletado` for AI property prefill
-- Enhanced mobile image upload with tap-to-select interface
-- Step-by-step wizard with progress indicators and connecting lines
+### Security Improvements
+- **Fixed infinite recursion in RLS policies**: Created `is_admin()` SECURITY DEFINER function to check admin status without triggering RLS on `user_roles` table
+- **All RLS policies updated** to use `is_admin()` instead of self-referencing subqueries
+- **Edge Functions deployed** with `--no-verify-jwt` flag (auth handled inside functions)
 
-### Key Features Added
+### Property Status Simplification
+- **Simplified status values**: Only `draft`, `active`, `paused` (removed: pending, sold, rented, archived)
+- **Subscription enforcement trigger**: Cannot set status to `active` without active subscription
+- **Automatic property pausing**: When subscription ends, all active properties become `paused`
+- **Automatic reactivation**: When subscription resumes, all paused properties become `active`
+
+### Dashboard Stats Simplification
+- **Simplified `get_agent_dashboard_stats()`**: Now only returns `user_id`, `total_properties`, `active_properties`
+- Removed: `total_views`, `total_leads`, `views_this_week`, `leads_this_month` (tables deleted)
+
+### Key Features
 1. **Auto-saving drafts** - Form state preserved across sessions
-2. **Background AI processing** - User can leave page while AI works
-3. **Mobile-first design** - Touch-friendly image selection
+2. **Supabase Edge Functions** - AI prefill, video generation, storage cleanup
+3. **R2 Storage** - All media on Cloudflare R2 with cleanup triggers
 4. **Credit tracking** - Proper transaction logging for AI usage
-5. **Silent UX** - No confirmation dialogs for draft deletion
 
 ---
 
@@ -280,7 +286,10 @@ Property listings with full details.
 - `user_id` (UUID, FK → auth.users) - Property owner
 - `title`, `description`, `slug` (UNIQUE)
 - `property_type` (TEXT) - 'casa', 'departamento', 'terreno', 'local', 'oficina', 'bodega', 'otro'
-- `status` (TEXT) - 'draft', 'pending', 'active', 'sold', 'rented', 'paused', 'archived'
+- `status` (TEXT) - 'draft', 'active', 'paused' (enforced by CHECK constraint)
+  - `draft`: Not published, user is still editing
+  - `active`: Published and visible (requires active subscription)
+  - `paused`: System-managed, set when subscription lapses
 - `price`, `currency` (default 'MXN')
 - `is_for_sale`, `is_for_rent`, `rent_price`, `rent_currency`
 - `images`, `videos` (TEXT[])
@@ -329,6 +338,7 @@ Persistent storage for property form drafts, allowing users to save progress and
 - `id` (UUID, PK) - Draft identifier
 - `user_id` (UUID, FK → auth.users) - Draft owner
 - `property_id` (UUID, FK → properties, NULLABLE) - NULL for new properties, set when editing existing
+- `pre_allocated_property_id` (UUID, NULLABLE) - Pre-allocated UUID for new properties. Generated when draft is created, used for R2 upload paths so files are stored in final location from the start. Used as the property ID when inserting new property.
 - `form_data` (JSONB) - Complete form state as PropertyInsert
 - `current_step` (TEXT) - Current wizard step ('basic', 'price', 'location', etc.)
 - `ai_text` (TEXT, NULLABLE) - AI prefill input text
@@ -454,82 +464,122 @@ File storage for AI-generated video assets with user-scoped access.
 
 ### Security Functions
 
-1. **`has_role(user_id UUID, role TEXT) → BOOLEAN`**
-   - Checks if user has specific role
-   - Used extensively in RLS policies
+1. **`is_admin(check_user_id UUID DEFAULT NULL) → BOOLEAN`** ⭐ NEW
+   - SECURITY DEFINER function that bypasses RLS to check admin status
+   - Prevents infinite recursion when used in RLS policies
+   - Returns false if user is NULL or not an admin
+   - Used by ALL RLS policies for admin checks
 
-2. **`has_active_subscription(user_id UUID) → BOOLEAN`**
+2. **`has_role(user_id UUID, role TEXT) → BOOLEAN`**
+   - Checks if user has specific role
+   - ⚠️ DEPRECATED for RLS policies - use `is_admin()` instead
+
+3. **`has_active_subscription(user_id UUID) → BOOLEAN`**
    - Returns true if user has active subscription
    - Considers: 'active', 'trialing' (with valid trial_ends_at), 'past_due'
    - **Critical for property visibility**
 
 ### Credit Management Functions
 
-3. **`add_credits(user_id UUID, amount INT, product TEXT DEFAULT 'Créditos')`**
+4. **`add_credits(user_id UUID, amount INT, product TEXT DEFAULT 'Créditos')`**
    - Adds credits to user balance
    - Creates transaction record with product name
    - Used for: subscription grants, purchases, refunds, bonuses
 
-4. **`deduct_credits(user_id UUID, amount INT, product TEXT DEFAULT 'Créditos')`**
+5. **`deduct_credits(user_id UUID, amount INT, product TEXT DEFAULT 'Créditos')`**
    - Deducts credits (free first, then paid)
    - Creates transaction record with product name
    - Returns false if insufficient balance
    - Security: Only user can deduct own credits
 
-5. **`get_user_credits(user_id UUID) → (balance, free_remaining, last_reset)`**
+6. **`get_user_credits(user_id UUID) → (balance, free_remaining, last_reset)`**
    - Gets current credit status
    - Security: Only user can view own credits
 
 ### Subscription Functions
 
-6. **`get_subscription_status(user_id UUID) → TABLE(...)`**
+7. **`get_subscription_status(user_id UUID) → TABLE(...)`**
    - Returns full subscription details
    - Includes computed `is_active` field
 
+### Property Status Management Functions ⭐ NEW
+
+8. **`enforce_subscription_for_active_status()` (TRIGGER FUNCTION)**
+   - Prevents setting property status to `active` without subscription
+   - Blocks changing `paused` to anything except `draft` without subscription
+   - Called by `enforce_subscription_on_property_status` trigger
+
+9. **`pause_user_properties(p_user_id UUID) → INTEGER`**
+   - Sets all `active` properties to `paused` for a user
+   - Called by Stripe webhook when subscription becomes inactive
+   - Returns count of properties paused
+
+10. **`reactivate_user_properties(p_user_id UUID) → INTEGER`**
+    - Sets all `paused` properties to `active` for a user
+    - Called by Stripe webhook when subscription becomes active
+    - Returns count of properties reactivated
+
 ### Invitation Functions
 
-7. **`validate_invitation_token(token TEXT) → (is_valid, email, trial_days)`**
+11. **`validate_invitation_token(token TEXT) → (is_valid, email, trial_days)`**
    - Checks if token is valid and not expired
    - Returns token details
 
-8. **`use_invitation_token(token TEXT, user_id UUID) → BOOLEAN`**
+12. **`use_invitation_token(token TEXT, user_id UUID) → BOOLEAN`**
    - Marks token as used
    - Creates subscription with trial period
    - Returns false if token invalid/expired/already used
 
 ### Utility Triggers
 
-9. **`generate_property_slug()`**
+13. **`generate_property_slug()`**
    - Auto-generates unique slug from title + property type + random suffix
    - Example: "casa-en-mexico-departamento-a3b4c5d6"
 
-10. **`update_*_updated_at()`**
+14. **`update_*_updated_at()`**
     - Triggers for profiles, subscriptions, credits, properties
     - Auto-updates `updated_at` timestamp
 
 ### Storage Cleanup Functions (pg_net)
 
-These functions are used by AFTER DELETE triggers to clean up R2 storage when entities are deleted. They use the `pg_net` extension for async HTTP calls to Edge Functions.
+These functions are used by AFTER DELETE triggers to clean up R2 storage when entities are deleted. They use the `pg_net` extension for async HTTP calls to Edge Functions with service role authentication.
 
-11. **`get_supabase_url()`**
+15. **`get_supabase_url()`**
     - Retrieves Supabase project URL from vault
     - Used by cleanup triggers for Edge Function calls
 
+16. **`get_service_role_key()`**
+    - Retrieves Supabase service role key from vault
+    - Used by cleanup triggers to authenticate Edge Function calls
+    - **Vault secret required:** `supabase_service_role_key`
+
 12. **`trigger_cleanup_property_files()`**
     - Called by `on_property_delete` trigger
+    - Uses service role key for authentication
     - Cleans up: `users/{user_id}/properties/{property_id}/*`
 
 13. **`trigger_cleanup_video_job_files()`**
     - Called by `on_video_job_delete` trigger
+    - Uses service role key for authentication
     - Cleans up: `users/{user_id}/ai-jobs/{job_id}/*`
 
 14. **`trigger_cleanup_user_files()`**
     - Called by `on_user_delete` trigger
+    - Uses service role key for authentication
     - Cleans up: `users/{user_id}/*` (entire user folder)
 
 15. **`trigger_cleanup_draft_files()`**
     - Called by `on_draft_delete` trigger
+    - Uses service role key for authentication
     - Cleans up specific files listed in `uploaded_files` array
+
+**Vault Secrets Required:**
+```sql
+-- Add these secrets to vault for cleanup triggers to work:
+INSERT INTO vault.secrets (name, secret) VALUES 
+  ('supabase_url', 'https://YOUR_PROJECT_REF.supabase.co'),
+  ('supabase_service_role_key', 'YOUR_SERVICE_ROLE_KEY');
+```
 
 ---
 

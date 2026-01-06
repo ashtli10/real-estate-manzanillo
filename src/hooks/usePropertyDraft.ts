@@ -7,6 +7,7 @@ interface PropertyDraft {
   id: string;
   user_id: string;
   property_id: string | null;
+  pre_allocated_property_id: string | null; // UUID generated for new properties, used for R2 paths
   form_data: PropertyInsert;
   current_step: string;
   ai_text: string | null;
@@ -52,6 +53,7 @@ export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraft
   const [formData, setFormData] = useState<PropertyInsert>(DEFAULT_FORM_DATA);
   const [currentStep, setCurrentStep] = useState<string>('basic');
   const [aiText, setAiText] = useState<string>('');
+  const [preAllocatedPropertyId, setPreAllocatedPropertyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -95,7 +97,15 @@ export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraft
         setFormData(draftData.form_data || DEFAULT_FORM_DATA);
         setCurrentStep(draftData.current_step || 'basic');
         setAiText(draftData.ai_text || '');
+        // Restore or generate pre-allocated property ID for new properties
+        if (!propertyId) {
+          const existingPreAllocatedId = draftData.pre_allocated_property_id;
+          setPreAllocatedPropertyId(existingPreAllocatedId || crypto.randomUUID());
+        }
         lastSavedRef.current = JSON.stringify(draftData.form_data);
+      } else if (!propertyId) {
+        // No existing draft for a new property - generate a new pre-allocated ID
+        setPreAllocatedPropertyId(crypto.randomUUID());
       }
     } catch (err) {
       console.error('Error loading draft:', err);
@@ -130,6 +140,7 @@ export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraft
       const draftPayload = {
         user_id: userId,
         property_id: propertyId || null,
+        pre_allocated_property_id: propertyId ? null : preAllocatedPropertyId, // Only for new properties
         form_data: data as unknown as Json,
         current_step: step,
         ai_text: text || null,
@@ -165,7 +176,7 @@ export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraft
     } finally {
       setSaving(false);
     }
-  }, [userId, propertyId, draft?.id, initialized]);
+  }, [userId, propertyId, draft?.id, initialized, preAllocatedPropertyId]);
 
   // Debounced auto-save when form data changes
   useEffect(() => {
@@ -210,6 +221,7 @@ export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraft
     setFormData(DEFAULT_FORM_DATA);
     setCurrentStep('basic');
     setAiText('');
+    setPreAllocatedPropertyId(crypto.randomUUID()); // Generate new ID for fresh draft
     deleteDraft();
   }, [deleteDraft]);
 
@@ -250,6 +262,7 @@ export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraft
     saving,
     hasDraft,
     draftId: draft?.id,
+    preAllocatedPropertyId, // UUID for new properties - use as property ID on insert
     
     // Setters
     setFormData,

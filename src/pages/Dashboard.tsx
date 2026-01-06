@@ -244,9 +244,15 @@ export function Dashboard({ onNavigate }: DashboardProps) {
 
         if (error) throw error;
       } else {
+        // For new properties, use the pre-allocated ID if provided
+        // This ensures files uploaded during form creation are already in the correct path
+        const insertData = data.id 
+          ? { ...dbData, id: data.id }  // Use pre-allocated ID
+          : dbData;  // Let database generate ID (fallback)
+        
         const { error } = await supabase
           .from('properties')
-          .insert([dbData]);
+          .insert([insertData]);
 
         if (error) throw error;
       }

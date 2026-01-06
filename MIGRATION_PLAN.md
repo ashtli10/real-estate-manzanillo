@@ -2,7 +2,7 @@
 
 **Created: January 5, 2026**  
 **Last Updated: January 6, 2026**  
-**Status: Phase 7 COMPLETED - Ready for Phase 8 (Testing & Go-Live)**
+**Status: Phase 8 IN PROGRESS - Testing & Go-Live**
 
 ---
 
@@ -10,10 +10,36 @@
 
 This document outlines a complete infrastructure migration for the Habitex real estate platform:
 
-1. **Storage Migration**: Supabase Storage → Cloudflare R2
-2. **API Migration**: Vercel Serverless Functions → Supabase Edge Functions
-3. **Database Reset**: Complete wipe and schema redesign
-4. **Media Pipeline**: Automated thumbnail/preview generation for all uploads
+1. **Storage Migration**: Supabase Storage → Cloudflare R2 ✅
+2. **API Migration**: Vercel Serverless Functions → Supabase Edge Functions ✅
+3. **Database Reset**: Complete wipe and schema redesign ✅
+4. **Media Pipeline**: Automated thumbnail/preview generation for all uploads ✅
+5. **Security Fixes**: RLS infinite recursion fix, subscription enforcement ✅
+
+### Migration Completed (January 6, 2026)
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1: R2 Infrastructure | ✅ DONE | Bucket, CORS, custom domain |
+| Phase 2: R2 Auth Worker | ✅ DONE | JWT verification, path authorization |
+| Phase 3: Media Processing | ✅ DONE | Image variants, video thumbnails |
+| Phase 4: Database Schema | ✅ DONE | Triggers, cleanup functions |
+| Phase 5: Edge Functions | ✅ DONE | Deployed with `--no-verify-jwt` |
+| Phase 6: Frontend Rewrite | ✅ DONE | R2 storage abstraction |
+| Phase 7: Vercel Cleanup | ✅ DONE | Removed old API routes |
+| Phase 8: Testing & Go-Live | 🔄 IN PROGRESS | End-to-end testing |
+
+### Important Deployment Notes
+
+**Edge Functions**: Must be deployed with `--no-verify-jwt` flag:
+```bash
+npx supabase functions deploy ai-prefill --no-verify-jwt
+npx supabase functions deploy video-generation --no-verify-jwt
+npx supabase functions deploy properties --no-verify-jwt
+npx supabase functions deploy storage-cleanup --no-verify-jwt
+```
+
+This allows the functions to receive the Authorization header and handle auth internally.
 
 ### Why This Migration?
 

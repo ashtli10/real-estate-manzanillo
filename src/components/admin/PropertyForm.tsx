@@ -69,6 +69,7 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     saving: draftSaving,
     hasDraft,
     draftId,
+    preAllocatedPropertyId, // UUID for new properties - used for R2 paths and property insert
     setFormData,
     setAiText,
     updateField,
@@ -197,7 +198,12 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     }
 
     try {
-      await onSave(formData);
+      // Include pre-allocated ID for new properties so files are already in the correct path
+      const dataToSave = property 
+        ? formData  // Editing existing property - no ID needed
+        : { ...formData, id: preAllocatedPropertyId || undefined }; // New property - include pre-allocated ID
+      
+      await onSave(dataToSave);
       // Delete draft after successful save
       await deleteDraft();
     } catch (err) {
@@ -607,7 +613,7 @@ Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baño
                 images={formData.images}
                 onChange={(images) => updateField('images', images)}
                 userId={userId}
-                propertyId={property?.id}
+                propertyId={property?.id || preAllocatedPropertyId || undefined}
               />
             </div>
             <div>
@@ -616,7 +622,7 @@ Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baño
                 videos={formData.videos}
                 onChange={(videos) => updateField('videos', videos)}
                 userId={userId}
-                propertyId={property?.id}
+                propertyId={property?.id || preAllocatedPropertyId || undefined}
               />
             </div>
           </div>

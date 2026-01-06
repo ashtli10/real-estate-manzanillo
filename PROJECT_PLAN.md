@@ -278,13 +278,16 @@ When subscription is **not active**:
 ### 4.2 Properties Management ✅ Implemented
 - List of own properties with thumbnail grid
 - Add/Edit/Delete properties
-- Toggle active/paused status
-- Move up/down for display order (reordering)
+- **Simplified status**: Only draft/active (paused is system-managed)
+- Cannot set active without subscription (database enforced)
+- Display order management
 
 **Implementation Details:**
 - PropertyForm component for CRUD operations
 - PropertyTable component for list view
-- `handleMoveUp` / `handleMoveDown` functions for reordering
+- Status dropdown: draft/active only (read-only "Paused" if system-managed)
+- Database trigger blocks `active` without subscription
+- `pause_user_properties()` / `reactivate_user_properties()` called by Stripe webhook
 
 ### 4.3 Profile Settings ✅ Implemented
 - Edit all profile fields (name, bio, phone, WhatsApp, etc.)
@@ -388,11 +391,11 @@ User only edits the `dialogue` field; `action` and `emotion` are AI-generated.
 - `src/components/AIToolsTab.tsx` - Full wizard UI with step indicator
 - `src/hooks/useVideoGeneration.ts` - Job state management with 10-min completed job persistence
 - `src/hooks/useCredits.ts` - Credit tracking with real-time updates
-- `api/video/generate-images.ts` - Start image generation (5 credits)
-- `api/video/approve-images.ts` - Approve images, start script gen (1 credit)
-- `api/video/approve-script.ts` - Approve script, start video render (30 credits)
+- **Supabase Edge Functions (NEW):**
+  - `supabase/functions/video-generation/` - Unified video pipeline (replaces Vercel routes)
+  - `supabase/functions/ai-prefill/` - AI property prefill (2 credits)
 - `video_generation_jobs` table - Job tracking with status flow
-- `storage:jobs` bucket - User-scoped asset storage
+- Cloudflare R2 bucket: `habitex/users/{user_id}/ai-jobs/{job_id}/`
 
 **External Integrations:**
 - n8n webhooks for AI processing:
@@ -498,12 +501,23 @@ User only edits the `dialogue` field; `action` and `emotion` are AI-generated.
 | Styling | Tailwind CSS |
 | State | React Context + Hooks |
 | Backend | Supabase (Database, Auth, Edge Functions, Realtime) |
-| Storage | Cloudflare R2 (CDN, auto-variants) |
+| Storage | Cloudflare R2 (bucket: `habitex`, CDN: storage.manzanillo-real-estate.com) |
 | Media Processing | Cloudflare Workers + Containers (FFmpeg) |
 | Payments | Stripe (Subscriptions, Credits) |
 | Maps | Google Maps API |
-| Hosting | Vercel (frontend + Stripe webhooks) |
+| Hosting | Vercel (frontend + Stripe webhooks only) |
 | i18n | react-i18next |
+
+### API Architecture (Updated January 2026)
+| Route | Location | Purpose |
+|-------|----------|---------|
+| `/api/stripe/webhook` | Vercel | Stripe payment webhooks |
+| `/api/stripe/create-checkout` | Vercel | Checkout sessions |
+| `/api/sitemap.xml` | Vercel | Dynamic sitemap |
+| `ai-prefill` | Supabase Edge Function | AI property form prefill |
+| `video-generation` | Supabase Edge Function | Unified video pipeline |
+| `properties` | Supabase Edge Function | Public property listing |
+| `storage-cleanup` | Supabase Edge Function | R2 folder cleanup on delete |
 
 ---
 
@@ -555,25 +569,38 @@ Payment Fails → Properties Hidden → Login → "Renew" Prompt → Pay → Res
 
 ## ✅ Success Criteria
 
-- [ ] Users can sign up via invitation and complete onboarding
-- [ ] Subscription payment works (199 MXN/month)
-- [ ] Agent profiles accessible at `domain.com/username`
-- [ ] Properties display from all agents with advanced filters
-- [ ] WhatsApp button uses property owner's number
-- [ ] Mobile experience is flawless
-- [ ] Language toggle works (EN/ES)
-- [ ] Unpaid users have properties hidden
-- [ ] Credit balance visible and top-ups work
-- [ ] AI tools section shows "Coming Soon"
+- [x] Users can sign up via invitation and complete onboarding
+- [x] Subscription payment works (199 MXN/month)
+- [x] Agent profiles accessible at `domain.com/username`
+- [x] Properties display from all agents with advanced filters
+- [x] WhatsApp button uses property owner's number
+- [x] Mobile experience is flawless
+- [x] Language toggle works (EN/ES)
+- [x] Unpaid users have properties auto-paused (database enforced)
+- [x] Credit balance visible and top-ups work
+- [x] AI video generation fully functional
 
 ---
 
-## 🚀 Next Steps
+## 🚀 Current Status (January 2026)
 
-1. **Approve this plan** - Any changes or additions?
-2. **Create Stripe products** - Monthly sub + credit packs
-3. **Update database schema** - Add new profile fields
-4. **Start Sprint 1** - Build landing + properties pages
+### ✅ Completed
+1. All core platform features implemented
+2. Supabase Edge Functions deployed (ai-prefill, video-generation, properties, storage-cleanup)
+3. Cloudflare R2 storage with media processing workers
+4. Property status simplified to 3 values (draft, active, paused)
+5. Database-level subscription enforcement via triggers
+6. RLS infinite recursion fix with `is_admin()` function
+
+### 🔄 Ongoing
+- Frontend deployed on Vercel
+- Edge Functions deployed with `--no-verify-jwt`
+- Stripe webhooks handling subscription lifecycle
+
+### 📋 Migrations Applied (January 6, 2026)
+- `20260106190555_fix_user_roles_infinite_recursion.sql`
+- `20260106190837_simplify_dashboard_stats.sql`
+- `20260106191505_enforce_subscription_for_active_status.sql`
 
 ---
 

@@ -8,96 +8,94 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                         User Browser                             │
 ├─────────────────────────────────────────────────────────────────┤
-│  React SPA (Vite)                                               │
+│  React SPA (Vite + TypeScript)                                  │
 │  ┌───────────────────────────────────────────────────────┐     │
 │  │ Pages:                                                 │     │
 │  │  • Home (SEO optimized, dynamic meta)                 │     │
 │  │  • Properties (SEO optimized, breadcrumbs)            │     │
 │  │  • PropertyDetail (Schema.org structured data)        │     │
-│  │  • Admin (Property management)                        │     │
+│  │  • Dashboard (Property management, AI tools)          │     │
+│  │  • AgentProfile (domain.com/{username})               │     │
 │  └───────────────────────────────────────────────────────┘     │
 │  ┌───────────────────────────────────────────────────────┐     │
 │  │ Hooks & Utils:                                        │     │
 │  │  • useRealtimeProperties (WebSocket subscriptions)    │     │
 │  │  • usePropertyDraft (persistent form drafts)          │     │
-│  │  • SEO utilities (meta tags, structured data)         │     │
+│  │  • useSubscription, useCredits (billing state)        │     │
+│  │  • r2-storage.ts (Cloudflare R2 abstraction)         │     │
 │  └───────────────────────────────────────────────────────┘     │
 └─────────────────────────────────────────────────────────────────┘
-                              ↓ ↑
-                         HTTP / WebSocket
-                              ↓ ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                        Vercel Platform                           │
-├─────────────────────────────────────────────────────────────────┤
-│  API Routes (Serverless Functions):                             │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │ /api/properties                                        │     │
-│  │  • GET properties with filters                        │     │
-│  │  • Real-time data from Supabase                       │     │
-│  │  • Caching: 60s + stale-while-revalidate              │     │
-│  └───────────────────────────────────────────────────────┘     │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │ /api/sitemap.xml                                       │     │
-│  │  • Dynamic sitemap generation                         │     │
-│  │  • Auto-updates with property changes                 │     │
-│  │  • Caching: 1 hour                                    │     │
-│  └───────────────────────────────────────────────────────┘     │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │ /api/stripe/webhook                                    │     │
-│  │  • Stripe webhook handler                             │     │
-│  │  • Subscription lifecycle events                      │     │
-│  │  • Credit purchase processing                         │     │
-│  │  • Uses Supabase service role (bypasses RLS)          │     │
-│  └───────────────────────────────────────────────────────┘     │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │ /api/stripe/create-checkout                            │     │
-│  │  • Creates Stripe checkout sessions                   │     │
-│  │  • Subscription + credit pack purchases               │     │
-│  │  • Customer portal session creation                   │     │
-│  └───────────────────────────────────────────────────────┘     │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │ /api/prefill-property                                  │     │
-│  │  • AI-powered property form prefill                   │     │
-│  │  • Requires authentication (JWT)                      │     │
-│  │  • Charges 2 credits per request                      │     │
-│  │  • Validates characteristics against definitions      │     │
-│  │  • Proxies to external AI webhook securely            │     │
-│  └───────────────────────────────────────────────────────┘     │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │ /api/video/generate-images                             │     │
-│  │  • Starts AI video image generation                   │     │
-│  │  • Requires authentication (JWT)                      │     │
-│  │  • Charges 5 credits per request                      │     │
-│  │  • Creates job in video_generation_jobs table         │     │
-│  │  • Calls n8n webhook for processing                   │     │
-│  └───────────────────────────────────────────────────────┘     │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │ /api/video/approve-images                              │     │
-│  │  • Approves generated images, starts script gen       │     │
-│  │  • Requires authentication (JWT)                      │     │
-│  │  • Charges 1 credit for script generation             │     │
-│  │  • Calls n8n webhook for script generation            │     │
-│  └───────────────────────────────────────────────────────┘     │
-│  ┌───────────────────────────────────────────────────────┐     │
-│  │ /api/video/approve-script                              │     │
-│  │  • Approves edited script, starts final video gen     │     │
-│  │  • Requires authentication (JWT)                      │     │
-│  │  • Charges 30 credits for video generation            │     │
-│  │  • Accepts ScriptScene[] with dialogue/action/emotion │     │
-│  │  • Calls n8n webhook for video rendering              │     │
-│  └───────────────────────────────────────────────────────┘     │
-│  ┌───────────────────────────────────────────────────────┐     │
-  │ /api/process-draft-prefill                            │     │
-  │  • Background AI property prefill processing         │     │
-  │  • Requires authentication (JWT)                      │     │
-  │  • Charges 2 credits for AI prefill                  │     │
-  │  • Updates draft with filled form data               │     │
-  │  • Logs credit transaction as 'IA Autocompletado'    │     │
-  │  • Uses webhook pattern for AI processing            │     │
-  └───────────────────────────────────────────────────────┘     ││                                                                  │
-│  Static Assets:                                                 │
-│  • /robots.txt                                                  │
-│  • /seo-validator.html                                          │
+                    │
+          ┌────────┴────────┐
+          ▼                 ▼
+┌──────────────────┐   ┌──────────────────────────────────────────┐
+│   CLOUDFLARE R2  │   │          SUPABASE EDGE FUNCTIONS          │
+│                  │   │                                            │
+│ Bucket: habitex  │   │  /ai-prefill (2 credits)                  │
+│ CDN: storage.    │   │   • AI-powered property form prefill      │
+│ manzanillo-real- │   │   • Deployed with --no-verify-jwt         │
+│ estate.com       │   │                                            │
+│                  │   │  /video-generation (5+1+30 credits)        │
+│ R2 Auth Worker   │   │   • Unified video pipeline                │
+│ Media Processor  │   │   • generate-images, approve-*, regenerate │
+└──────────────────┘   │                                            │
+                       │  /properties (public)                      │
+                       │   • List/filter active properties          │
+                       │                                            │
+                       │  /storage-cleanup (internal)               │
+                       │   • R2 folder deletion via DB triggers     │
+                       └──────────────────────────────────────────────┘
+                                        │
+                    ┌───────────────────┴───────────────────┐
+                    ▼                                       ▼
+┌──────────────────────────────────┐   ┌──────────────────────────────┐
+│          VERCEL (KEPT)            │   │      SUPABASE DATABASE       │
+│                                   │   │                              │
+│  /api/stripe/webhook.ts          │   │  Tables: profiles, properties│
+│   • Subscription lifecycle       │   │  user_roles, credits, etc.   │
+│   • Pauses/reactivates props     │   │                              │
+│                                   │   │  Functions:                  │
+│  /api/stripe/create-checkout.ts  │   │  • is_admin() - RLS helper   │
+│   • Checkout sessions            │   │  • pause_user_properties()   │
+│                                   │   │  • reactivate_user_props()   │
+│  /api/sitemap.xml.ts             │   │                              │
+│   • Dynamic sitemap              │   │  Triggers:                   │
+└──────────────────────────────────┘   │  • enforce_subscription_*    │
+                                       │  • on_property_delete        │
+                                       │  • on_user_delete            │
+                                       └──────────────────────────────┘
+```
+
+## Property Status Flow
+
+Properties have only 3 statuses (simplified January 6, 2026):
+
+```
+┌───────────┐
+│   DRAFT   │ ← User editing, not published
+└─────┬─────┘
+      │ User publishes (requires subscription)
+      ▼
+┌───────────┐
+│  ACTIVE   │ ← Published, visible to public
+└─────┬─────┘
+      │ Subscription lapses (automatic)
+      ▼
+┌───────────┐
+│  PAUSED   │ ← System-managed, hidden from public
+└─────┬─────┘
+      │ Subscription resumes (automatic)
+      ▼
+┌───────────┐
+│  ACTIVE   │ ← Back to published
+└───────────┘
+
+Database enforces:
+• Cannot set ACTIVE without subscription (trigger)
+• Cannot change PAUSED to ACTIVE without subscription (trigger)
+• Stripe webhook calls pause_user_properties() on subscription end
+• Stripe webhook calls reactivate_user_properties() on subscription resume
+```
 │  • Favicon, manifest, images                                   │
 └─────────────────────────────────────────────────────────────────┘
                               ↓ ↑
@@ -271,16 +269,22 @@ function canAccessDashboard(subscription) {
 }
 ```
 
-### Visibility Rules
-- **No subscription**: Properties hidden from public
-- **Subscription active**: Properties visible
-- **Past due**: Access with warning banner
-- **Canceled**: No access, prompt to resubscribe
+### Property Status Rules (Simplified Jan 6, 2026)
+| Status | Description | Visible to Public | User Can Set |
+|--------|-------------|-------------------|--------------|
+| `draft` | User is editing, not yet published | ❌ | ✅ |
+| `active` | Published, visible to all | ✅ | ✅ (requires subscription) |
+| `paused` | Auto-paused due to lapsed subscription | ❌ | ❌ (system-managed) |
+
+**Database Enforcement:**
+- Trigger `enforce_subscription_on_property_status` blocks setting `active` without subscription
+- `pause_user_properties(user_id)` called by Stripe webhook on subscription end
+- `reactivate_user_properties(user_id)` called by Stripe webhook on subscription resume
 
 ### React Hooks
 - `useSubscription(userId)`: Subscription state, access control
 - `useCredits(userId)`: Credit balance, purchase functions
-- `useDashboardStats(userId)`: Dashboard statistics (property counts)
+- `useDashboardStats(userId)`: Dashboard statistics (total/active property counts)
 - `useAuth()`: Authentication state from AuthContext
 - `useRealtimeProperties()`: Real-time property updates via WebSocket
 - `useLanguageSync()`: Syncs language preference from Supabase profile on login
@@ -291,8 +295,8 @@ function canAccessDashboard(subscription) {
 - `BillingTab`: Subscription/credits management UI
 - `AIToolsTab`: AI video generation wizard with multi-step workflow
 - `ProfileSettings`: Full profile editing with username validation and automatic property slug updates on username change
-- `PropertyForm`: Property CRUD form
-- `PropertyTable`: Property list with actions
+- `PropertyForm`: Property CRUD form (status dropdown: draft/active only; shows read-only "Paused" if system-paused)
+- `PropertyTable`: Property list with actions (toggle disabled for paused properties)
 - `LanguageSwitcher`: EN/ES language toggle with persistence
 
 ## Internationalization (i18n)
@@ -475,13 +479,43 @@ User logs in → useLanguageSync
 
 ## Recent Component Updates (January 2026)
 
+### RLS Security Fix (January 6, 2026)
+
+Fixed infinite recursion in Row Level Security policies across all tables:
+
+**Problem:** `user_roles` RLS policies referenced `user_roles` table, causing:
+```
+ERROR: infinite recursion detected in policy for relation "user_roles"
+```
+
+**Solution:** Created `is_admin()` SECURITY DEFINER function that bypasses RLS:
+```sql
+CREATE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = auth.uid() AND role = 'admin'
+  )
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '';
+```
+
+All tables now use `is_admin()` instead of self-referencing subqueries.
+
+### Property Status Simplification (January 6, 2026)
+
+Reduced property status from 7 values to 3:
+- **Before:** draft, pending, active, sold, rented, paused, archived
+- **After:** draft, active, paused
+
+Database enforcement via trigger blocks setting `active` without subscription.
+
 ### Property Form Enhancement
 
 #### PropertyForm.tsx
 - **7-step wizard**: AI → Info → Precio → Lugar → Características → Fotos → Extras
 - **Step navigation**: Centered progress indicators with connecting lines
 - **Auto-saving**: Form state persisted in `property_drafts` table
-- **Background AI**: Async processing via `/api/process-draft-prefill.ts`
+- **Status dropdown**: Only shows draft/active; read-only "Paused" if system-managed
 - **Mobile optimization**: Responsive design with proper touch targets
 
 #### ImageUpload.tsx  
@@ -500,12 +534,12 @@ User logs in → useLanguageSync
 ```
 User inputs text → PropertyForm
                 → Save to draft (ai_text field)
-                → Call /api/process-draft-prefill
-                → Background webhook processing
-                → Update draft with filled form_data
+                → Call Supabase Edge Function (ai-prefill)
+                → AI webhook processing
+                → Return filled form_data
                 → Deduct 2 credits
                 → Log transaction ('IA Autocompletado')
-                → Return to form with data filled
+                → Apply data to form
 ```
 
 ### Mobile UX Improvements
@@ -525,9 +559,11 @@ User inputs text → PropertyForm
 - [x] Dev server runs
 - [x] No TypeScript errors
 - [x] No security vulnerabilities
+- [x] RLS policies work without recursion
 
 ### Production (User Action Required)
-- [ ] Deploy to Vercel
+- [x] Edge Functions deployed with --no-verify-jwt
+- [ ] Deploy frontend to Vercel
 - [ ] Test all pages load
 - [ ] Validate structured data
 - [ ] Submit sitemap
