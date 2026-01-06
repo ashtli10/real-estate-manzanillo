@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
 import { X, Save, Loader2, Sparkles, ChevronLeft, ChevronRight, Check, AlertCircle, Cloud } from 'lucide-react';
 import type { Property, PropertyInsert, PropertyType, PropertyStatus } from '../../types/property';
-import { generateSlug, propertyTypeLabels, propertyStatusLabels } from '../../types/property';
+import { generateSlug, propertyTypeLabels, propertyStatusLabels, CHARACTERISTIC_DEFINITIONS } from '../../types/property';
 import { ImageUpload } from './ImageUpload';
 import { VideoUpload } from './VideoUpload';
 import { TagInput } from './TagInput';
 import { GoogleMapsInput } from './GoogleMapsInput';
 import { CharacteristicInput, type Characteristic } from './CharacteristicInput';
 import { usePropertyDraft } from '../../hooks/usePropertyDraft';
+import { requestPropertyPrefill } from '../../lib/prefillProperty';
+
+// Property types and currencies for AI prefill
+const PROPERTY_TYPES: PropertyType[] = ['casa', 'departamento', 'terreno', 'local', 'oficina'];
+const CURRENCIES = ['MXN', 'USD'];
 
 interface PropertyFormProps {
   property?: Property | null;
@@ -220,7 +225,7 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     setRentPriceDisplay(numericString ? formatPriceValue(numeric) : '');
   };
 
-  // AI prefill - waits for completion before advancing
+  // AI prefill - uses Edge Function for processing
   const applyPrefill = async () => {
     if (!aiText.trim() || !userId) return;
     
@@ -228,31 +233,50 @@ export function PropertyForm({ property, onSave, onCancel, loading = false, user
     setAiLoading(true);
     
     try {
-      // First, save the AI text to the draft immediately
-      setAiText(aiText);
-      await forceSaveDraft();
-      
-      // Wait for draft to be created/saved
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      if (!draftId) {
-        throw new Error('No se pudo crear el borrador');
+      // Prepare characteristic definitions for the AI (key, label, type only)
+      const characteristicDefs = CHARACTERISTIC_DEFINITIONS.map(d => ({
+        key: d.key,
+        label: d.label,
+        type: d.type,
+      }));
+
+      // Call the Edge Function via the prefill utility
+      const prefillResult = await requestPropertyPrefill(
+        aiText,
+        characteristicDefs,
+        PROPERTY_TYPES,
+        CURRENCIES,
+        { language: 'es', defaultCurrency: 'MXN' }
+      );
+
+      // Apply prefill results to form data
+      const updates: Partial<typeof formData> = {};
+
+      if (prefillResult.title) updates.title = prefillResult.title;
+      if (prefillResult.description) updates.description = prefillResult.description;
+      if (prefillResult.price !== null) updates.price = prefillResult.price;
+      if (prefillResult.currency) updates.currency = prefillResult.currency;
+      if (prefillResult.is_for_sale !== undefined) updates.is_for_sale = prefillResult.is_for_sale;
+      if (prefillResult.is_for_rent !== undefined) updates.is_for_rent = prefillResult.is_for_rent;
+      if (prefillResult.rent_price !== null) updates.rent_price = prefillResult.rent_price;
+      if (prefillResult.rent_currency) updates.rent_currency = prefillResult.rent_currency;
+      if (prefillResult.property_type) updates.property_type = prefillResult.property_type;
+      if (prefillResult.custom_bonuses?.length) updates.custom_bonuses = prefillResult.custom_bonuses;
+      if (prefillResult.characteristics?.length) updates.characteristics = prefillResult.characteristics;
+
+      // Update form data with prefill results
+      setFormData(prev => ({ ...prev, ...updates }));
+
+      // Update price display fields
+      if (prefillResult.price) {
+        setPriceDisplay(formatPriceValue(prefillResult.price));
+      }
+      if (prefillResult.rent_price) {
+        setRentPriceDisplay(formatPriceValue(prefillResult.rent_price));
       }
 
-      // Call the API and wait for completion
-      const response = await fetch('/api/process-draft-prefill', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ draft_id: draftId, user_id: userId }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Error al procesar con IA');
-      }
-      
-      // Reload draft to get the filled data
-      await loadDraft();
+      // Save the updated form data to draft
+      await forceSaveDraft();
       
       setAiLoading(false);
       
@@ -582,6 +606,8 @@ Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baño
               <ImageUpload
                 images={formData.images}
                 onChange={(images) => updateField('images', images)}
+                userId={userId}
+                propertyId={property?.id}
               />
             </div>
             <div>
@@ -589,6 +615,8 @@ Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baño
               <VideoUpload
                 videos={formData.videos}
                 onChange={(videos) => updateField('videos', videos)}
+                userId={userId}
+                propertyId={property?.id}
               />
             </div>
           </div>

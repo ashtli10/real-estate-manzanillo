@@ -310,6 +310,9 @@ export interface Property {
   display_order: number;
   show_map: boolean;
   characteristics: PropertyCharacteristic[];
+  // R2 storage tracking (Phase 4)
+  image_count: number;
+  video_count: number;
 }
 
 // PropertyInsert omits auto-generated fields and makes user_id optional (added by backend/dashboard)

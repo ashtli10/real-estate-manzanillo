@@ -21,8 +21,16 @@ export interface PrefillErrorResponse {
   credits_available?: number;
 }
 
-// Use our secure Vercel API endpoint
-const PREFILL_ENDPOINT = '/api/prefill-property';
+// Use Supabase Edge Function for AI prefill
+// VITE_SUPABASE_FUNCTIONS_URL is required - old Vercel routes have been deleted
+const getEndpointUrl = () => {
+  const functionsUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
+  if (!functionsUrl) {
+    throw new Error('VITE_SUPABASE_FUNCTIONS_URL is not configured');
+  }
+  return `${functionsUrl}/ai-prefill`;
+};
+
 const PREFILL_TIMEOUT_MS = 30000; // 30s to account for AI processing time
 
 /**
@@ -52,7 +60,7 @@ export async function requestPropertyPrefill(
   const timeout = setTimeout(() => controller.abort(), PREFILL_TIMEOUT_MS);
 
   try {
-    const response = await fetch(PREFILL_ENDPOINT, {
+    const response = await fetch(getEndpointUrl(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -60,6 +68,7 @@ export async function requestPropertyPrefill(
         Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({
+        action: 'start', // Required for Edge Function
         raw_text: rawText,
         language: options?.language ?? 'es',
         default_currency: options?.defaultCurrency ?? 'MXN',

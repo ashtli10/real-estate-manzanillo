@@ -1,0 +1,42 @@
+name = "media-processor"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# R2 Bucket binding for reading source files and writing processed files
+[[r2_buckets]]
+binding = "HABITEX_BUCKET"
+bucket_name = "habitex"
+
+# FFmpeg Processor service binding for video processing
+[[services]]
+binding = "FFMPEG_CONTAINER"
+service = "ffmpeg-processor"
+
+# Queue consumer - receives R2 event notifications
+[[queues.consumers]]
+queue = "habitex-media-processing"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "habitex-media-processing-dlq"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+R2_PUBLIC_URL = "https://storage.manzanillo-real-estate.com"
+
+# Image processing settings
+IMAGE_MEDIUM_MAX_WIDTH = 800
+IMAGE_MEDIUM_MAX_HEIGHT = 600
+IMAGE_THUMB_SIZE = 160
+IMAGE_QUALITY = 80
+
+# Video processing settings  
+VIDEO_THUMB_WIDTH = 480
+VIDEO_THUMB_HEIGHT = 270
+VIDEO_GIF_DURATION = 3
+
+# Profile image settings
+AVATAR_SIZE = 512
+COVER_WIDTH = 1920
+COVER_HEIGHT = 1080

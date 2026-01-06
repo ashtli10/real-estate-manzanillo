@@ -1,55 +1,89 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2, GripVertical, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Upload, X, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
+import {
+  uploadPropertyImage,
+  deleteFile,
+  getNextImageSequence,
+  isValidImageType,
+  validateFileSize,
+  STORAGE_LIMITS,
+  type UploadProgress,
+} from '../../lib/r2-storage';
 
 interface ImageUploadProps {
   images: string[];
   onChange: (images: string[]) => void;
   maxImages?: number;
+  propertyId?: string;
+  userId?: string;
 }
 
-export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadProps) {
+export function ImageUpload({ images, onChange, maxImages = 50, propertyId, userId }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+
+  // Track sequence numbers from existing images (for R2 path structure)
+  const existingSequences = images.map((url) => {
+    // Extract sequence from URL like: .../images/001.jpg
+    const match = url.match(/\/images\/(\d{3})\./);
+    return match ? match[1] : null;
+  }).filter((seq): seq is string => seq !== null);
 
   const uploadImage = async (file: File): Promise<string | null> => {
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Solo se permiten imágenes');
+    if (!isValidImageType(file)) {
+      alert('Solo se permiten imágenes (JPG, PNG, WEBP)');
       return null;
     }
 
     // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen no puede ser mayor a 5MB');
+    if (!validateFileSize(file, STORAGE_LIMITS.MAX_IMAGE_SIZE_MB)) {
+      alert(`La imagen no puede ser mayor a ${STORAGE_LIMITS.MAX_IMAGE_SIZE_MB}MB`);
       return null;
     }
 
-    // Generate unique filename
-    const ext = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-    const filePath = `properties/${fileName}`;
+    // Get auth token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      alert('Debes iniciar sesión para subir imágenes');
+      return null;
+    }
 
-    const { error } = await supabase.storage
-      .from('properties')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
+    // Determine user and property IDs
+    const effectiveUserId = userId || session.user.id;
+    const effectivePropertyId = propertyId || 'temp-' + Date.now();
 
-    if (error) {
+    try {
+      // Get next available sequence number
+      const nextSeq = await getNextImageSequence(effectiveUserId, effectivePropertyId, existingSequences);
+      
+      // Upload to R2
+      const result = await uploadPropertyImage(
+        effectiveUserId,
+        effectivePropertyId,
+        nextSeq,
+        file,
+        session.access_token,
+        (progress: UploadProgress) => {
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: progress.percentage
+          }));
+        }
+      );
+
+      // Add the new sequence to our tracking
+      existingSequences.push(String(nextSeq).padStart(3, '0'));
+      
+      return result.url;
+    } catch (error) {
       console.error('Error uploading image:', error);
       alert('Error al subir la imagen');
       return null;
     }
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('properties')
-      .getPublicUrl(filePath);
-
-    return urlData.publicUrl;
   };
 
   const handleFileSelect = async (files: FileList | null) => {
@@ -90,7 +124,23 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
     setDragOver(false);
   }, []);
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
+    const imageUrl = images[index];
+    
+    // Try to delete from R2 storage
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token && imageUrl.includes('/users/')) {
+        // Extract the path from the URL (everything after the domain)
+        const url = new URL(imageUrl);
+        const path = url.pathname.slice(1); // Remove leading /
+        await deleteFile(path, session.access_token);
+      }
+    } catch (error) {
+      console.error('Error deleting image from storage:', error);
+      // Continue with removal from array even if storage delete fails
+    }
+    
     const newImages = [...images];
     newImages.splice(index, 1);
     onChange(newImages);
@@ -172,6 +222,21 @@ export function ImageUpload({ images, onChange, maxImages = 100 }: ImageUploadPr
             <>
               <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 text-primary animate-spin mb-3" />
               <p className="text-foreground font-medium text-sm sm:text-base">Subiendo imágenes...</p>
+              {Object.keys(uploadProgress).length > 0 && (
+                <div className="w-full max-w-xs mt-2">
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ 
+                        width: `${Math.round(
+                          Object.values(uploadProgress).reduce((a, b) => a + b, 0) / 
+                          Object.values(uploadProgress).length
+                        )}%` 
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <>

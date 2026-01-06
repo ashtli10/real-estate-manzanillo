@@ -1,0 +1,19 @@
+name = "r2-auth"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# R2 Bucket binding
+[[r2_buckets]]
+binding = "HABITEX_BUCKET"
+bucket_name = "habitex"
+
+# Environment variables (set via wrangler secret)
+# SUPABASE_JWT_SECRET - For verifying user tokens (legacy HS256, optional)
+
+[vars]
+ENVIRONMENT = "production"
+SUPABASE_URL = "https://vvvscafjvisaswpqhnvy.supabase.co"
+
+# Routes
+# Custom domain: r2-auth.habitex.workers.dev
+# Or use a custom domain on your zone

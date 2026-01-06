@@ -1,6 +1,6 @@
 # Habitex - Architecture Overview
 
-**Last Edited: 2026-01-04**
+**Last Edited: 2026-01-06**
 
 ## System Architecture
 
@@ -405,16 +405,25 @@ User logs in → useLanguageSync
 ## File Structure
 ```
 ├── api/
-│   ├── properties.ts          # Property API endpoint
-│   ├── prefill-property.ts    # AI property prefill endpoint
-│   ├── sitemap.xml.ts         # Sitemap generator
-│   ├── stripe/
-│   │   ├── webhook.ts         # Stripe webhook handler
-│   │   └── create-checkout.ts # Checkout session creation
-│   └── video/
-│       ├── generate-images.ts # Start AI image generation (5 credits)
-│       ├── approve-images.ts  # Approve images, start script gen (30 credits)
-│       └── approve-script.ts  # Approve script, start video render
+│   ├── sitemap.xml.ts         # Dynamic sitemap generator
+│   └── stripe/
+│       ├── webhook.ts         # Stripe webhook handler
+│       └── create-checkout.ts # Checkout session creation
+├── supabase/
+│   └── functions/             # Edge Functions
+│       ├── _shared/           # Shared utilities (cors, credits, client)
+│       ├── properties/        # Public property listing
+│       ├── ai-prefill/        # AI property form prefill
+│       ├── video-generation/  # Unified video pipeline
+│       └── storage-cleanup/   # R2 folder cleanup
+├── workers/
+│   ├── r2-auth/               # JWT verification + R2 access
+│   └── media-processor/       # Image/video variant generation
+├── containers/
+│   └── ffmpeg-processor/      # FFmpeg for video thumbnails/GIFs
+├── cloudflare/
+│   ├── r2-cors-config.json    # R2 bucket CORS policy
+│   └── README.md              # Cloudflare setup instructions
 ├── public/
 │   ├── robots.txt             # Crawler instructions
 │   ├── seo-validator.html     # SEO testing tool
@@ -431,33 +440,36 @@ User logs in → useLanguageSync
 │   │   └── admin/
 │   │       ├── PropertyForm.tsx  # Property CRUD form
 │   │       ├── PropertyTable.tsx # Property list display
-│   │       ├── ImageUpload.tsx   # Image upload component
-│   │       └── VideoUpload.tsx   # Video upload component
+│   │       ├── ImageUpload.tsx   # R2 image upload with variants
+│   │       └── VideoUpload.tsx   # R2 video upload with thumbnails
 │   ├── hooks/
 │   │   ├── useRealtimeProperties.ts  # Real-time subscriptions
 │   │   ├── useSubscription.ts # Subscription state management
 │   │   ├── useCredits.ts      # Credits state management
 │   │   ├── useDashboardStats.ts # Dashboard statistics hook
 │   │   ├── useLanguageSync.ts # Language preference sync from profile
-│   │   ├── useVideoGeneration.ts # AI video generation workflow (10-min job persistence)
+│   │   ├── useVideoGeneration.ts # AI video workflow (Edge Functions)
 │   │   └── useAuth.ts         # Auth context hook
 │   ├── i18n/
 │   │   ├── index.ts           # i18next configuration
 │   │   ├── en.ts              # English translations
 │   │   └── es.ts              # Spanish translations
 │   ├── lib/
-│   │   └── seo.ts             # SEO utilities (meta, Schema.org, agent SEO)
+│   │   ├── r2-storage.ts      # R2 storage abstraction
+│   │   ├── prefillProperty.ts # AI prefill (Edge Function client)
+│   │   └── seo.ts             # SEO utilities
 │   └── pages/
 │       ├── Home.tsx           # SEO: Home page
 │       ├── Properties.tsx     # SEO: Properties list
 │       ├── PropertyDetail.tsx # SEO: Property detail
-│       ├── Dashboard.tsx      # Agent dashboard (tabs: overview, properties, profile, billing, ai-tools)
-│       ├── AgentProfile.tsx   # Public agent profile page (with Schema.org)
+│       ├── Dashboard.tsx      # Agent dashboard
+│       ├── AgentProfile.tsx   # Public agent profile page
 │       └── OnboardingPage.tsx # New user onboarding
 ├── DEPLOYMENT.md              # Deployment guide
 ├── ARCHITECTURE.md            # This file
 ├── PROJECT_PLAN.md            # Project roadmap and phases
 ├── DATABASE_SCHEMA.md         # Database documentation
+├── MIGRATION_PLAN.md          # R2/Edge Functions migration
 └── vercel.json               # Vercel configuration
 ```
 

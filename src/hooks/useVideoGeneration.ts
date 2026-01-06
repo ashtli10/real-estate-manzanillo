@@ -1,6 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../integrations/supabase/client';
 
+// Use Supabase Edge Function for video generation
+// VITE_SUPABASE_FUNCTIONS_URL is required - old Vercel routes have been deleted
+const getVideoEndpointUrl = (): string => {
+  const functionsUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
+  if (!functionsUrl) {
+    throw new Error('VITE_SUPABASE_FUNCTIONS_URL is not configured');
+  }
+  return `${functionsUrl}/video-generation`;
+};
+
 // Job status types
 export type VideoJobStatus = 
   | 'pending' 
@@ -248,13 +258,17 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
         return false;
       }
 
-      const response = await fetch('/api/video/generate-images', {
+      // Use Edge Function (required)
+      const endpoint = getVideoEndpointUrl();
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
+          action: 'generate-images', // For Edge Function
           propertyId,
           selectedImages,
           notes,
@@ -308,13 +322,19 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
         return false;
       }
 
-      const response = await fetch('/api/video/approve-images', {
+      // Use Edge Function (required)
+      const endpoint = getVideoEndpointUrl();
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ jobId }),
+        body: JSON.stringify({ 
+          action: 'approve-images', // For Edge Function
+          jobId 
+        }),
       });
 
       const data = await response.json();
@@ -355,13 +375,17 @@ export function useVideoGeneration(userId: string | undefined): UseVideoGenerati
         return false;
       }
 
-      const response = await fetch('/api/video/approve-script', {
+      // Use Edge Function (required)
+      const endpoint = getVideoEndpointUrl();
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ 
+          action: 'approve-script', // For Edge Function
           jobId,
           script: editedScript,
         }),

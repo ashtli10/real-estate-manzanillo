@@ -1,0 +1,30 @@
+{
+  "name": "ffmpeg-processor",
+  "version": "1.0.0",
+  "description": "FFmpeg video processor for Cloudflare Containers - generates thumbnails and GIF previews",
+  "main": "src/worker.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [
+    "ffmpeg",
+    "video",
+    "thumbnail",
+    "gif",
+    "cloudflare",
+    "containers"
+  ],
+  "author": "Habitex",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260103.0",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "wrangler": "^4.54.0"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.0.31"
+  }
+}

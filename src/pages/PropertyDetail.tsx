@@ -101,6 +101,7 @@ import { transformProperty } from '../lib/propertyTransform';
 import { buildWhatsappUrl } from '../lib/whatsapp';
 import { updateMetaTags, getPropertySEO } from '../lib/seo';
 import { Breadcrumb } from '../components/Breadcrumb';
+import { getThumbnailUrl, getPreviewUrl } from '../lib/r2-storage';
 
 const FALLBACK_IMAGE_URL = 'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg?auto=compress&cs=tinysrgb&w=1600';
 type MediaItem = { type: 'image' | 'video'; url: string };
@@ -367,7 +368,21 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
     ...images.map<MediaItem>((url) => ({ type: 'image', url })),
     ...videos.map<MediaItem>((url) => ({ type: 'video', url })),
   ];
-  const videoPoster = propertyImages[0] ?? FALLBACK_IMAGE_URL;
+  const fallbackPoster = propertyImages[0] ?? FALLBACK_IMAGE_URL;
+
+  // Helper to get video thumbnail - uses R2-generated thumbnails for R2 URLs
+  const getVideoThumbnailUrl = (videoUrl: string): string => {
+    if (videoUrl.includes('/users/')) {
+      try {
+        const url = new URL(videoUrl);
+        const path = url.pathname.slice(1).replace(/\.[^.]+$/, '');
+        return getThumbnailUrl(path);
+      } catch {
+        return fallbackPoster;
+      }
+    }
+    return fallbackPoster;
+  };
 
   useEffect(() => {
     setCurrentMediaIndex(0);
@@ -550,7 +565,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                     <video
                       key={mediaItems[currentMediaIndex]?.url}
                       src={mediaItems[currentMediaIndex]?.url}
-                      poster={videoPoster}
+                      poster={getVideoThumbnailUrl(mediaItems[currentMediaIndex]?.url)}
                       className="h-full w-full object-contain"
                       controls
                       controlsList="nodownload"
@@ -608,7 +623,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                           ) : (
                             <div className="w-full h-full relative">
                               <img
-                                src={videoPoster}
+                                src={getVideoThumbnailUrl(item.url)}
                                 alt={`${t('propertyDetail.videoThumbnail')} ${index + 1}`}
                                 className="w-full h-full object-cover"
                               />
@@ -913,7 +928,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
             ? {
                 type: 'video' as const,
                 sources: [{ src: item.url, type: 'video/mp4' }],
-                poster: videoPoster,
+                poster: getVideoThumbnailUrl(item.url),
               }
             : { src: item.url, alt: property.title }
         )}

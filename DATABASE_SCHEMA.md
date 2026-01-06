@@ -1,6 +1,6 @@
 # 🗄️ Database Schema Documentation
 
-**Last Edited: 2026-01-04**
+**Last Edited: 2026-01-06**
 
 > **Note:** The `tour_generation_jobs` table has been removed. Run the SQL at the end of this file to drop it from your database.
 
@@ -100,6 +100,9 @@ Stores agent/user profile information including contact details and settings.
 - ✅ Users can view/update own profile
 - ✅ Admins can view/update/delete all profiles
 - ❌ Only user can insert their own profile
+
+**Triggers:**
+- `on_user_delete` - Cleans up all R2 storage files for user via Edge Function (pg_net)
 
 **Indexes:**
 - `idx_profiles_username`
@@ -286,6 +289,8 @@ Property listings with full details.
 - `characteristics` (JSONB) - Property features
 - `custom_bonuses` (JSONB)
 - `is_featured`, `display_order`
+- `image_count` (INT, DEFAULT 0) - Number of images uploaded (max 50)
+- `video_count` (INT, DEFAULT 0) - Number of videos uploaded (max 3)
 
 **RLS Policies:**
 - ✅ **Public can view active properties** IF:
@@ -299,6 +304,7 @@ Property listings with full details.
 **Triggers:**
 - `generate_property_slug()` - Auto-generates slug from title + type + random suffix
 - `update_properties_updated_at()` - Auto-updates updated_at on changes
+- `on_property_delete` - Cleans up R2 storage files via Edge Function (pg_net)
 
 **Indexes:**
 - `idx_properties_user_id`
@@ -326,6 +332,7 @@ Persistent storage for property form drafts, allowing users to save progress and
 - `form_data` (JSONB) - Complete form state as PropertyInsert
 - `current_step` (TEXT) - Current wizard step ('basic', 'price', 'location', etc.)
 - `ai_text` (TEXT, NULLABLE) - AI prefill input text
+- `uploaded_files` (TEXT[], DEFAULT '{}') - R2 file paths for cleanup on draft deletion
 - `created_at`, `updated_at` (TIMESTAMPTZ)
 
 **Unique Constraint:**
@@ -340,6 +347,7 @@ Persistent storage for property form drafts, allowing users to save progress and
 
 **Triggers:**
 - `trigger_update_property_drafts_updated_at` - Auto-updates updated_at on changes
+- `on_draft_delete` - Cleans up uploaded R2 files via Edge Function (pg_net)
 
 **Helper Functions:**
 - `cleanup_old_property_drafts()` - Deletes drafts older than 7 days
@@ -383,6 +391,7 @@ Tracks AI video generation jobs with status, generated images, scripts, and fina
 
 **Triggers:**
 - `trigger_update_video_generation_jobs_updated_at` - Auto-updates updated_at on changes
+- `on_video_job_delete` - Cleans up R2 storage files via Edge Function (pg_net)
 
 **Indexes:**
 - `idx_video_generation_jobs_user_id`
@@ -498,6 +507,30 @@ File storage for AI-generated video assets with user-scoped access.
     - Triggers for profiles, subscriptions, credits, properties
     - Auto-updates `updated_at` timestamp
 
+### Storage Cleanup Functions (pg_net)
+
+These functions are used by AFTER DELETE triggers to clean up R2 storage when entities are deleted. They use the `pg_net` extension for async HTTP calls to Edge Functions.
+
+11. **`get_supabase_url()`**
+    - Retrieves Supabase project URL from vault
+    - Used by cleanup triggers for Edge Function calls
+
+12. **`trigger_cleanup_property_files()`**
+    - Called by `on_property_delete` trigger
+    - Cleans up: `users/{user_id}/properties/{property_id}/*`
+
+13. **`trigger_cleanup_video_job_files()`**
+    - Called by `on_video_job_delete` trigger
+    - Cleans up: `users/{user_id}/ai-jobs/{job_id}/*`
+
+14. **`trigger_cleanup_user_files()`**
+    - Called by `on_user_delete` trigger
+    - Cleans up: `users/{user_id}/*` (entire user folder)
+
+15. **`trigger_cleanup_draft_files()`**
+    - Called by `on_draft_delete` trigger
+    - Cleans up specific files listed in `uploaded_files` array
+
 ---
 
 ## 📊 Dashboard Statistics Function
@@ -588,7 +621,7 @@ All optimized with appropriate indexes.
 
 ## ✅ Migration Summary
 
-**Total Migrations Applied:** 32
+**Total Migrations Applied:** 45
 
 **Key Migrations:**
 1. `create_performance_indexes` - 30+ indexes for fast queries
@@ -596,6 +629,13 @@ All optimized with appropriate indexes.
 3. `rebuild_*_rls_policies` - 8 migrations rebuilding RLS policies
 4. `create_update_triggers` - Auto-update timestamps
 5. `remove_analytics_tables` - Removed property_views and property_leads tables
+
+**Phase 4 Migrations (January 6, 2026):**
+1. `enable_pg_net_extension` - Enable async HTTP for triggers
+2. `add_file_count_columns_to_properties` - Add image_count, video_count
+3. `add_uploaded_files_to_property_drafts` - Track draft file uploads
+4. `create_storage_cleanup_trigger_functions` - R2 cleanup functions
+5. `create_storage_cleanup_triggers` - 4 AFTER DELETE triggers
 
 ---
 
@@ -606,23 +646,36 @@ All optimized with appropriate indexes.
 - ✅ Strict RLS policies in place
 - ✅ Performance indexes added
 - ✅ Helper functions and triggers active
+- ✅ Storage cleanup triggers (pg_net) ready
 
-### Application Development (Pending)
-1. **Stripe Webhook Integration**
-   - Handle subscription lifecycle events
-   - Update subscriptions table via admin role
-   - Process credit purchases
+### Edge Functions ✅ COMPLETE (Phase 5)
+- ✅ `storage-cleanup` - R2 folder deletion via S3 API
+- ✅ `properties` - Public property listing with filters
+- ✅ `ai-prefill` - AI property form prefill (2 credits)
+- ✅ `video-generation` - AI video pipeline (unified endpoint)
 
-2. **Frontend Implementation**
-   - Public property listing with filters
-   - Agent dashboard
-   - Credit management UI
+### Frontend ✅ COMPLETE (Phase 6)
+- ✅ ImageUpload.tsx - R2 storage with sequence-based naming
+- ✅ VideoUpload.tsx - R2 storage with thumbnail/preview display
+- ✅ ProfileSettings.tsx - R2 avatar upload
+- ✅ PropertyDetail.tsx - R2 video thumbnails
+- ✅ Dashboard.tsx - Cleanup via DB triggers
+- ✅ All hooks use Edge Function URLs with Vercel fallback
 
-3. **Edge Functions** (None yet)
-   - Stripe webhook handler
-   - Email notifications
-   - Image processing/optimization
-   - AI video generation (future)
+### Remaining Work (Phase 7+)
+1. **Vercel Cleanup**
+   - Remove old API routes (properties, prefill, video/*)
+   - Keep Stripe webhooks and sitemap
+   - Enhance sitemap with agent profiles
+
+2. **Edge Function Deployment**
+   - Deploy functions to Supabase
+   - Configure secrets (N8N_*, R2_*)
+   - Test with live requests
+
+3. **Integration Testing**
+   - Full end-to-end flow testing
+   - n8n webhook updates
 
 ---
 
@@ -675,10 +728,11 @@ SELECT deduct_credits(
 
 ---
 
-**Last Updated:** January 4, 2026  
+**Last Updated:** January 6, 2026  
 **Database Version:** PostgreSQL 14.1 (Supabase)  
 **Status:** ✅ Production Ready  
 **Total RLS Policies:** 39 (35 table policies + 4 storage policies)
+**Storage:** Cloudflare R2 with cleanup triggers via pg_net
 
 ---
 

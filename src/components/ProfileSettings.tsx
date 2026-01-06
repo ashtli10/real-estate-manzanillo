@@ -18,6 +18,14 @@ import { supabase } from '../integrations/supabase/client';
 import type { Profile, ProfileUpdate } from '../types/user';
 import { isValidUsername, formatUsernameError } from '../types/user';
 import { validatePhoneNumber, formatPhoneAsYouType, formatPhoneDisplay, normalizePhoneNumber } from '../lib/whatsapp';
+import {
+  uploadAvatar,
+  getProfileAvatarPath,
+  getPublicUrl,
+  isValidImageType,
+  validateFileSize,
+  STORAGE_LIMITS,
+} from '../lib/r2-storage';
 
 interface ProfileSettingsProps {
   userId: string;
@@ -137,15 +145,15 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
     const file = event.target.files?.[0];
     if (!file || !userId) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Solo se permiten imágenes');
+    // Validate file type using R2 storage utilities
+    if (!isValidImageType(file)) {
+      setError('Solo se permiten imágenes (JPG, PNG, WEBP)');
       return;
     }
 
     // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('La imagen no puede ser mayor a 5MB');
+    if (!validateFileSize(file, STORAGE_LIMITS.MAX_IMAGE_SIZE_MB)) {
+      setError(`La imagen no puede ser mayor a ${STORAGE_LIMITS.MAX_IMAGE_SIZE_MB}MB`);
       return;
     }
 
@@ -153,27 +161,15 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
     setError(null);
 
     try {
-      // Generate unique filename
-      const ext = file.name.split('.').pop();
-      const fileName = `${userId}-${Date.now()}.${ext}`;
-      const filePath = `profiles/${fileName}`;
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No hay sesión activa');
+      }
 
-      // Upload to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('properties')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true,
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('properties')
-        .getPublicUrl(filePath);
-
-      const imageUrl = urlData.publicUrl;
+      // Upload to R2 using the avatar upload function
+      const result = await uploadAvatar(userId, file, session.access_token);
+      const imageUrl = result.url;
 
       // Update profile with new image URL
       const { data, error: updateError } = await supabase

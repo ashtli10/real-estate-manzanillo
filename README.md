@@ -1,6 +1,6 @@
 # Habitex Real Estate Platform
 
-**Last Updated: 2026-01-04**
+**Last Updated: 2026-01-06**
 
 ## Overview
 
@@ -48,7 +48,8 @@ Habitex is a real estate marketplace platform for agents in Mexico, built with R
 
 - **Supabase PostgreSQL** with strict Row Level Security (RLS)
 - Key tables: `profiles`, `user_roles`, `invitation_tokens`, `subscriptions`, `credits`, `credit_transactions`, `audit_logs`, `properties`, `property_drafts`, `video_generation_jobs`
-- Storage buckets: `properties` (public images), `jobs` (AI assets)
+- Storage: Cloudflare R2 bucket `habitex` with user-scoped folders
+- Media processing: Auto-generated thumbnails and GIF previews via Workers
 - Helper functions for credit management, subscription status, and invitations
 
 ---
@@ -65,9 +66,11 @@ Habitex is a real estate marketplace platform for agents in Mexico, built with R
 ## 🛠️ Tech Stack
 
 - **Frontend:** React, Vite, TypeScript, Tailwind CSS
-- **Backend:** Supabase (DB, Auth, Storage, Realtime)
+- **Backend:** Supabase (DB, Auth, Edge Functions, Realtime)
+- **Storage:** Cloudflare R2 (images, videos, AI assets)
+- **Media Processing:** Cloudflare Workers + Containers (FFmpeg)
 - **Payments:** Stripe
-- **Hosting:** Vercel
+- **Hosting:** Vercel (frontend + Stripe webhooks)
 - **Maps:** Google Maps API
 - **i18n:** react-i18next
 
@@ -76,10 +79,12 @@ Habitex is a real estate marketplace platform for agents in Mexico, built with R
 ## 📦 Project Structure
 
 - `/src` - Main app code (components, hooks, pages, lib, i18n)
-- `/api` - Serverless API routes (properties, stripe, video, prefill)
+- `/api` - Vercel serverless routes (Stripe webhooks only)
+- `/supabase/functions` - Edge Functions (properties, ai-prefill, video-generation, storage-cleanup)
+- `/workers` - Cloudflare Workers (r2-auth, media-processor)
+- `/containers` - Cloudflare Containers (ffmpeg-processor)
+- `/cloudflare` - R2 configuration files
 - `/public` - Static assets (branding, robots.txt, manifest)
-- `/test` - Test setup and utilities
-- `/docs` - Architecture, database schema, and project plan
 
 ---
 

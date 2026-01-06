@@ -1,52 +1,92 @@
 import { useState, useCallback } from 'react';
 import { Upload, X, Video as VideoIcon, Loader2, Play } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
+import {
+  uploadPropertyVideo,
+  deleteFile,
+  getNextVideoSequence,
+  getPropertyVideoUrl,
+  getThumbnailUrl,
+  getPreviewUrl,
+  isValidVideoType,
+  validateFileSize,
+  STORAGE_LIMITS,
+  type UploadProgress,
+} from '../../lib/r2-storage';
 
 interface VideoUploadProps {
   videos: string[];
   onChange: (videos: string[]) => void;
   maxVideos?: number;
+  propertyId?: string;
+  userId?: string;
 }
 
-const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50MB safety cap for uploads
-
-export function VideoUpload({ videos, onChange, maxVideos = 5 }: VideoUploadProps) {
+export function VideoUpload({ videos, onChange, maxVideos = 3, propertyId, userId }: VideoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  // Track sequence numbers from existing videos (for R2 path structure)
+  const existingSequences = videos.map((url) => {
+    // Extract sequence from URL like: .../videos/001.mp4
+    const match = url.match(/\/videos\/(\d{3})\./);
+    return match ? match[1] : null;
+  }).filter((seq): seq is string => seq !== null);
 
   const uploadVideo = async (file: File): Promise<string | null> => {
-    if (!file.type.startsWith('video/')) {
-      alert('Solo se permiten videos');
+    // Validate file type
+    if (!isValidVideoType(file)) {
+      alert('Solo se permiten videos (MP4, MOV, WEBM)');
       return null;
     }
 
-    if (file.size > MAX_SIZE_BYTES) {
-      alert('El video no puede ser mayor a 50MB');
+    // Validate file size (max 50MB)
+    if (!validateFileSize(file, STORAGE_LIMITS.MAX_VIDEO_SIZE_MB)) {
+      alert(`El video no puede ser mayor a ${STORAGE_LIMITS.MAX_VIDEO_SIZE_MB}MB`);
       return null;
     }
 
-    const ext = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-    const filePath = `properties/videos/${fileName}`;
+    // Get auth token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      alert('Debes iniciar sesión para subir videos');
+      return null;
+    }
 
-    const { error } = await supabase.storage
-      .from('properties')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false,
-      });
+    // Determine user and property IDs
+    const effectiveUserId = userId || session.user.id;
+    const effectivePropertyId = propertyId || 'temp-' + Date.now();
 
-    if (error) {
+    try {
+      // Get next available sequence number
+      const nextSeq = await getNextVideoSequence(effectiveUserId, effectivePropertyId, existingSequences);
+      
+      // Upload to R2
+      const result = await uploadPropertyVideo(
+        effectiveUserId,
+        effectivePropertyId,
+        nextSeq,
+        file,
+        session.access_token,
+        (progress: UploadProgress) => {
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: progress.percentage
+          }));
+        }
+      );
+
+      // Add the new sequence to our tracking
+      existingSequences.push(String(nextSeq).padStart(3, '0'));
+      
+      return result.url;
+    } catch (error) {
       console.error('Error uploading video:', error);
       alert('Error al subir el video');
       return null;
     }
-
-    const { data: urlData } = supabase.storage
-      .from('properties')
-      .getPublicUrl(filePath);
-
-    return urlData.publicUrl;
   };
 
   const handleFileSelect = async (files: FileList | null) => {
@@ -86,10 +126,64 @@ export function VideoUpload({ videos, onChange, maxVideos = 5 }: VideoUploadProp
     setDragOver(false);
   }, []);
 
-  const removeVideo = (index: number) => {
+  const removeVideo = async (index: number) => {
+    const videoUrl = videos[index];
+    
+    // Try to delete from R2 storage (including thumbnail and preview)
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token && videoUrl.includes('/users/')) {
+        // Extract the path from the URL (everything after the domain)
+        const url = new URL(videoUrl);
+        const path = url.pathname.slice(1); // Remove leading /
+        
+        // Delete the video file
+        await deleteFile(path, session.access_token);
+        
+        // Also try to delete associated thumbnail and preview
+        const basePath = path.replace(/\.[^.]+$/, '');
+        await deleteFile(`${basePath}.thumb.jpg`, session.access_token).catch(() => {});
+        await deleteFile(`${basePath}.preview.gif`, session.access_token).catch(() => {});
+      }
+    } catch (error) {
+      console.error('Error deleting video from storage:', error);
+      // Continue with removal from array even if storage delete fails
+    }
+    
     const nextVideos = [...videos];
     nextVideos.splice(index, 1);
     onChange(nextVideos);
+  };
+
+  // Get thumbnail URL for a video (auto-generated by media processor)
+  const getVideoThumbnail = (videoUrl: string): string => {
+    // For R2 URLs, use the auto-generated thumbnail
+    if (videoUrl.includes('/users/')) {
+      try {
+        const url = new URL(videoUrl);
+        const path = url.pathname.slice(1).replace(/\.[^.]+$/, '');
+        return getThumbnailUrl(path);
+      } catch {
+        return '';
+      }
+    }
+    // Fallback for old Supabase URLs - use video element poster
+    return '';
+  };
+
+  // Get preview GIF URL for a video (auto-generated by media processor)
+  const getVideoPreview = (videoUrl: string): string => {
+    // For R2 URLs, use the auto-generated preview
+    if (videoUrl.includes('/users/')) {
+      try {
+        const url = new URL(videoUrl);
+        const path = url.pathname.slice(1).replace(/\.[^.]+$/, '');
+        return getPreviewUrl(path);
+      } catch {
+        return '';
+      }
+    }
+    return '';
   };
 
   const moveVideo = (fromIndex: number, toIndex: number) => {
@@ -144,49 +238,92 @@ export function VideoUpload({ videos, onChange, maxVideos = 5 }: VideoUploadProp
 
       {videos.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {videos.map((url, index) => (
-            <div key={url} className="relative group rounded-lg overflow-hidden bg-muted aspect-video">
-              <video src={url} className="w-full h-full object-cover" controls preload="metadata" />
-
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
-                {index > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => moveVideo(index, index - 1)}
-                    className="p-2 bg-white rounded-full text-foreground hover:bg-gray-100"
-                    title="Mover arriba"
-                  >
-                    Prev
-                  </button>
+          {videos.map((url, index) => {
+            const thumbnailUrl = getVideoThumbnail(url);
+            const previewUrl = getVideoPreview(url);
+            const isHovered = hoveredIndex === index;
+            
+            return (
+              <div 
+                key={url} 
+                className="relative group rounded-lg overflow-hidden bg-muted aspect-video"
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              >
+                {/* Show thumbnail/preview or video */}
+                {thumbnailUrl ? (
+                  <>
+                    {/* Show animated preview on hover, thumbnail otherwise */}
+                    {isHovered && previewUrl ? (
+                      <img 
+                        src={previewUrl} 
+                        alt={`Video ${index + 1} preview`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img 
+                        src={thumbnailUrl} 
+                        alt={`Video ${index + 1} thumbnail`}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    {/* Play icon overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center">
+                        <Play className="h-8 w-8 text-white fill-white ml-1" />
+                      </div>
+                    </div>
+                    {/* Click to play video in modal/lightbox could go here */}
+                  </>
+                ) : (
+                  <video 
+                    src={url} 
+                    className="w-full h-full object-cover" 
+                    controls 
+                    preload="metadata" 
+                  />
                 )}
-                <button
-                  type="button"
-                  onClick={() => removeVideo(index)}
-                  className="p-2 bg-destructive text-destructive-foreground rounded-full hover:opacity-90"
-                  title="Eliminar"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-                {index < videos.length - 1 && (
+
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
+                  {index > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => moveVideo(index, index - 1)}
+                      className="p-2 bg-white rounded-full text-foreground hover:bg-gray-100"
+                      title="Mover arriba"
+                    >
+                      Prev
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => moveVideo(index, index + 1)}
-                    className="p-2 bg-white rounded-full text-foreground hover:bg-gray-100"
-                    title="Mover abajo"
+                    onClick={() => removeVideo(index)}
+                    className="p-2 bg-destructive text-destructive-foreground rounded-full hover:opacity-90"
+                    title="Eliminar"
                   >
-                    Next
+                    <X className="h-4 w-4" />
                   </button>
+                  {index < videos.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => moveVideo(index, index + 1)}
+                      className="p-2 bg-white rounded-full text-foreground hover:bg-gray-100"
+                      title="Mover abajo"
+                    >
+                      Next
+                    </button>
+                  )}
+                </div>
+
+                {index === 0 && (
+                  <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
+                    <Play className="h-3 w-3" />
+                    Principal
+                  </div>
                 )}
               </div>
-
-              {index === 0 && (
-                <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded flex items-center gap-1">
-                  <Play className="h-3 w-3" />
-                  Principal
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

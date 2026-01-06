@@ -1191,13 +1191,23 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
           const { data: { session } } = await supabase.auth.getSession();
           if (!session?.access_token) return;
 
-          const response = await fetch('/api/video/check-job-status', {
+          // Use Edge Function for job status check
+          const functionsUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
+          if (!functionsUrl) {
+            console.error('VITE_SUPABASE_FUNCTIONS_URL is not configured');
+            return;
+          }
+
+          const response = await fetch(`${functionsUrl}/video-generation`, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${session.access_token}`
             },
-            body: JSON.stringify({ jobId: currentJob.id }),
+            body: JSON.stringify({ 
+              action: 'check-job-status',
+              jobId: currentJob.id 
+            }),
           });
           
           if (response.ok) {

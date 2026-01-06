@@ -10,6 +10,7 @@ interface PropertyDraft {
   form_data: PropertyInsert;
   current_step: string;
   ai_text: string | null;
+  uploaded_files: string[]; // R2 file paths for cleanup on draft deletion
   created_at: string;
   updated_at: string;
 }

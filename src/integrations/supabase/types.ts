@@ -221,6 +221,7 @@ export type Database = {
           description: string | null
           display_order: number | null
           id: string
+          image_count: number
           images: string[] | null
           is_featured: boolean | null
           is_for_rent: boolean | null
@@ -241,6 +242,7 @@ export type Database = {
           title: string
           updated_at: string | null
           user_id: string
+          video_count: number
           videos: string[] | null
         }
         Insert: {
@@ -251,6 +253,7 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           id?: string
+          image_count?: number
           images?: string[] | null
           is_featured?: boolean | null
           is_for_rent?: boolean | null
@@ -271,6 +274,7 @@ export type Database = {
           title: string
           updated_at?: string | null
           user_id: string
+          video_count?: number
           videos?: string[] | null
         }
         Update: {
@@ -281,6 +285,7 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           id?: string
+          image_count?: number
           images?: string[] | null
           is_featured?: boolean | null
           is_for_rent?: boolean | null
@@ -301,6 +306,7 @@ export type Database = {
           title?: string
           updated_at?: string | null
           user_id?: string
+          video_count?: number
           videos?: string[] | null
         }
         Relationships: []
@@ -314,6 +320,7 @@ export type Database = {
           id: string
           property_id: string | null
           updated_at: string
+          uploaded_files: string[]
           user_id: string
         }
         Insert: {
@@ -324,6 +331,7 @@ export type Database = {
           id?: string
           property_id?: string | null
           updated_at?: string
+          uploaded_files?: string[]
           user_id: string
         }
         Update: {
@@ -334,6 +342,7 @@ export type Database = {
           id?: string
           property_id?: string | null
           updated_at?: string
+          uploaded_files?: string[]
           user_id?: string
         }
         Relationships: [

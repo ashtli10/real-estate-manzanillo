@@ -1,6 +1,6 @@
 # 🏠 Habitex - Complete Platform Plan
 
-**Last Edited: 2026-01-04**
+**Last Edited: 2026-01-06**
 
 > **Habitex** - A marketplace platform for real estate agents in Mexico
 
@@ -497,10 +497,12 @@ User only edits the `dialogue` field; `action` and `emotion` are AI-generated.
 | Frontend | React + Vite + TypeScript |
 | Styling | Tailwind CSS |
 | State | React Context + Hooks |
-| Backend | Supabase (Database, Auth, Storage, Realtime) |
+| Backend | Supabase (Database, Auth, Edge Functions, Realtime) |
+| Storage | Cloudflare R2 (CDN, auto-variants) |
+| Media Processing | Cloudflare Workers + Containers (FFmpeg) |
 | Payments | Stripe (Subscriptions, Credits) |
 | Maps | Google Maps API |
-| Hosting | Vercel |
+| Hosting | Vercel (frontend + Stripe webhooks) |
 | i18n | react-i18next |
 
 ---
@@ -575,4 +577,4 @@ Payment Fails → Properties Hidden → Login → "Renew" Prompt → Pay → Res
 
 ---
 
-*Last Updated: June 24, 2025*
+*Last Updated: January 6, 2026*

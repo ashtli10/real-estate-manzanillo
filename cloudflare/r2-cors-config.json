@@ -1,0 +1,14 @@
+[
+  {
+    "AllowedOrigins": [
+      "https://habitex.mx",
+      "https://www.habitex.mx",
+      "https://manzanillo-real-estate.com",
+      "https://www.manzanillo-real-estate.com"
+    ],
+    "AllowedMethods": ["GET", "PUT", "DELETE", "HEAD"],
+    "AllowedHeaders": ["Content-Type", "Authorization", "X-Requested-With"],
+    "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"],
+    "MaxAgeSeconds": 3600
+  }
+]

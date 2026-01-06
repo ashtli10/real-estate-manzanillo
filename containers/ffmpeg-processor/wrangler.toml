@@ -1,0 +1,34 @@
+name = "ffmpeg-processor"
+main = "src/worker.ts"
+compatibility_date = "2024-12-01"
+
+# Container configuration - runs FFmpeg for video/image processing
+# Included in Workers Paid plan ($5/month)
+# Free tier: 375 vCPU-min/mo, 25 GiB-hours/mo, 200 GB-hours/mo
+[[containers]]
+class_name = "FFmpegProcessor"
+image = "./Dockerfile"
+max_instances = 5
+instance_type = "lite"  # 256 MiB RAM, 2 GB disk
+image_vars = { R2_PUBLIC_URL = "https://storage.manzanillo-real-estate.com", R2_BUCKET = "habitex" }
+
+# Durable Object binding
+[[durable_objects.bindings]]
+name = "FFMPEG_CONTAINER"
+class_name = "FFmpegProcessor"
+
+# Migration for Durable Object
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["FFmpegProcessor"]
+
+# R2 bucket binding for reading videos and writing thumbnails
+[[r2_buckets]]
+binding = "HABITEX_BUCKET"
+bucket_name = "habitex"
+
+[vars]
+ENVIRONMENT = "production"
+
+[observability]
+enabled = true

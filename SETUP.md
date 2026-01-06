@@ -20,8 +20,10 @@ Habitex is a modern, responsive real estate website built for showcasing propert
 
 - **Frontend**: React + TypeScript + Vite
 - **Styling**: Tailwind CSS
-- **Backend**: Supabase (Database, Authentication, Storage)
-- **Hosting**: Vercel (Serverless Functions)
+- **Backend**: Supabase (Database, Authentication, Edge Functions)
+- **Storage**: Cloudflare R2 (images, videos with auto-generated thumbnails)
+- **Media Processing**: Cloudflare Workers + Containers (FFmpeg)
+- **Hosting**: Vercel (Frontend + Stripe Webhooks)
 - **Icons**: Lucide React
 - **SEO**: JSON-LD Structured Data (Schema.org)
 
@@ -156,11 +158,24 @@ After logging in, admins can:
 
 For best results with property images:
 
-1. **Use high-quality images** from Pexels or similar stock photo sites
-2. **Recommended resolution**: 1600x1000 or higher
-3. **First image** is used as the main thumbnail
-4. **Multiple images** create a gallery on the detail page
-5. **Example URL format**: `https://images.pexels.com/photos/[ID]/pexels-photo-[ID].jpeg?auto=compress&cs=tinysrgb&w=1600`
+1. **Use high-quality images** (PNG, JPG, or WEBP)
+2. **Maximum file size**: 5MB per image
+3. **Maximum images**: 50 per property
+4. **First image** in the array is used as the main thumbnail
+5. **Auto-generated variants**: 
+   - `.thumb.jpg` (160x160) - Grid thumbnails
+   - `.medium.jpg` (800x600) - Card previews
+6. **Reordering** does NOT rename files - array order controls display
+7. **Sequence numbers** (001, 002, etc.) are unique identifiers, not positions
+
+### Video Guidelines
+
+1. **Maximum file size**: 50MB per video
+2. **Maximum videos**: 3 per property
+3. **Supported formats**: MP4, MOV, WEBM
+4. **Auto-generated assets**:
+   - `.thumb.jpg` (480x270) - Poster image
+   - `.preview.gif` (3 seconds) - Hover preview
 
 ## Customization Tips
 
@@ -209,7 +224,7 @@ For issues or questions:
 
 ### Real-Time Updates
 - **Live Property Data**: Properties update automatically when changes are made in the database
-- **API Endpoint**: `/api/properties` provides real-time property data with filtering
+- **Supabase Edge Functions**: API endpoints for properties, AI prefill, and video generation
 - **WebSocket Subscriptions**: Automatic updates without page refresh
 
 ### SEO Testing
