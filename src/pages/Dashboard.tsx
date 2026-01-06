@@ -56,6 +56,7 @@ function getInitialTab(): DashboardTab {
 
 export function Dashboard({ onNavigate }: DashboardProps) {
   const { user, isAdmin, loading: authLoading, signOut } = useAuth();
+  const userId = user?.id;
   const [activeTab, setActiveTab] = useState<DashboardTab>(getInitialTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
@@ -65,19 +66,19 @@ export function Dashboard({ onNavigate }: DashboardProps) {
     isPastDue,
     getStatusMessage,
     canAccessDashboard,
-  } = useSubscription(user?.id);
+  } = useSubscription(userId);
   
   const {
     totalCredits,
     freeCredits,
     paidCredits,
-  } = useCredits(user?.id);
+  } = useCredits(userId);
 
   // Use dashboard stats hook
   const {
     stats: dashboardStats,
     loading: loadingStats,
-  } = useDashboardStats(user?.id);
+  } = useDashboardStats(userId);
   
   // Data state
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -145,7 +146,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   }, [user, authLoading, onNavigate]);
 
   useEffect(() => {
-    if (user) {
+    if (userId) {
       loadUserData();
       loadProperties();
       // Load invitations only for admins
@@ -153,7 +154,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
         loadInvitations();
       }
     }
-  }, [user, isAdmin]);
+  }, [userId, isAdmin]);
 
   const loadUserData = async () => {
     if (!user) return;
@@ -784,7 +785,7 @@ export function Dashboard({ onNavigate }: DashboardProps) {
                     <h3 className="font-bold text-foreground text-lg">Generador de Videos con IA</h3>
                     <p className="text-muted-foreground mt-1">
                       Crea videos profesionales de tus propiedades con inteligencia artificial. 
-                      Próximamente disponible.
+                      Ahorra tiempo y destaca en el mercado inmobiliario.
                     </p>
                     <button 
                       onClick={() => setActiveTab('ai-tools')}

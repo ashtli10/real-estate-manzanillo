@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import type { Profile, Subscription } from '../types/user';
@@ -14,22 +14,34 @@ export function useAuth() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAgent, setIsAgent] = useState(false);
   const [loading, setLoading] = useState(true);
+  const lastLoadedUserId = useRef<string | null>(null);
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
       (_event: AuthChangeEvent, newSession: Session | null) => {
+        const newUserId = newSession?.user?.id ?? null;
+
         setSession(newSession);
         setUser(newSession?.user ?? null);
-        
-        // Check roles with setTimeout to avoid deadlock
-        if (newSession?.user) {
-          setTimeout(() => {
-            loadUserData(newSession.user.id);
-          }, 0);
-        } else {
+
+        if (!newUserId) {
+          lastLoadedUserId.current = null;
           resetUserState();
+          return;
         }
+
+        // Avoid reloading user data on token refreshes for the same user
+        if (lastLoadedUserId.current === newUserId) {
+          return;
+        }
+
+        lastLoadedUserId.current = newUserId;
+
+        // Check roles with setTimeout to avoid deadlock
+        setTimeout(() => {
+          loadUserData(newUserId);
+        }, 0);
       }
     );
 
@@ -39,8 +51,10 @@ export function useAuth() {
       setUser(existingSession?.user ?? null);
       
       if (existingSession?.user) {
+        lastLoadedUserId.current = existingSession.user.id;
         loadUserData(existingSession.user.id);
       } else {
+        lastLoadedUserId.current = null;
         setLoading(false);
       }
     });
@@ -49,6 +63,7 @@ export function useAuth() {
   }, []);
 
   const resetUserState = () => {
+    lastLoadedUserId.current = null;
     setProfile(null);
     setSubscription(null);
     setRole(null);
