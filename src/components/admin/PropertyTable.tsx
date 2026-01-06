@@ -224,17 +224,26 @@ function SortableRow({
 
       {/* Status */}
       <div className="text-center">
-        <button
-          onClick={() => onTogglePublish(property)}
-          className={`p-2 rounded-lg transition-colors ${
-            property.status === 'active'
-              ? 'bg-green-100 text-green-600 hover:bg-green-200'
-              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-          }`}
-          title={property.status === 'active' ? 'Publicado' : 'No publicado'}
-        >
-          {property.status === 'active' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-        </button>
+        {property.status === 'paused' ? (
+          <div
+            className="p-2 rounded-lg bg-amber-100 text-amber-600 cursor-not-allowed"
+            title="Pausado - requiere suscripción activa"
+          >
+            <EyeOff className="h-4 w-4" />
+          </div>
+        ) : (
+          <button
+            onClick={() => onTogglePublish(property)}
+            className={`p-2 rounded-lg transition-colors ${
+              property.status === 'active'
+                ? 'bg-green-100 text-green-600 hover:bg-green-200'
+                : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+            }`}
+            title={property.status === 'active' ? 'Publicado' : 'No publicado'}
+          >
+            {property.status === 'active' ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+          </button>
+        )}
       </div>
 
       {/* Featured */}

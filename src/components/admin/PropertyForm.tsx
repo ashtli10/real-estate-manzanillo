@@ -643,15 +643,21 @@ Ejemplo: Casa de 3 recámaras en Nuevo Salagua, 150m² de construcción, 2 baño
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">Estado</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => updateField('status', e.target.value as PropertyStatus)}
-                  className="input-field"
-                >
-                  {Object.entries(propertyStatusLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
-                  ))}
-                </select>
+                {formData.status === 'paused' ? (
+                  <div className="input-field bg-amber-50 border-amber-300 text-amber-700 cursor-not-allowed">
+                    Pausado (requiere suscripción activa)
+                  </div>
+                ) : (
+                  <select
+                    value={formData.status}
+                    onChange={(e) => updateField('status', e.target.value as PropertyStatus)}
+                    className="input-field"
+                  >
+                    {Object.entries(propertyStatusLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="flex items-end">
                 <label className="flex items-center gap-3 cursor-pointer p-3 border border-border rounded-lg w-full justify-center hover:bg-muted/50 transition-colors">

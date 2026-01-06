@@ -2,17 +2,22 @@
 export type PropertyType = 'casa' | 'departamento' | 'terreno' | 'local' | 'oficina';
 
 // Property status matching the database schema
-export type PropertyStatus = 'draft' | 'pending' | 'active' | 'sold' | 'rented' | 'paused' | 'archived';
+// - draft: Not yet published
+// - active: Published and visible (requires active subscription)
+// - paused: Automatically set when subscription lapses (system-managed)
+export type PropertyStatus = 'draft' | 'active' | 'paused';
 
-// Labels for property status in Spanish
-export const propertyStatusLabels: Record<PropertyStatus, string> = {
+// Labels for property status in Spanish (only user-selectable statuses)
+export const propertyStatusLabels: Record<'draft' | 'active', string> = {
   draft: 'Borrador',
-  pending: 'Pendiente',
   active: 'Activo',
-  sold: 'Vendido',
-  rented: 'Rentado',
+};
+
+// All status labels including system-managed ones (for display purposes)
+export const allPropertyStatusLabels: Record<PropertyStatus, string> = {
+  draft: 'Borrador',
+  active: 'Activo',
   paused: 'Pausado',
-  archived: 'Archivado',
 };
 
 // Characteristic types - some are boolean (yes/no), some are numeric (quantities)

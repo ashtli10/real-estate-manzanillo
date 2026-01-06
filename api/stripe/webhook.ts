@@ -131,6 +131,29 @@ async function handleSubscriptionEvent(
     return { success: false, message: 'Failed to update subscription' };
   }
 
+  // Handle property visibility based on subscription status
+  if (status === 'active' || status === 'trialing') {
+    // Reactivate paused properties when subscription becomes active
+    const { data: reactivatedCount, error: reactivateError } = await supabaseAdmin
+      .rpc('reactivate_user_properties', { p_user_id: userId });
+    
+    if (reactivateError) {
+      console.error('Error reactivating properties:', reactivateError);
+    } else if (reactivatedCount && reactivatedCount > 0) {
+      console.log(`Reactivated ${reactivatedCount} properties for user ${userId}`);
+    }
+  } else if (status === 'canceled' || status === 'past_due' || status === 'paused') {
+    // Pause all active properties when subscription ends
+    const { data: pausedCount, error: pauseError } = await supabaseAdmin
+      .rpc('pause_user_properties', { p_user_id: userId });
+    
+    if (pauseError) {
+      console.error('Error pausing properties:', pauseError);
+    } else if (pausedCount && pausedCount > 0) {
+      console.log(`Paused ${pausedCount} properties for user ${userId}`);
+    }
+  }
+
   // Log to audit
   await supabaseAdmin.from('audit_logs').insert({
     user_id: userId,

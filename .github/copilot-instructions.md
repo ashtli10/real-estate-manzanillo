@@ -21,7 +21,24 @@
 | Tool | Purpose | Example Commands |
 |------|---------|------------------|
 | **Wrangler** | Cloudflare CLI for R2, Workers, D1 | `wrangler r2 bucket list`, `wrangler deploy` |
-| **Supabase CLI** | Database migrations, Edge Functions | `supabase db push`, `supabase functions deploy` |
+| **Supabase CLI** | Database migrations, Edge Functions | `npx supabase db push`, `npx supabase functions deploy` |
+
+### ⚠️ CRITICAL: CLI-Only Policy
+
+**NEVER use MCP tools for Supabase or Cloudflare operations.** Always use CLI commands:
+
+**Supabase (via `npx supabase`):**
+- Create migrations: `npx supabase migration new <name>` → then edit the SQL file
+- Apply migrations: `npx supabase db push`
+- Pull remote schema: `npx supabase db pull`
+- Deploy functions: `npx supabase functions deploy <name>`
+- Mark migration as applied: `npx supabase migration repair --status applied <timestamp>`
+
+**Cloudflare (via `wrangler`):**
+- List R2 buckets: `wrangler r2 bucket list`
+- Apply CORS policies: `wrangler r2 bucket cors set habitex --file cloudflare/r2-cors-config.json`
+- Deploy Workers: `wrangler deploy` (from worker directory)
+- View logs: `wrangler tail`
 
 **Wrangler is installed globally.** Use it to:
 - List/create R2 buckets: `wrangler r2 bucket list`
