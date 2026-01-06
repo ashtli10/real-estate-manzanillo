@@ -11,6 +11,11 @@
 
 ## 🆕 Recent Changes (January 6, 2026)
 
+### Storage Maintenance (Scheduled Cleanup)
+- **Replaced on-delete triggers** with scheduled `storage-maintenance` Edge Function
+- **pg_cron runs daily at 3:00 AM UTC** via `run_storage_maintenance()` function
+- **Benefits**: No race conditions with async media processing, simpler architecture, more reliable
+
 ### Security Improvements
 - **Fixed infinite recursion in RLS policies**: Created `is_admin()` SECURITY DEFINER function to check admin status without triggering RLS on `user_roles` table
 - **All RLS policies updated** to use `is_admin()` instead of self-referencing subqueries
@@ -106,9 +111,6 @@ Stores agent/user profile information including contact details and settings.
 - ✅ Users can view/update own profile
 - ✅ Admins can view/update/delete all profiles
 - ❌ Only user can insert their own profile
-
-**Triggers:**
-- `on_user_delete` - Cleans up all R2 storage files for user via Edge Function (pg_net)
 
 **Indexes:**
 - `idx_profiles_username`

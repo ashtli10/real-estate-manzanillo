@@ -42,8 +42,9 @@
                        │  /properties (public)                      │
                        │   • List/filter active properties          │
                        │                                            │
-                       │  /storage-cleanup (internal)               │
-                       │   • R2 folder deletion via DB triggers     │
+                       │  /storage-maintenance (scheduled)          │
+                       │   • R2 orphaned file cleanup               │
+                       │   • Runs daily at 3:00 AM UTC via pg_cron  │
                        └──────────────────────────────────────────────┘
                                         │
                     ┌───────────────────┴───────────────────┐
@@ -58,11 +59,10 @@
 │  /api/stripe/create-checkout.ts  │   │  • is_admin() - RLS helper   │
 │   • Checkout sessions            │   │  • pause_user_properties()   │
 │                                   │   │  • reactivate_user_props()   │
-│  /api/sitemap.xml.ts             │   │                              │
-│   • Dynamic sitemap              │   │  Triggers:                   │
-└──────────────────────────────────┘   │  • enforce_subscription_*    │
-                                       │  • on_property_delete        │
-                                       │  • on_user_delete            │
+│  /api/sitemap.xml.ts             │   │  • run_storage_maintenance() │
+│   • Dynamic sitemap              │   │                              │
+└──────────────────────────────────┘   │  Scheduled Jobs (pg_cron):   │
+                                       │  • storage-maintenance-daily │
                                        └──────────────────────────────┘
 ```
 

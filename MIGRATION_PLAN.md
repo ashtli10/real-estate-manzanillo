@@ -2,7 +2,7 @@
 
 **Created: January 5, 2026**  
 **Last Updated: January 6, 2026**  
-**Status: Phase 8 IN PROGRESS - Testing & Go-Live**
+**Status: ✅ COMPLETE - All Phases Done**
 
 ---
 
@@ -36,7 +36,7 @@ This document outlines a complete infrastructure migration for the Habitex real 
 npx supabase functions deploy ai-prefill --no-verify-jwt
 npx supabase functions deploy video-generation --no-verify-jwt
 npx supabase functions deploy properties --no-verify-jwt
-npx supabase functions deploy storage-cleanup --no-verify-jwt
+npx supabase functions deploy storage-maintenance --no-verify-jwt
 ```
 
 This allows the functions to receive the Authorization header and handle auth internally.
@@ -46,8 +46,8 @@ This allows the functions to receive the Authorization header and handle auth in
 | Current Problem | Solution |
 |-----------------|----------|
 | Mixed storage organization (images, videos, profiles all jumbled) | User-scoped hierarchical folder structure |
-| No file cleanup on entity deletion (orphaned files) | Database triggers → Edge Functions → R2 cleanup |
-| 6+ deletion gaps causing storage waste | Comprehensive cleanup at all trigger points |
+| No file cleanup on entity deletion (orphaned files) | Scheduled `storage-maintenance` job via pg_cron (daily 3 AM UTC) |
+| 6+ deletion gaps causing storage waste | Single maintenance job scans for all orphaned files |
 | Vercel API routes scattered, inconsistent security | Centralized Supabase Edge Functions with unified auth |
 | No video thumbnails (uses placeholder images) | Automated thumbnail + GIF preview generation |
 | High egress costs potential | R2 zero egress fees |
@@ -85,8 +85,8 @@ This allows the functions to receive the Authorization header and handle auth in
 │ Domain: storage.     │ │ /properties      │ │ /api/stripe/create-      │
 │ manzanillo-real-     │ │ /ai-prefill      │ │   checkout.ts            │
 │ estate.com           │ │ /video-generation│ │ /api/sitemap.xml.ts      │
-│                      │ │ /storage-cleanup │ │                          │
-│ R2 Auth Worker ◄─────┤ │                  │ │                          │
+│                      │ │ /storage-        │ │                          │
+│ R2 Auth Worker ◄─────┤ │  maintenance     │ │                          │
 │ Media Processing     │ └────────┬─────────┘ └──────────────────────────┘
 │ Worker               │          │
 └──────────┬───────────┘          │
@@ -96,7 +96,7 @@ This allows the functions to receive the Authorization header and handle auth in
 │                         SUPABASE DATABASE                                │
 │                                                                          │
 │  Tables: profiles, properties, video_generation_jobs, credits, etc.     │
-│  Triggers: on_property_delete → invoke cleanup Edge Function             │
+│  Scheduled: pg_cron runs storage-maintenance daily at 3:00 AM UTC       │
 │  RLS: User-scoped access policies                                        │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
@@ -454,56 +454,51 @@ ALTER TABLE properties ADD COLUMN video_count INT DEFAULT 0;
 ALTER TABLE property_drafts ADD COLUMN uploaded_files TEXT[] DEFAULT '{}';
 ```
 
-### New Triggers
+### Scheduled Cleanup (Replaces Triggers)
 
-#### On Property Delete → Cleanup Files
+Instead of on-delete triggers, cleanup is handled by a scheduled job:
 
 ```sql
--- Trigger function
-CREATE OR REPLACE FUNCTION trigger_cleanup_property_files()
-RETURNS TRIGGER AS $$
+-- Function to invoke the storage-maintenance Edge Function
+CREATE OR REPLACE FUNCTION run_storage_maintenance()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  service_key TEXT;
 BEGIN
-  -- Call Edge Function to delete R2 folder
+  -- Get service role key from vault
+  SELECT decrypted_secret INTO service_key
+  FROM vault.decrypted_secrets
+  WHERE name = 'supabase_service_role_key';
+  
+  -- Call the Edge Function
   PERFORM net.http_post(
-    url := 'https://{project}.supabase.co/functions/v1/storage-cleanup',
+    url := 'https://vvvscafjvisaswpqhnvy.supabase.co/functions/v1/storage-maintenance',
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('request.jwt.claim.sub', true),
-      'Content-Type', 'application/json'
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer ' || service_key
     ),
-    body := jsonb_build_object(
-      'type', 'property',
-      'user_id', OLD.user_id,
-      'entity_id', OLD.id
-    )
+    body := '{}'::jsonb
   );
-  RETURN OLD;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
--- Trigger
-CREATE TRIGGER on_property_delete
-  AFTER DELETE ON properties
-  FOR EACH ROW
-  EXECUTE FUNCTION trigger_cleanup_property_files();
+-- Schedule to run daily at 3:00 AM UTC
+SELECT cron.schedule(
+  'storage-maintenance-daily',
+  '0 3 * * *',
+  'SELECT run_storage_maintenance()'
+);
 ```
 
-#### On Video Job Delete → Cleanup Files
-
-```sql
-CREATE TRIGGER on_video_job_delete
-  AFTER DELETE ON video_generation_jobs
-  FOR EACH ROW
-  EXECUTE FUNCTION trigger_cleanup_video_job_files();
-```
-
-#### On User Delete → Cleanup All Files
-
-```sql
-CREATE TRIGGER on_user_delete
-  AFTER DELETE ON profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION trigger_cleanup_user_files();
-```
+**Benefits over triggers:**
+- No race conditions with async media processing (ffmpeg)
+- Handles all orphaned files (properties, AI jobs, users) in one sweep
+- Simpler architecture - no pg_net calls from triggers
+- More reliable - can be manually invoked if needed
+- Better observability - logs in Edge Function dashboard
 
 ---
 
@@ -519,7 +514,7 @@ CREATE TRIGGER on_user_delete
 | `/api/video/generate-images.ts` | `video-generation` | Unified video pipeline |
 | `/api/video/approve-images.ts` | `video-generation` | (merged) |
 | `/api/video/approve-script.ts` | `video-generation` | (merged) |
-| (new) | `storage-cleanup` | R2 folder deletion |
+| (new) | `storage-maintenance` | Scheduled R2 orphan cleanup (daily via pg_cron) |
 
 ### Edge Function: `properties`
 
@@ -658,47 +653,50 @@ serve(async (req) => {
 })
 ```
 
-### Edge Function: `storage-cleanup`
+### Edge Function: `storage-maintenance`
 
-Called by database triggers to delete R2 folders:
+Scheduled cleanup job that runs daily to delete orphaned R2 files. This replaced the on-delete triggers for simpler, more reliable cleanup.
+
+**Features:**
+- Scans all R2 folders and compares against database records
+- Finds orphaned property folders, AI job folders, and user folders
+- Handles race conditions with async media processing (ffmpeg)
+- Runs daily at 3:00 AM UTC via pg_cron
+- Can also be invoked manually for dry-run preview
 
 ```typescript
-// supabase/functions/storage-cleanup/index.ts
+// supabase/functions/storage-maintenance/index.ts
 serve(async (req) => {
-  // Verify request is from database trigger (internal)
+  // Verify service role key
   const authHeader = req.headers.get('Authorization')
-  // ... validate service role or trigger signature
-  
-  const { type, user_id, entity_id } = await req.json()
-  
-  let pathToDelete: string
-  switch (type) {
-    case 'property':
-      pathToDelete = `users/${user_id}/properties/${entity_id}/`
-      break
-    case 'video-job':
-      pathToDelete = `users/${user_id}/ai-jobs/${entity_id}/`
-      break
-    case 'user':
-      pathToDelete = `users/${user_id}/`
-      break
+  const token = authHeader?.replace('Bearer ', '').trim()
+  if (token !== SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response('Unauthorized', { status: 401 })
   }
   
-  // Call R2 to list and delete all objects with prefix
-  const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/r2/buckets/habitex/objects`,
-    {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${R2_API_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ prefix: pathToDelete })
-    }
-  )
+  const dryRun = req.method === 'GET'
   
-  return new Response('OK', { status: 200 })
+  // Scan R2 for all user/property/ai-job folders
+  const orphaned = await findOrphanedFolders(supabase)
+  
+  // Delete if not dry run
+  if (!dryRun) {
+    for (const folder of orphaned) {
+      await deleteFolder(folder.path)
+    }
+  }
+  
+  return new Response(JSON.stringify({ orphaned, deleted, dryRun }))
 })
+```
+
+**Scheduled via pg_cron:**
+```sql
+SELECT cron.schedule(
+  'storage-maintenance-daily',
+  '0 3 * * *',  -- Daily at 3:00 AM UTC
+  'SELECT run_storage_maintenance()'
+);
 ```
 
 ---
@@ -1022,17 +1020,17 @@ The Edge Functions will send these payloads to n8n:
 ### Phase 4: Database
 - [x] Schema migration successful (5 migrations applied)
 - [x] RLS policies working (existing policies preserved)
-- [x] Triggers fire correctly (4 cleanup triggers created)
-- [ ] Cleanup Edge Function receives trigger calls (requires Phase 5 deployment)
+- [x] Scheduled cleanup via pg_cron (runs daily at 3:00 AM UTC)
+- [x] On-delete triggers removed (replaced by scheduled maintenance)
 
 ### Phase 5: Edge Functions
 - [x] `properties` function created with filtering
 - [x] `ai-prefill` deducts credits and calls n8n
 - [x] `video-generation` handles all actions (generate-images, approve-images, approve-script)
-- [x] `storage-cleanup` deletes R2 folders via S3 API
-- [ ] Functions deployed to Supabase (manual step)
-- [ ] Secrets configured in Supabase (manual step)
-- [ ] Functions tested with live requests
+- [x] `storage-maintenance` scans for orphaned R2 files and deletes them
+- [x] Functions deployed to Supabase with `--no-verify-jwt`
+- [x] Secrets configured in Supabase (R2 credentials, vault)
+- [x] Functions tested with live requests
 
 ### Phase 6: Frontend
 - [x] Image upload works
@@ -1267,11 +1265,11 @@ Entity Deletion → AFTER DELETE Trigger → pg_net.http_post() → Edge Functio
 2. ✅ Create `properties` function (public endpoint, filters by type/price/city/etc.)
 3. ✅ Create `ai-prefill` function (consolidated, 2 credits)
 4. ✅ Create `video-generation` function (consolidated: generate-images 5cr, approve-images 1cr, approve-script 30cr)
-5. ✅ Create `storage-cleanup` function (handles property/video-job/user/draft deletion)
+5. ✅ Create `storage-maintenance` function (scheduled orphan cleanup via pg_cron)
 6. ✅ Create shared utilities (`_shared/cors.ts`, `_shared/supabase-client.ts`, `_shared/credits.ts`)
-7. ⏳ Add environment variables (manual step in Supabase Dashboard or CLI)
-8. ⏳ Deploy all functions (manual step)
-9. ⏳ Test each endpoint
+7. ✅ Add environment variables (R2 credentials, vault secrets)
+8. ✅ Deploy all functions with `--no-verify-jwt`
+9. ✅ Test each endpoint
 
 **Files Created (January 6, 2026):**
 - `supabase/functions/_shared/cors.ts` - CORS headers
@@ -1280,7 +1278,7 @@ Entity Deletion → AFTER DELETE Trigger → pg_net.http_post() → Edge Functio
 - `supabase/functions/properties/index.ts` - Public properties listing
 - `supabase/functions/ai-prefill/index.ts` - AI property form prefill
 - `supabase/functions/video-generation/index.ts` - Unified video generation pipeline
-- `supabase/functions/storage-cleanup/index.ts` - R2 folder/file cleanup
+- `supabase/functions/storage-maintenance/index.ts` - Scheduled R2 orphan cleanup
 - `supabase/functions/import_map.json` - Deno import map
 - `.vscode/settings.json` - VS Code Deno settings
 
@@ -1298,8 +1296,8 @@ supabase/
     │   └── index.ts          # POST - AI form prefill (2 credits)
     ├── video-generation/
     │   └── index.ts          # POST - unified video pipeline
-    ├── storage-cleanup/
-    │   └── index.ts          # POST - R2 cleanup (internal)
+    ├── storage-maintenance/
+    │   └── index.ts          # GET/POST - scheduled orphan cleanup
     └── import_map.json
 ```
 
@@ -1323,11 +1321,11 @@ npx supabase secrets set R2_ACCOUNT_ID="your-account-id"
 npx supabase secrets set R2_ACCESS_KEY_ID="your-access-key"
 npx supabase secrets set R2_SECRET_ACCESS_KEY="your-secret-key"
 
-# Deploy all functions
-npx supabase functions deploy properties
-npx supabase functions deploy ai-prefill
-npx supabase functions deploy video-generation
-npx supabase functions deploy storage-cleanup
+# Deploy all functions (with --no-verify-jwt for custom auth handling)
+npx supabase functions deploy properties --no-verify-jwt
+npx supabase functions deploy ai-prefill --no-verify-jwt
+npx supabase functions deploy video-generation --no-verify-jwt
+npx supabase functions deploy storage-maintenance --no-verify-jwt
 ```
 
 **Video Generation Actions:**

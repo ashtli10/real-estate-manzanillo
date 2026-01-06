@@ -73,13 +73,13 @@ These files are the **source of truth**. Code must align with these specs.
 
 ## 🚨 Migration Status (January 2026)
 
-**Migration is NEARLY COMPLETE (Phase 6 Done)**. The following has been migrated:
+**Migration is COMPLETE**. The following has been migrated:
 
 1. ✅ **Supabase Storage → Cloudflare R2** with new folder schema
-2. ✅ **Vercel API Routes → Supabase Edge Functions** (created, pending deployment)
+2. ✅ **Vercel API Routes → Supabase Edge Functions** (deployed)
 3. ✅ **Frontend rewritten** to use R2 storage and Edge Functions
-4. ⏳ **Edge Functions deployment** (Phase 7 - manual step)
-5. ⏳ **Vercel route cleanup** (Phase 7 - after Edge Functions verified)
+4. ✅ **Edge Functions deployed** with `--no-verify-jwt`
+5. ✅ **Scheduled maintenance** via pg_cron (daily orphan cleanup)
 
 ### R2 Storage Structure (ACTIVE)
 ```
@@ -104,13 +104,13 @@ habitex/
 
 **Important**: Image sequence numbers (001, 002, etc.) are unique identifiers, NOT position indicators. Array order in database determines display order. Reordering images does NOT rename files.
 
-### Supabase Edge Functions (Created)
+### Supabase Edge Functions (Deployed)
 | Function | Purpose | Status |
 |----------|---------|--------|
-| `properties` | List/filter properties | ✅ Created |
-| `ai-prefill` | AI property form prefill | ✅ Created |
-| `video-generation` | Unified video pipeline | ✅ Created |
-| `storage-cleanup` | Delete R2 folders on entity deletion | ✅ Created |
+| `properties` | List/filter properties | ✅ Deployed |
+| `ai-prefill` | AI property form prefill | ✅ Deployed |
+| `video-generation` | Unified video pipeline | ✅ Deployed |
+| `storage-maintenance` | Scheduled R2 orphan cleanup (daily via pg_cron) | ✅ Deployed |
 
 ### Kept on Vercel
 - `/api/stripe/webhook.ts` - Stripe payment webhooks
