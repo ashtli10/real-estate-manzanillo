@@ -10,6 +10,7 @@ export interface SubscriptionState {
   isTrialing: boolean;
   isPastDue: boolean;
   isCanceled: boolean;
+  isAdmin: boolean;
   daysRemaining: number | null;
   trialDaysRemaining: number | null;
 }
@@ -26,8 +27,9 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Fetch subscription from database
+  // Fetch subscription and admin status from database
   const fetchSubscription = useCallback(async () => {
     if (!userId) {
       setLoading(false);
@@ -38,17 +40,27 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      // Fetch subscription and admin role in parallel
+      const [subscriptionResult, roleResult] = await Promise.all([
+        supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle(),
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('role', 'admin')
+          .maybeSingle()
+      ]);
 
-      if (fetchError) {
-        throw fetchError;
+      if (subscriptionResult.error) {
+        throw subscriptionResult.error;
       }
 
-      setSubscription(data as Subscription | null);
+      setSubscription(subscriptionResult.data as Subscription | null);
+      setIsAdmin(!!roleResult.data);
     } catch (err) {
       const errMessage = err instanceof Error ? err.message : 'Failed to load subscription';
       console.error('Error fetching subscription:', err);
@@ -119,13 +131,14 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     trialDaysRemaining = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
   }
 
-  // Access control function
+  // Access control function - admins always have access
   const canAccessDashboard = useCallback((): boolean => {
+    if (isAdmin) return true; // Admins bypass subscription check
     if (!subscription) return false;
     if (isActive) return true;
     if (isPastDue) return true; // Grace period
     return false;
-  }, [subscription, isActive, isPastDue]);
+  }, [subscription, isActive, isPastDue, isAdmin]);
 
   // Get status message for UI
   const getStatusMessage = useCallback((): { status: string; message: string; color: string } => {
@@ -233,6 +246,7 @@ export function useSubscription(userId: string | undefined): UseSubscriptionRetu
     isTrialing: Boolean(isTrialing),
     isPastDue,
     isCanceled,
+    isAdmin,
     daysRemaining,
     trialDaysRemaining,
     refresh: fetchSubscription,
