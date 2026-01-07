@@ -1,10 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Upload, X, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../integrations/supabase/client';
 import {
   uploadPropertyImage,
   deleteFile,
-  getNextImageSequence,
   isValidImageType,
   validateFileSize,
   STORAGE_LIMITS,
@@ -26,13 +25,34 @@ export function ImageUpload({ images, onChange, maxImages = 50, propertyId, user
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
 
   // Track sequence numbers from existing images (for R2 path structure)
-  const existingSequences = images.map((url) => {
-    // Extract sequence from URL like: .../images/001.jpg
-    const match = url.match(/\/images\/(\d{3})\./);
-    return match ? match[1] : null;
-  }).filter((seq): seq is string => seq !== null);
+  const existingSequenceSet = useMemo(() => {
+    const sequences = images.map((url) => {
+      // Extract sequence from URL like: .../images/001.jpg
+      const match = url.match(/\/images\/(\d{3})\./);
+      return match ? match[1] : null;
+    }).filter((seq): seq is string => seq !== null);
+    return new Set(sequences);
+  }, [images]);
 
-  const uploadImage = async (file: File): Promise<string | null> => {
+  const reserveNextSequence = (sequenceSet: Set<string>): number => {
+    for (let seq = 1; seq <= STORAGE_LIMITS.MAX_IMAGES_PER_PROPERTY; seq++) {
+      const padded = String(seq).padStart(3, '0');
+      if (!sequenceSet.has(padded)) {
+        sequenceSet.add(padded);
+        return seq;
+      }
+    }
+    throw new Error(`Maximum image limit (${STORAGE_LIMITS.MAX_IMAGES_PER_PROPERTY}) reached`);
+  };
+
+  const uploadImage = async (
+    file: File,
+    seq: number,
+    token: string,
+    progressKey: string,
+    effectiveUserId: string,
+    effectivePropertyId: string
+  ): Promise<string | null> => {
     // Validate file type
     if (!isValidImageType(file)) {
       alert('Solo se permiten imágenes (JPG, PNG, WEBP)');
@@ -45,39 +65,22 @@ export function ImageUpload({ images, onChange, maxImages = 50, propertyId, user
       return null;
     }
 
-    // Get auth token
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      alert('Debes iniciar sesión para subir imágenes');
-      return null;
-    }
-
-    // Determine user and property IDs
-    const effectiveUserId = userId || session.user.id;
-    const effectivePropertyId = propertyId || 'temp-' + Date.now();
-
     try {
-      // Get next available sequence number
-      const nextSeq = await getNextImageSequence(effectiveUserId, effectivePropertyId, existingSequences);
-      
-      // Upload to R2
+      // Upload to R2 with reserved sequence
       const result = await uploadPropertyImage(
         effectiveUserId,
         effectivePropertyId,
-        nextSeq,
+        seq,
         file,
-        session.access_token,
+        token,
         (progress: UploadProgress) => {
           setUploadProgress(prev => ({
             ...prev,
-            [file.name]: progress.percentage
+            [progressKey]: progress.percentage
           }));
         }
       );
 
-      // Add the new sequence to our tracking
-      existingSequences.push(String(nextSeq).padStart(3, '0'));
-      
       return result.url;
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -97,13 +100,51 @@ export function ImageUpload({ images, onChange, maxImages = 50, propertyId, user
 
     setUploading(true);
 
+    // Get auth token once per batch
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      alert('Debes iniciar sesión para subir imágenes');
+      setUploading(false);
+      return;
+    }
+
+    // Determine user and property IDs
+    const effectiveUserId = userId || session.user.id;
+    const effectivePropertyId = propertyId || 'temp-' + Date.now();
+
     const filesToUpload = Array.from(files).slice(0, remainingSlots);
-    const uploadPromises = filesToUpload.map(uploadImage);
-    const results = await Promise.all(uploadPromises);
+    const sequencePool = new Set(existingSequenceSet);
+    const uploadResults: string[] = [];
 
-    const newUrls = results.filter((url): url is string => url !== null);
-    onChange([...images, ...newUrls]);
+    for (const file of filesToUpload) {
+      let seq: number;
+      try {
+        seq = reserveNextSequence(sequencePool);
+      } catch (err) {
+        console.error(err);
+        alert(`Ya alcanzaste el límite de imágenes (${STORAGE_LIMITS.MAX_IMAGES_PER_PROPERTY})`);
+        break;
+      }
 
+      const progressKey = `${file.name}-${seq}`;
+      const url = await uploadImage(
+        file,
+        seq,
+        session.access_token,
+        progressKey,
+        effectiveUserId,
+        effectivePropertyId
+      );
+      if (url) {
+        uploadResults.push(url);
+      }
+    }
+
+    if (uploadResults.length > 0) {
+      onChange([...images, ...uploadResults]);
+    }
+
+    setUploadProgress({});
     setUploading(false);
   };
 
