@@ -797,7 +797,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         
         {/* Progress bar */}
         <div className="max-w-md mx-auto mb-2">
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div className="h-2 bg-muted/80 border border-border/60 shadow-inner rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary transition-all duration-100 ease-linear rounded-full"
               style={{ width: `${displayProgress}%` }}

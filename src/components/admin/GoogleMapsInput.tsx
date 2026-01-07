@@ -22,12 +22,11 @@ type ApiStatus = 'idle' | 'loading' | 'ready' | 'error';
 interface GoogleMapsWindow extends Window {
   google?: {
     maps?: {
+      importLibrary?: (name: 'places') => Promise<{ Place: new (options: { id: string }) => GooglePlace }>;
       places?: {
         AutocompleteService: new () => GoogleAutocompleteService;
-        PlacesService: new (attrContainer: HTMLElement) => GooglePlacesService;
-        PlacesServiceStatus?: {
-          OK: string;
-        };
+        Place?: new (options: { id: string }) => GooglePlace;
+        PlacesServiceStatus?: { OK: string };
       };
     };
   };
@@ -49,31 +48,23 @@ interface GooglePlacePrediction {
   description: string;
 }
 
-interface GooglePlacesService {
-  getDetails: (
-    request: {
-      placeId: string;
-      fields: string[];
-    },
-    callback: (result: GooglePlaceResult | null, status: string) => void
-  ) => void;
-}
-
-interface GooglePlaceResult {
-  formatted_address?: string;
-  name?: string;
-  geometry?: {
-    location?: {
-      lat: () => number;
-      lng: () => number;
-    };
-  };
-  address_components?: GoogleAddressComponent[];
+interface GooglePlace {
+  fetchFields: (options: { fields: string[] }) => Promise<void>;
+  formattedAddress?: string;
+  displayName?: { text?: string };
+  location?: { lat: () => number; lng: () => number };
+  addressComponents?: Array<GoogleAddressComponent | GoogleAddressComponentV2>;
 }
 
 interface GoogleAddressComponent {
   long_name: string;
   short_name: string;
+  types: string[];
+}
+
+interface GoogleAddressComponentV2 {
+  longText: string;
+  shortText: string;
   types: string[];
 }
 
@@ -97,7 +88,6 @@ export function GoogleMapsInput({
   const [apiStatus, setApiStatus] = useState<ApiStatus>('idle');
   const [predictions, setPredictions] = useState<GooglePlacePrediction[]>([]);
   const [autocompleteService, setAutocompleteService] = useState<GoogleAutocompleteService | null>(null);
-  const [placesService, setPlacesService] = useState<GooglePlacesService | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -168,7 +158,6 @@ export function GoogleMapsInput({
     if (apiStatus !== 'ready' || !window.google?.maps?.places) return;
 
     setAutocompleteService(new window.google.maps.places.AutocompleteService());
-    setPlacesService(new window.google.maps.places.PlacesService(document.createElement('div')));
   }, [apiStatus]);
 
   // Fetch predictions when user types
@@ -202,9 +191,21 @@ export function GoogleMapsInput({
     return () => window.clearTimeout(handle);
   }, [search, autocompleteService]);
 
-  const parseAddressComponents = (components: GoogleAddressComponent[]) => {
-    const findComponent = (types: string[]) =>
-      components.find((component) => types.some((type) => component.types.includes(type)))?.long_name || '';
+  const parseAddressComponents = (components: Array<GoogleAddressComponent | GoogleAddressComponentV2>) => {
+    const findComponent = (types: string[]) => {
+      const match = components.find((component) =>
+        types.some((type) => component.types.includes(type))
+      );
+
+      if (!match) return '';
+
+      // Support both legacy and new Places API component shapes
+      const maybeV2 = match as GoogleAddressComponentV2;
+      if ('longText' in maybeV2) return maybeV2.longText;
+
+      const maybeLegacy = match as GoogleAddressComponent;
+      return maybeLegacy.long_name;
+    };
 
     const city =
       findComponent(['locality']) ||
@@ -224,34 +225,46 @@ export function GoogleMapsInput({
     return { city, state, neighborhood };
   };
 
-  const selectPrediction = (prediction: GooglePlacePrediction) => {
-    if (!placesService) return;
+  const fetchPlaceDetails = async (placeId: string): Promise<GooglePlace | null> => {
+    if (!window.google?.maps) return null;
 
-    placesService.getDetails(
-      {
-        placeId: prediction.place_id,
-        fields: ['formatted_address', 'geometry', 'address_components', 'name'],
-      },
-      (result: GooglePlaceResult | null, status: string) => {
-        const okStatus =
-          status === 'OK' ||
-          status === window.google?.maps?.places?.PlacesServiceStatus?.OK;
+    try {
+      // Prefer importLibrary (new API), fallback to direct Place constructor if present
+      const placesLib = window.google.maps.importLibrary
+        ? await window.google.maps.importLibrary('places')
+        : null;
 
-        if (!okStatus || !result) return;
+      const PlaceCtor = placesLib?.Place || window.google.maps.places?.Place;
+      if (!PlaceCtor) return null;
 
-        const formattedAddress = result.formatted_address || result.name || prediction.description;
-        const geometry = result.geometry?.location;
-        const latValue = geometry ? geometry.lat() : null;
-        const lngValue = geometry ? geometry.lng() : null;
-        const details = parseAddressComponents(result.address_components || []);
+      const place = new PlaceCtor({ id: placeId }) as GooglePlace;
+      await place.fetchFields({
+        fields: ['formattedAddress', 'location', 'addressComponents', 'displayName'],
+      });
 
-        setSearch(formattedAddress);
-        onAddressChange(formattedAddress);
-        onLocationChange(latValue, lngValue);
-        onLocationDetailsChange?.(details);
-        setShowSuggestions(false);
-      }
-    );
+      return place;
+    } catch (error) {
+      console.error('Error fetching place details:', error);
+      return null;
+    }
+  };
+
+  const selectPrediction = async (prediction: GooglePlacePrediction) => {
+    const place = await fetchPlaceDetails(prediction.place_id);
+    if (!place) return;
+
+    const formattedAddress =
+      place.formattedAddress || place.displayName?.text || prediction.description;
+    const geometry = place.location;
+    const latValue = geometry ? geometry.lat() : null;
+    const lngValue = geometry ? geometry.lng() : null;
+    const details = parseAddressComponents(place.addressComponents || []);
+
+    setSearch(formattedAddress);
+    onAddressChange(formattedAddress);
+    onLocationChange(latValue, lngValue);
+    onLocationDetailsChange?.(details);
+    setShowSuggestions(false);
   };
 
   const handleInputChange = (value: string) => {
