@@ -1,6 +1,7 @@
 import { Building2, MapPin, Heart, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ThemeToggle } from './ThemeToggle';
 
 interface FooterProps {
   onNavigate?: (path: string) => void;
@@ -36,10 +37,15 @@ export function Footer({ onNavigate }: FooterProps) {
               {t('footer.description')}
             </p>
             
-            {/* Language Switcher */}
-            <div className="mt-6">
-              <p className="text-sm text-gray-400 mb-2">{t('common.language')}</p>
-              <LanguageSwitcher variant="footer" />
+            {/* Language & Theme */}
+            <div className="mt-6 space-y-3">
+              <div>
+                <p className="text-sm text-gray-400 mb-2">{t('common.language')}</p>
+                <LanguageSwitcher variant="footer" />
+              </div>
+              <div className="flex items-center gap-3">
+                <ThemeToggle className="bg-white/5 text-white border-white/10 hover:bg-white/10" showLabel />
+              </div>
             </div>
           </div>
 

@@ -16,6 +16,7 @@ import { Dashboard } from './pages/Dashboard';
 import { FloatingWhatsappButton } from './components/FloatingWhatsappButton';
 import { DEFAULT_WHATSAPP_MESSAGE } from './lib/whatsapp';
 import { useLanguageSync } from './hooks/useLanguageSync';
+import { useTheme } from './hooks/useTheme';
 
 // Reserved routes that should not be treated as agent usernames
 const RESERVED_ROUTES = ['/', '/propiedades', '/login', '/admin', '/dashboard', '/onboarding'];
@@ -23,6 +24,7 @@ const RESERVED_ROUTES = ['/', '/propiedades', '/login', '/admin', '/dashboard', 
 function AppContent() {
   const { route, navigate } = useRouter();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [whatsappMessage, setWhatsappMessage] = useState(DEFAULT_WHATSAPP_MESSAGE);
   const [whatsappNumber, setWhatsappNumber] = useState<string | undefined>(undefined);
 
@@ -135,7 +137,7 @@ function AppContent() {
   }, [route]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" data-theme={theme}>
       {!hideHeaderFooter && <Header onNavigate={navigate} currentPath={route} />}
       <main className="flex-1">{renderPage()}</main>
       {!hideHeaderFooter && <Footer onNavigate={navigate} />}

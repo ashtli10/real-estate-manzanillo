@@ -54,6 +54,52 @@
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
     --radius: 0.75rem;
+    color-scheme: light;
+  }
+
+  .dark {
+    --background: 215 24% 12%;
+    --foreground: 210 20% 95%;
+
+    --card: 215 22% 16%;
+    --card-foreground: 210 20% 96%;
+
+    --popover: 215 24% 14%;
+    --popover-foreground: 210 20% 96%;
+
+    --primary: 199 89% 60%;
+    --primary-foreground: 218 45% 10%;
+
+    --secondary: 187 70% 58%;
+    --secondary-foreground: 215 24% 12%;
+
+    --muted: 215 18% 22%;
+    --muted-foreground: 210 12% 72%;
+
+    --accent: 40 90% 70%;
+    --accent-foreground: 215 24% 12%;
+
+    --destructive: 0 74% 62%;
+    --destructive-foreground: 210 20% 96%;
+
+    --border: 215 18% 28%;
+    --input: 215 18% 28%;
+    --ring: 199 89% 60%;
+
+    --ocean-deep: 210 70% 24%;
+    --ocean-light: 195 70% 52%;
+    --sand: 40 25% 32%;
+    --sand-dark: 35 20% 25%;
+    --foam: 200 15% 18%;
+
+    --gradient-ocean: linear-gradient(135deg, hsl(210 70% 24%), hsl(187 70% 58%));
+    --gradient-beach: linear-gradient(180deg, hsl(195 70% 52%), hsl(40 25% 32%));
+    --gradient-sunset: linear-gradient(135deg, hsl(199 89% 60%), hsl(187 70% 58%), hsl(40 90% 70%));
+
+    --shadow-soft: 0 4px 20px -4px hsla(210 40% 8% / 0.35);
+    --shadow-medium: 0 8px 30px -8px hsla(210 40% 8% / 0.45);
+    --shadow-strong: 0 12px 40px -12px hsla(210 40% 8% / 0.55);
+    color-scheme: dark;
   }
 }
 
@@ -66,6 +112,19 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+@layer base {
+  /* Dark-mode fallbacks for legacy utility classes */
+  .dark .bg-white { background-color: hsl(var(--card)) !important; }
+  .dark .bg-gray-50, .dark .bg-gray-100 { background-color: hsl(var(--muted)) !important; }
+  .dark .bg-gray-200, .dark .bg-gray-300 { background-color: hsl(var(--muted)) !important; }
+  .dark .text-gray-900, .dark .text-gray-800 { color: hsl(var(--foreground)) !important; }
+  .dark .text-gray-700, .dark .text-gray-600, .dark .text-gray-500, .dark .text-gray-400 { color: hsl(var(--muted-foreground)) !important; }
+  .dark .border-gray-50, .dark .border-gray-100, .dark .border-gray-200 { border-color: hsl(var(--border)) !important; }
+  .dark .bg-blue-50 { background-color: hsl(var(--muted)) !important; color: hsl(var(--foreground)) !important; }
+  .dark .text-blue-600 { color: hsl(var(--primary)) !important; }
+  .dark .shadow-lg, .dark .shadow-md, .dark .shadow-sm { box-shadow: var(--shadow-soft); }
 }
 
 @layer components {
