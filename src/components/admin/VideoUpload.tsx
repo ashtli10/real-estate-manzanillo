@@ -27,6 +27,18 @@ export function VideoUpload({ videos, onChange, maxVideos = 3, propertyId, userI
   const [dragOver, setDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [assetStatus, setAssetStatus] = useState<Record<string, { thumb?: 'idle' | 'ready' | 'missing'; preview?: 'idle' | 'ready' | 'missing' }>>({});
+  const [aspectRatios, setAspectRatios] = useState<Record<string, number>>({});
+
+  const updateAssetStatus = useCallback((url: string, key: 'thumb' | 'preview', status: 'idle' | 'ready' | 'missing') => {
+    setAssetStatus((prev) => ({
+      ...prev,
+      [url]: {
+        ...prev[url],
+        [key]: status,
+      },
+    }));
+  }, []);
 
   // Track sequence numbers from existing videos (for R2 path structure)
   const existingSequences = videos.map((url) => {
@@ -242,29 +254,50 @@ export function VideoUpload({ videos, onChange, maxVideos = 3, propertyId, userI
             const thumbnailUrl = getVideoThumbnail(url);
             const previewUrl = getVideoPreview(url);
             const isHovered = hoveredIndex === index;
+            const thumbState = assetStatus[url]?.thumb || 'idle';
+            const previewState = assetStatus[url]?.preview || 'idle';
+            const aspectRatio = aspectRatios[url];
             
             return (
               <div 
                 key={url} 
-                className="relative group rounded-lg overflow-hidden bg-muted aspect-video"
+                className="relative group rounded-lg overflow-hidden bg-muted flex items-center justify-center"
+                style={{ aspectRatio: aspectRatio || undefined, minHeight: '14rem' }}
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
               >
                 {/* Show thumbnail/preview or video */}
-                {thumbnailUrl ? (
+                {thumbnailUrl && thumbState !== 'missing' ? (
                   <>
-                    {/* Show animated preview on hover, thumbnail otherwise */}
-                    {isHovered && previewUrl ? (
+                    {isHovered && previewUrl && previewState !== 'missing' ? (
                       <img 
                         src={previewUrl} 
                         alt={`Video ${index + 1} preview`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain bg-black"
+                        onLoad={(e) => {
+                          updateAssetStatus(url, 'preview', 'ready');
+                          const { naturalWidth, naturalHeight } = e.currentTarget;
+                          if (naturalWidth && naturalHeight) {
+                            const ratio = Number((naturalWidth / naturalHeight).toFixed(3));
+                            setAspectRatios((prev) => ({ ...prev, [url]: ratio }));
+                          }
+                        }}
+                        onError={() => updateAssetStatus(url, 'preview', 'missing')}
                       />
                     ) : (
                       <img 
                         src={thumbnailUrl} 
                         alt={`Video ${index + 1} thumbnail`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain bg-black"
+                        onLoad={(e) => {
+                          updateAssetStatus(url, 'thumb', 'ready');
+                          const { naturalWidth, naturalHeight } = e.currentTarget;
+                          if (naturalWidth && naturalHeight) {
+                            const ratio = Number((naturalWidth / naturalHeight).toFixed(3));
+                            setAspectRatios((prev) => ({ ...prev, [url]: ratio }));
+                          }
+                        }}
+                        onError={() => updateAssetStatus(url, 'thumb', 'missing')}
                       />
                     )}
                     {/* Play icon overlay */}
@@ -273,14 +306,20 @@ export function VideoUpload({ videos, onChange, maxVideos = 3, propertyId, userI
                         <Play className="h-8 w-8 text-white fill-white ml-1" />
                       </div>
                     </div>
-                    {/* Click to play video in modal/lightbox could go here */}
                   </>
                 ) : (
                   <video 
                     src={url} 
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-contain" 
                     controls 
-                    preload="metadata" 
+                    preload="metadata"
+                    onLoadedMetadata={(e) => {
+                      const { videoWidth, videoHeight } = e.currentTarget;
+                      if (videoWidth && videoHeight) {
+                        const ratio = Number((videoWidth / videoHeight).toFixed(3));
+                        setAspectRatios((prev) => ({ ...prev, [url]: ratio }));
+                      }
+                    }}
                   />
                 )}
 

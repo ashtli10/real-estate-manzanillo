@@ -1,30 +1,71 @@
-import { useState } from 'react';
-import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { LogIn, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../integrations/supabase/client';
 
 interface LoginProps {
   onNavigate: (path: string) => void;
 }
 
 export function Login({ onNavigate }: LoginProps) {
-  const { signIn } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      onNavigate('/dashboard');
+    }
+  }, [authLoading, user, onNavigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setResetMessage('');
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      const { error: signInError } = await signIn(email, password);
+
+      if (signInError) {
+        setError('Credenciales inválidas. Por favor verifica tu correo y contraseña.');
+        return;
+      }
+
       onNavigate('/dashboard');
     } catch (err) {
       setError('Credenciales inválidas. Por favor verifica tu correo y contraseña.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setError('');
+    setResetMessage('');
+
+    if (!email.trim()) {
+      setError('Ingresa tu correo para enviarte el enlace de recuperación.');
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/login`,
+      });
+
+      if (resetError) {
+        setError('No se pudo enviar el correo de recuperación. Intenta de nuevo.');
+      } else {
+        setResetMessage('Te enviamos un correo con el enlace para restablecer tu contraseña.');
+      }
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -40,10 +81,22 @@ export function Login({ onNavigate }: LoginProps) {
             <p className="text-gray-600 mt-2">Habitex</p>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start space-x-3">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-red-800 text-sm">{error}</p>
+          {(error || resetMessage) && (
+            <div
+              className={`rounded-lg p-4 mb-6 flex items-start space-x-3 border ${
+                error
+                  ? 'bg-red-50 border-red-200'
+                  : 'bg-emerald-50 border-emerald-200'
+              }`}
+            >
+              {error ? (
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              ) : (
+                <CheckCircle className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+              )}
+              <p className={`text-sm ${error ? 'text-red-800' : 'text-emerald-800'}`}>
+                {error || resetMessage}
+              </p>
             </div>
           )}
 
@@ -88,6 +141,15 @@ export function Login({ onNavigate }: LoginProps) {
               className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white py-3 px-4 rounded-lg font-semibold shadow-lg transform transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleResetPassword}
+              disabled={resetLoading}
+              className="w-full text-blue-700 hover:text-blue-800 text-sm font-medium underline-offset-4 hover:underline disabled:opacity-60"
+            >
+              {resetLoading ? 'Enviando enlace...' : '¿Olvidaste tu contraseña?'}
             </button>
           </form>
 

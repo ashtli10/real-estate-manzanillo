@@ -284,6 +284,14 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     }
   }, [currentJob]);
 
+  // Keep local notes in sync with the active job (useful after regenerations)
+  useEffect(() => {
+    if (!currentJob) return;
+    if (currentJob.notes !== undefined && currentJob.notes !== customNotes) {
+      setCustomNotes(currentJob.notes || '');
+    }
+  }, [currentJob?.notes, customNotes]);
+
   // Handle property selection
   const handleSelectProperty = (property: EligibleProperty) => {
     setSelectedProperty(property);
@@ -341,6 +349,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     );
     
     if (success) {
+      setCustomNotes(regenerationNotes || '');
       setRegenerationNotes('');
       // Credits already deducted by hook
       refreshCredits();

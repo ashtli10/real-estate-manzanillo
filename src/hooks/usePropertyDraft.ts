@@ -51,7 +51,7 @@ const DEFAULT_FORM_DATA: PropertyInsert = {
 export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraftOptions) {
   const [draft, setDraft] = useState<PropertyDraft | null>(null);
   const [formData, setFormData] = useState<PropertyInsert>(DEFAULT_FORM_DATA);
-  const [currentStep, setCurrentStep] = useState<string>('basic');
+  const [currentStep, setCurrentStep] = useState<string>(() => (propertyId ? 'basic' : 'ai'));
   const [aiText, setAiText] = useState<string>('');
   const [preAllocatedPropertyId, setPreAllocatedPropertyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,7 +95,7 @@ export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraft
         const draftData = data as unknown as PropertyDraft;
         setDraft(draftData);
         setFormData(draftData.form_data || DEFAULT_FORM_DATA);
-        setCurrentStep(draftData.current_step || 'basic');
+        setCurrentStep(draftData.current_step || (propertyId ? 'basic' : 'ai'));
         setAiText(draftData.ai_text || '');
         // Restore or generate pre-allocated property ID for new properties
         if (!propertyId) {
@@ -104,8 +104,9 @@ export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraft
         }
         lastSavedRef.current = JSON.stringify(draftData.form_data);
       } else if (!propertyId) {
-        // No existing draft for a new property - generate a new pre-allocated ID
+        // No existing draft for a new property - generate a new pre-allocated ID and start at AI
         setPreAllocatedPropertyId(crypto.randomUUID());
+        setCurrentStep('ai');
       }
     } catch (err) {
       console.error('Error loading draft:', err);
@@ -219,11 +220,11 @@ export function usePropertyDraft({ userId, propertyId = null }: UsePropertyDraft
   // Reset to default state
   const resetDraft = useCallback(() => {
     setFormData(DEFAULT_FORM_DATA);
-    setCurrentStep('basic');
+    setCurrentStep(propertyId ? 'basic' : 'ai');
     setAiText('');
     setPreAllocatedPropertyId(crypto.randomUUID()); // Generate new ID for fresh draft
     deleteDraft();
-  }, [deleteDraft]);
+  }, [deleteDraft, propertyId]);
 
   // Update a single field
   const updateField = useCallback(<K extends keyof PropertyInsert>(
