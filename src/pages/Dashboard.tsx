@@ -395,8 +395,6 @@ export function Dashboard({ onNavigate }: DashboardProps) {
   };
 
   const handleDeleteInvitation = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta invitación?')) return;
-    
     try {
       const { error } = await supabase
         .from('invitation_tokens')

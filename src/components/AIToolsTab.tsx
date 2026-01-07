@@ -95,7 +95,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   
   // Progress durations in ms (time to go from 1% to 99%)
   const PROGRESS_DURATIONS = {
-    images: 70000,  // 1m 10s
+    images: 60000,  // 60s target for image generation
     script: 30000,  // 30s
     video: 130000,  // 2m 10s
   };
@@ -133,11 +133,10 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   // Check for active job on mount (auto-resume)
   useEffect(() => {
     if (initialCheckDone) return;
-    
+
     const checkActive = async () => {
       const activeJob = await checkForActiveJob();
       if (activeJob) {
-        // Find the property to restore context
         const property = eligibleProperties.find(p => p.id === activeJob.property_id);
         if (property) {
           setSelectedProperty(property);
@@ -147,11 +146,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       }
       setInitialCheckDone(true);
     };
-    
-    // Wait for properties to load first
-    if (eligibleProperties.length > 0 || initialCheckDone) {
-      checkActive();
-    }
+
+    checkActive();
   }, [checkForActiveJob, eligibleProperties, initialCheckDone]);
 
   // Load recent jobs
@@ -199,7 +195,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     }
     
     const duration = PROGRESS_DURATIONS[generationType];
-    const updateInterval = 100; // Update every 100ms for smooth animation
+    const updateInterval = 50; // Update every 50ms for smoother animation
     
     progressIntervalRef.current = setInterval(() => {
       const elapsed = Date.now() - (progressStartTimeRef.current || Date.now());
@@ -235,7 +231,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
       // Fast fill to 100%
       const fastFillInterval = setInterval(() => {
         setProgress(prev => {
-          const next = prev + 5;
+          const next = prev + 2;
           if (next >= 100) {
             clearInterval(fastFillInterval);
             // Reset after showing 100% briefly
@@ -248,7 +244,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
           }
           return next;
         });
-      }, 20);
+      }, 16);
     }
   }, [wizardStep, progress, isCompletingProgress, getCurrentGenerationType]);
 

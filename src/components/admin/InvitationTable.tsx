@@ -27,7 +27,6 @@ export function InvitationTable({ invitations, onDelete, loading = false }: Invi
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta invitación?')) return;
     setDeletingId(id);
     try {
       await onDelete(id);
