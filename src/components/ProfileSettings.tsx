@@ -206,9 +206,15 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
   const handleSave = async () => {
     if (!userId) return;
 
+    const usernameValue = formData.username?.toLowerCase().trim();
+    if (!usernameValue) {
+      setError('El nombre de usuario es requerido');
+      return;
+    }
+
     // Validate username if changed
-    if (formData.username && formData.username !== profile?.username) {
-      if (!isValidUsername(formData.username)) {
+    if (usernameValue !== profile?.username) {
+      if (!isValidUsername(usernameValue)) {
         setError('El nombre de usuario no es válido');
         return;
       }
@@ -237,7 +243,7 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
     setError(null);
 
     try {
-      const newUsername = formData.username?.toLowerCase().trim() || null;
+      const newUsername = usernameValue;
       const oldUsername = profile?.username;
       const usernameChanged = newUsername && oldUsername && newUsername !== oldUsername;
 
@@ -379,7 +385,7 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
               </button>
               <button
                 onClick={handleSave}
-                disabled={saving || Boolean(usernameError)}
+                disabled={saving || Boolean(usernameError) || !formData.username?.trim()}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -477,6 +483,7 @@ export function ProfileSettings({ userId, profile, onProfileUpdate, onNavigate }
                       type="text"
                       value={formData.username || ''}
                       onChange={(e) => handleInputChange('username', e.target.value.toLowerCase())}
+                      required
                       className={`w-full pl-8 pr-10 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
                         usernameError 
                           ? 'border-red-300 focus:ring-red-500' 

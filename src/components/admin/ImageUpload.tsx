@@ -1,5 +1,22 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { Upload, Image as ImageIcon, Loader2, Trash2, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  KeyboardSensor,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { supabase } from '../../integrations/supabase/client';
 import {
   uploadPropertyImage,
@@ -21,8 +38,12 @@ interface ImageUploadProps {
 export function ImageUpload({ images, onChange, maxImages = 50, propertyId, userId }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   // Track sequence numbers from existing images (for R2 path structure)
   const existingSequenceSet = useMemo(() => {
@@ -185,53 +206,16 @@ export function ImageUpload({ images, onChange, maxImages = 50, propertyId, user
     const newImages = [...images];
     newImages.splice(index, 1);
     onChange(newImages);
-    setSelectedIndex(null);
   };
 
-  // Move image left (towards position 0)
-  const moveImageLeft = (index: number) => {
-    if (index <= 0) return;
-    const newImages = [...images];
-    [newImages[index - 1], newImages[index]] = [newImages[index], newImages[index - 1]];
-    onChange(newImages);
-    setSelectedIndex(index - 1);
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = images.findIndex((img) => img === active.id);
+    const newIndex = images.findIndex((img) => img === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    onChange(arrayMove(images, oldIndex, newIndex));
   };
-
-  // Move image right (towards end)
-  const moveImageRight = (index: number) => {
-    if (index >= images.length - 1) return;
-    const newImages = [...images];
-    [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
-    onChange(newImages);
-    setSelectedIndex(index + 1);
-  };
-
-  // Make this image the main (first) image
-  const makeMain = (index: number) => {
-    if (index === 0) return;
-    const newImages = [...images];
-    const [movedImage] = newImages.splice(index, 1);
-    newImages.unshift(movedImage);
-    onChange(newImages);
-    setSelectedIndex(0);
-  };
-
-  // Toggle selection on tap
-  const handleImageClick = (index: number) => {
-    setSelectedIndex(selectedIndex === index ? null : index);
-  };
-
-  // Close selection when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.image-grid-item') && !target.closest('.image-actions-bar')) {
-        setSelectedIndex(null);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
 
   return (
     <div className="space-y-4">
@@ -293,102 +277,31 @@ export function ImageUpload({ images, onChange, maxImages = 50, propertyId, user
         </label>
       </div>
 
-      {/* Selected Image Actions Bar - Shows when an image is selected */}
-      {selectedIndex !== null && images.length > 0 && (
-        <div className="image-actions-bar flex items-center justify-center gap-2 p-3 bg-primary/10 rounded-lg border border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-200">
-          <span className="text-sm text-foreground font-medium mr-2">
-            Imagen {selectedIndex + 1}
-          </span>
-          
-          {selectedIndex !== 0 && (
-            <button
-              type="button"
-              onClick={() => makeMain(selectedIndex)}
-              className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
-            >
-              Hacer principal
-            </button>
-          )}
-          
-          <button
-            type="button"
-            onClick={() => moveImageLeft(selectedIndex)}
-            disabled={selectedIndex <= 0}
-            className="p-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="Mover izquierda"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => moveImageRight(selectedIndex)}
-            disabled={selectedIndex >= images.length - 1}
-            className="p-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            title="Mover derecha"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => removeImage(selectedIndex)}
-            className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-            title="Eliminar"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
       {/* Image Preview Grid */}
       {images.length > 0 && (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
-          {images.map((url, index) => (
-            <div
-              key={url}
-              onClick={() => handleImageClick(index)}
-              className={`image-grid-item relative rounded-lg overflow-hidden bg-muted aspect-square cursor-pointer transition-all duration-200 ${
-                selectedIndex === index 
-                  ? 'ring-2 ring-primary ring-offset-2 scale-[1.02] shadow-lg' 
-                  : 'hover:ring-1 hover:ring-primary/50'
-              }`}
-            >
-              <img
-                src={url}
-                alt={`Imagen ${index + 1}`}
-                className="w-full h-full object-cover"
-                draggable={false}
-              />
-              
-              {/* Position number badge */}
-              <div className={`absolute bottom-1 left-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold ${
-                index === 0 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-black/60 text-white'
-              }`}>
-                {index + 1}
-              </div>
-
-              {/* Main image badge */}
-              {index === 0 && (
-                <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-medium">
-                  Principal
-                </div>
-              )}
-              
-              {/* Selection indicator */}
-              {selectedIndex === index && (
-                <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
-              )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={images} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+              {images.map((url, index) => (
+                <SortableImage
+                  key={url}
+                  id={url}
+                  index={index}
+                  onRemove={() => removeImage(index)}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {images.length > 1 && (
         <p className="text-xs text-muted-foreground text-center">
-          Toca una imagen para seleccionarla y usa los botones para reordenar.
+          Arrastra y suelta para reordenar (funciona en móvil y desktop).
         </p>
       )}
 
@@ -400,6 +313,77 @@ export function ImageUpload({ images, onChange, maxImages = 50, propertyId, user
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SortableImage({ id, index, onRemove }: { id: string; index: number; onRemove: () => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`image-grid-item group relative rounded-lg overflow-hidden bg-muted aspect-square cursor-grab touch-none transition-all duration-200 border border-transparent ${
+        isDragging ? 'ring-2 ring-primary ring-offset-2 shadow-lg' : 'hover:ring-1 hover:ring-primary/50'
+      }`}
+    >
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black"
+        title="Eliminar imagen"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="absolute bottom-1.5 left-1.5 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/70 text-white text-[10px] sm:text-xs active:scale-95"
+        aria-label={`Reordenar imagen ${index + 1}`}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+        <span>Arrastra</span>
+      </button>
+
+      <img
+        src={id}
+        alt={`Imagen ${index + 1}`}
+        className="w-full h-full object-cover"
+        draggable={false}
+      />
+      
+      <div className={`absolute bottom-1 left-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold ${
+        index === 0 
+          ? 'bg-primary text-primary-foreground' 
+          : 'bg-black/60 text-white'
+      }`}>
+        {index + 1}
+      </div>
+
+      {index === 0 && (
+        <div className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded font-medium">
+          Principal
+        </div>
+      )}
+
     </div>
   );
 }

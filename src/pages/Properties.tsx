@@ -183,7 +183,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
   }, [filters]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-6 md:py-10">
         <Breadcrumb 
           items={[{ label: t('properties.title') }]} 
@@ -192,27 +192,27 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
 
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t('properties.title')}</h1>
-          <p className="text-gray-600">{t('properties.subtitle')}</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">{t('properties.title')}</h1>
+          <p className="text-muted-foreground">{t('properties.subtitle')}</p>
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+        <div className="bg-card rounded-xl shadow-medium border border-border p-4 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Input */}
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder={t('landing.hero.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-10 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-800"
+                className="w-full pl-12 pr-10 py-3 border border-border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -222,7 +222,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
             {/* Quick Filters */}
             <div className="flex gap-2 flex-wrap lg:flex-nowrap">
               {/* Listing Type Toggle */}
-              <div className="flex bg-gray-100 rounded-xl p-1">
+              <div className="flex bg-muted rounded-xl p-1">
                 {(['all', 'sale', 'rent'] as const).map((type) => (
                   <button
                     key={type}
@@ -233,8 +233,8 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
                           ? 'bg-blue-600 text-white'
                           : type === 'rent'
                           ? 'bg-emerald-600 text-white'
-                          : 'bg-white text-gray-800 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
+                          : 'bg-card text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {type === 'all' ? t('properties.filters.all') : 
@@ -249,25 +249,25 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
                   showFilters || activeFiltersCount > 0
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
                 <SlidersHorizontal className="h-5 w-5" />
                 <span>{t('common.filters')}</span>
                 {activeFiltersCount > 0 && (
-                  <span className="bg-white text-blue-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-card text-primary text-xs font-bold px-2 py-0.5 rounded-full shadow-soft">
                     {activeFiltersCount}
                   </span>
                 )}
               </button>
 
               {/* View Mode Toggle (Desktop) */}
-              <div className="hidden md:flex bg-gray-100 rounded-xl p-1">
+              <div className="hidden md:flex bg-muted rounded-xl p-1">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-lg transition-all ${
-                    viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
+                    viewMode === 'grid' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground'
                   }`}
                 >
                   <Grid className="h-5 w-5" />
@@ -275,7 +275,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-2 rounded-lg transition-all ${
-                    viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
+                    viewMode === 'list' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground'
                   }`}
                 >
                   <List className="h-5 w-5" />
@@ -303,14 +303,14 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
           <div className="flex-1">
             {/* Results Count */}
             <div className="flex items-center justify-between mb-4">
-              <p className="text-gray-600">
+              <p className="text-muted-foreground">
                 {t('properties.found', { count: filteredProperties.length })}
               </p>
               {/* Sort dropdown for mobile */}
               <select
                 value={filters.sortBy}
                 onChange={(e) => setFilters({ ...filters, sortBy: e.target.value as PropertyFilters['sortBy'] })}
-                className="md:hidden px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                className="md:hidden px-3 py-2 border border-border rounded-lg text-sm bg-background text-foreground"
               >
                 <option value="newest">{t('properties.filters.sortNewest')}</option>
                 <option value="price_asc">{t('properties.filters.sortPriceAsc')}</option>
@@ -320,7 +320,7 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
 
             {loading ? (
               <div className="flex justify-center py-16">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
               </div>
             ) : filteredProperties.length > 0 ? (
               <div className={
@@ -337,16 +337,16 @@ export function Properties({ onNavigate, onUpdateWhatsappMessage }: PropertiesPr
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
-                <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600 text-lg mb-2">{t('properties.noResults')}</p>
-                <p className="text-gray-500">{t('properties.adjustFilters')}</p>
+              <div className="text-center py-16 bg-card text-card-foreground rounded-xl shadow-medium border border-border">
+                <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground text-lg mb-2">{t('properties.noResults')}</p>
+                <p className="text-muted-foreground">{t('properties.adjustFilters')}</p>
                 <button
                   onClick={() => {
                     setFilters(defaultFilters);
                     setSearchQuery('');
                   }}
-                  className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   {t('common.clearFilters')}
                 </button>

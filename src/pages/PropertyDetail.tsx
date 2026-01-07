@@ -477,10 +477,10 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">{t('propertyDetail.loadingProperty')}</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="mt-4 text-muted-foreground">{t('propertyDetail.loadingProperty')}</p>
         </div>
       </div>
     );
@@ -491,13 +491,13 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
 
   if (!property) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
-          <HomeIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('propertyDetail.propertyNotFound')}</h2>
+          <HomeIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-2">{t('propertyDetail.propertyNotFound')}</h2>
           <button
             onClick={() => onNavigate('/propiedades')}
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className="text-primary hover:text-primary/90 font-medium"
           >
             {t('propertyDetail.backToProperties')}
           </button>
@@ -520,7 +520,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb 
           items={[
@@ -542,7 +542,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="bg-card text-card-foreground rounded-xl shadow-medium border border-border overflow-hidden">
               <div className="relative h-96 md:h-[500px]">
                 {mediaItems[currentMediaIndex]?.type === 'image' ? (
                   <button
@@ -581,13 +581,13 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                   <>
                     <button
                       onClick={prevMedia}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-3 rounded-full shadow-lg transition-all"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-card/90 hover:bg-card text-foreground p-3 rounded-full shadow-lg transition-all border border-border"
                     >
                       <ChevronLeft className="h-6 w-6" />
                     </button>
                     <button
                       onClick={nextMedia}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-800 p-3 rounded-full shadow-lg transition-all"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-card/90 hover:bg-card text-foreground p-3 rounded-full shadow-lg transition-all border border-border"
                     >
                       <ChevronRight className="h-6 w-6" />
                     </button>
@@ -599,7 +599,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               </div>
 
               {mediaItems.length > 1 && (
-                <div className="p-4 bg-gray-50">
+                <div className="p-4 bg-muted">
                   <div
                     ref={thumbnailListRef}
                     className="flex gap-3 overflow-x-auto py-1 px-1 thumb-scroll"
@@ -610,10 +610,10 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                         ref={(el) => { thumbnailRefs.current[index] = el; }}
                         onClick={() => setCurrentMediaIndex(index)}
                         className={`relative h-20 w-20 flex-shrink-0 rounded-lg overflow-visible focus:outline-none ${
-                          index === currentMediaIndex ? 'ring-4 ring-blue-500' : ''
+                          index === currentMediaIndex ? 'ring-4 ring-primary' : ''
                         }`}
                       >
-                        <div className="h-full w-full rounded-lg overflow-hidden bg-white">
+                        <div className="h-full w-full rounded-lg overflow-hidden bg-card shadow-soft">
                           {item.type === 'image' ? (
                             <img
                               src={item.url}
@@ -643,12 +643,12 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               )}
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            <div className="bg-card text-card-foreground rounded-xl shadow-medium border border-border p-6">
+              <h1 className="text-3xl md:text-4xl font-bold mb-4">
                 {property.title}
               </h1>
-              <div className="flex items-center text-gray-600 mb-6">
-                <MapPin className="h-5 w-5 mr-2 text-blue-500" />
+              <div className="flex items-center text-muted-foreground mb-6">
+                <MapPin className="h-5 w-5 mr-2 text-primary" />
                 <span className="text-lg">
                   {property.location_address && `${property.location_address}, `}
                   {property.location_neighborhood && `${property.location_neighborhood}, `}
@@ -657,15 +657,15 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               </div>
               <div className="flex flex-wrap items-center gap-3 mb-6">
                 {property.is_for_sale && (
-                  <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-lg border border-blue-200">
+                  <div className="bg-primary/10 text-primary px-4 py-3 rounded-lg border border-primary/30">
                     <p className="text-xs uppercase font-semibold">{t('propertyDetail.sale')}</p>
-                    <p className="text-3xl font-bold">{formatPrice(property.price, property.currency)}</p>
+                    <p className="text-3xl font-bold text-foreground">{formatPrice(property.price, property.currency)}</p>
                   </div>
                 )}
                 {property.is_for_rent && (
-                  <div className="bg-emerald-50 text-emerald-700 px-4 py-3 rounded-lg border border-emerald-200">
+                  <div className="bg-secondary/10 text-secondary px-4 py-3 rounded-lg border border-secondary/30">
                     <p className="text-xs uppercase font-semibold">{t('propertyDetail.monthlyRent')}</p>
-                    <p className="text-3xl font-bold">{formatPrice(property.rent_price, property.rent_currency)}</p>
+                    <p className="text-3xl font-bold text-foreground">{formatPrice(property.rent_price, property.rent_currency)}</p>
                   </div>
                 )}
               </div>
@@ -694,8 +694,8 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                       return (
                         <div key={char.key} className={`${colors.bg} rounded-lg p-4 text-center`}>
                           <IconComponent className={`h-8 w-8 ${colors.icon} mx-auto mb-2`} />
-                          <p className="text-2xl font-bold text-gray-800">{displayValue}{displayUnit && <span className="text-lg"> {displayUnit}</span>}</p>
-                          <p className="text-sm text-gray-600">{t(`characteristics.${char.key}`)}</p>
+                          <p className="text-2xl font-bold text-foreground">{displayValue}{displayUnit && <span className="text-lg"> {displayUnit}</span>}</p>
+                          <p className="text-sm text-muted-foreground">{t(`characteristics.${char.key}`)}</p>
                         </div>
                       );
                     })}
@@ -705,7 +705,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
 
               {property.custom_bonuses && property.custom_bonuses.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-3 flex items-center">
+                  <h3 className="text-xl font-bold text-foreground mb-3 flex items-center">
                     <Tag className="h-6 w-6 mr-2 text-cyan-500" />
                     {t('propertyDetail.specialFeatures')}
                   </h3>
@@ -723,9 +723,9 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               )}
 
               <div className="prose max-w-none">
-                <h3 className="text-xl font-bold text-gray-800 mb-3">{t('propertyDetail.description')}</h3>
+                <h3 className="text-xl font-bold mb-3">{t('propertyDetail.description')}</h3>
                 <ReactMarkdown
-                  className="prose max-w-none text-gray-700 leading-relaxed prose-headings:text-gray-800 prose-strong:text-gray-800 prose-a:text-blue-600 hover:prose-a:text-blue-700 whitespace-pre-wrap"
+                  className="prose max-w-none text-muted-foreground leading-relaxed prose-headings:text-foreground prose-strong:text-foreground prose-a:text-primary hover:prose-a:text-primary/90 whitespace-pre-wrap"
                   remarkPlugins={[remarkGfm, remarkBreaks]}
                   components={{
                     p: (props) => (
@@ -738,18 +738,18 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-2xl font-bold text-gray-800 mb-6">{t('propertyDetail.propertyDetails')}</h3>
+            <div className="bg-card text-card-foreground rounded-xl shadow-medium border border-border p-6">
+              <h3 className="text-2xl font-bold mb-6">{t('propertyDetail.propertyDetails')}</h3>
               
               {/* Property Type - Always shown */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <HomeIcon className="h-6 w-6 text-blue-600" />
+                <div className="flex items-center space-x-3 p-4 bg-primary/10 rounded-xl border border-primary/30">
+                  <div className="p-3 bg-primary/15 rounded-lg">
+                    <HomeIcon className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 font-medium">{t('propertyDetail.type')}</p>
-                    <p className="font-bold text-gray-800 text-lg">{t(`propertyTypes.${property?.property_type}`)}</p>
+                    <p className="text-sm text-muted-foreground font-medium">{t('propertyDetail.type')}</p>
+                    <p className="font-bold text-foreground text-lg">{t(`propertyTypes.${property?.property_type}`)}</p>
                   </div>
                 </div>
               </div>
@@ -789,10 +789,10 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                       return (
                         <div key={category}>
                           {/* Category Header */}
-                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
-                            <CategoryIcon className="h-5 w-5 text-gray-500" />
-                            <h4 className="font-semibold text-gray-700">{t(`characteristicCategories.${category}`)}</h4>
-                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
+                            <CategoryIcon className="h-5 w-5 text-muted-foreground" />
+                            <h4 className="font-semibold text-foreground">{t(`characteristicCategories.${category}`)}</h4>
+                            <span className="text-xs text-muted-foreground/80 bg-muted px-2 py-0.5 rounded-full">
                               {chars.length}
                             </span>
                           </div>
@@ -811,14 +811,14 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                                     key={index}
                                     className={`group relative py-2 px-3 rounded-lg ${colors.bg} border border-opacity-50 hover:shadow-sm transition-all duration-200 flex items-center gap-2`}
                                   >
-                                    <div className={`p-1.5 rounded-md bg-white shadow-sm flex-shrink-0`}>
+                                    <div className={`p-1.5 rounded-md bg-card shadow-sm flex-shrink-0`}>
                                       <IconComponent className={`h-4 w-4 ${colors.icon}`} />
                                     </div>
                                     <span className={`font-medium text-sm ${colors.text} flex-1`}>
                                       {t(`characteristics.${char.key}`)}
                                     </span>
                                     {char.type === 'number' && (
-                                      <span className={`px-2 py-0.5 text-sm font-bold rounded-full bg-white shadow-sm ${colors.text}`}>
+                                      <span className={`px-2 py-0.5 text-sm font-bold rounded-full bg-card shadow-sm ${colors.text}`}>
                                         {char.value}
                                       </span>
                                     )}
@@ -836,7 +836,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                                   className={`group relative p-3 rounded-lg ${colors.bg} border border-opacity-50 hover:shadow-sm transition-all duration-200`}
                                 >
                                   <div className="flex items-start gap-2">
-                                    <div className={`p-1.5 rounded-md bg-white shadow-sm flex-shrink-0`}>
+                                    <div className={`p-1.5 rounded-md bg-card shadow-sm flex-shrink-0`}>
                                       <IconComponent className={`h-4 w-4 ${colors.icon}`} />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -845,7 +845,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                                           {t(`characteristics.${char.key}`)}
                                         </span>
                                         {char.type === 'number' && (
-                                          <span className={`px-2 py-0.5 text-xs font-bold rounded-full bg-white shadow-sm ${colors.text}`}>
+                                          <span className={`px-2 py-0.5 text-xs font-bold rounded-full bg-card shadow-sm ${colors.text}`}>
                                             {char.value}
                                           </span>
                                         )}
@@ -853,7 +853,7 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
                                           <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                                         )}
                                       </div>
-                                      <p className="mt-1 text-xs text-gray-600 leading-relaxed">
+                                      <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                                         {char.description}
                                       </p>
                                     </div>
@@ -872,8 +872,8 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
 
             {/* Conditionally show map based on show_map field */}
             {property.show_map && property.location_lat && property.location_lng && (
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h3 className="text-2xl font-bold text-gray-800 mb-4">{t('propertyDetail.location')}</h3>
+              <div className="bg-card text-card-foreground rounded-xl shadow-medium border border-border p-6">
+                <h3 className="text-2xl font-bold mb-4">{t('propertyDetail.location')}</h3>
                 <div className="aspect-video rounded-lg overflow-hidden">
                   <iframe
                     src={`https://www.google.com/maps?q=${property.location_lat},${property.location_lng}&output=embed`}
@@ -889,18 +889,18 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
           </div>
 
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-lg p-6 sticky top-24">
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">{t('propertyDetail.talkToUs')}</h3>
-              <p className="text-gray-600 mb-4">
+            <div className="bg-card text-card-foreground rounded-xl shadow-medium border border-border p-6 sticky top-24">
+              <h3 className="text-2xl font-bold mb-4">{t('propertyDetail.talkToUs')}</h3>
+              <p className="text-muted-foreground mb-4">
                 {t('propertyDetail.whatsappContactText')}
               </p>
 
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-100 rounded-lg">
-                  <Phone className="h-5 w-5 text-green-600 mt-0.5" />
+                <div className="flex items-start gap-3 p-4 bg-secondary/10 border border-secondary/30 rounded-lg">
+                  <Phone className="h-5 w-5 text-secondary mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">{t('propertyDetail.quickResponse')}</p>
-                    <p className="text-sm text-gray-600">{t('propertyDetail.quickResponseText')}</p>
+                    <p className="text-sm font-semibold text-foreground">{t('propertyDetail.quickResponse')}</p>
+                    <p className="text-sm text-muted-foreground">{t('propertyDetail.quickResponseText')}</p>
                   </div>
                 </div>
 
@@ -933,6 +933,16 @@ export function PropertyDetail({ propertySlug, onNavigate, onUpdateWhatsappMessa
             : { src: item.url, alt: property.title }
         )}
         plugins={[LightboxVideo]}
+        animation={{
+          swipe: 180,
+          fade: 180,
+          navigation: 150,
+          easing: {
+            swipe: 'ease-out',
+            fade: 'ease-out',
+            navigation: 'ease-out',
+          },
+        }}
         carousel={{ finite: false }}
         controller={{ closeOnBackdropClick: true }}
         on={{

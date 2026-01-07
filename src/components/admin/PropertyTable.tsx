@@ -1,3 +1,4 @@
+import type React from 'react';
 import { useMemo } from 'react';
 import { Edit2, Trash2, Eye, EyeOff, Star, StarOff, GripVertical } from 'lucide-react';
 import {
@@ -69,16 +70,16 @@ export function PropertyTable({
   return (
     <div className="overflow-x-auto">
       {/* Header */}
-      <div className="grid grid-cols-[60px_80px_1fr_100px_140px_140px_80px_80px_100px] gap-2 bg-muted px-4 py-3 min-w-[900px]">
+      <div className="grid grid-cols-[60px_80px_1fr] sm:grid-cols-[60px_80px_1fr_100px_140px_140px_80px_80px_100px] gap-2 bg-muted px-4 py-3 min-w-full sm:min-w-[900px]">
         <div className="text-left text-sm font-semibold text-foreground">Orden</div>
         <div className="text-left text-sm font-semibold text-foreground">Imagen</div>
         <div className="text-left text-sm font-semibold text-foreground">Título</div>
-        <div className="text-left text-sm font-semibold text-foreground">Tipo</div>
-        <div className="text-left text-sm font-semibold text-foreground">Precio</div>
-        <div className="text-left text-sm font-semibold text-foreground">Ubicación</div>
-        <div className="text-center text-sm font-semibold text-foreground">Estado</div>
-        <div className="text-center text-sm font-semibold text-foreground">Destacado</div>
-        <div className="text-right text-sm font-semibold text-foreground">Acciones</div>
+        <div className="hidden text-left text-sm font-semibold text-foreground sm:block">Tipo</div>
+        <div className="hidden text-left text-sm font-semibold text-foreground sm:block">Precio</div>
+        <div className="hidden text-left text-sm font-semibold text-foreground sm:block">Ubicación</div>
+        <div className="hidden text-center text-sm font-semibold text-foreground sm:block">Estado</div>
+        <div className="hidden text-center text-sm font-semibold text-foreground sm:block">Destacado</div>
+        <div className="hidden text-right text-sm font-semibold text-foreground sm:block">Acciones</div>
       </div>
 
       {/* Body */}
@@ -89,7 +90,7 @@ export function PropertyTable({
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={items} strategy={verticalListSortingStrategy}>
-          <div className="divide-y divide-border min-w-[900px]">
+          <div className="divide-y divide-border min-w-full sm:min-w-[900px]">
             {properties.map((property, index) => (
               <SortableRow
                 key={property.id}
@@ -154,7 +155,7 @@ function SortableRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="grid grid-cols-[60px_80px_1fr_100px_140px_140px_80px_80px_100px] gap-2 items-center px-4 py-3 hover:bg-muted/50 transition-colors"
+      className="grid grid-cols-[60px_80px_1fr] sm:grid-cols-[60px_80px_1fr_100px_140px_140px_80px_80px_100px] gap-2 items-center px-4 py-3 hover:bg-muted/50 transition-colors"
     >
       {/* Order / Drag Handle */}
       <div className="flex items-center gap-1">
@@ -192,14 +193,14 @@ function SortableRow({
       </div>
 
       {/* Type */}
-      <div>
+      <div className="hidden sm:block">
         <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full whitespace-nowrap">
           {propertyTypeLabels[property.property_type]}
         </span>
       </div>
 
       {/* Price */}
-      <div className="font-semibold text-foreground text-sm">
+      <div className="hidden font-semibold text-foreground text-sm sm:block">
         <div className="space-y-1">
           {property.is_for_sale && (
             <div className="text-foreground">
@@ -217,13 +218,13 @@ function SortableRow({
       </div>
 
       {/* Location */}
-      <div className="text-sm text-muted-foreground truncate">
+      <div className="hidden text-sm text-muted-foreground truncate sm:block">
         {property.location_neighborhood && `${property.location_neighborhood}, `}
         {property.location_city}
       </div>
 
       {/* Status */}
-      <div className="text-center">
+      <div className="hidden text-center sm:block">
         {property.status === 'paused' ? (
           <div
             className="p-2 rounded-lg bg-amber-100 text-amber-600 cursor-not-allowed"
@@ -247,7 +248,7 @@ function SortableRow({
       </div>
 
       {/* Featured */}
-      <div className="text-center">
+      <div className="hidden text-center sm:block">
         <button
           onClick={() => onToggleFeatured(property)}
           className={`p-2 rounded-lg transition-colors ${
@@ -262,7 +263,7 @@ function SortableRow({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end space-x-1">
+      <div className="hidden items-center justify-end space-x-1 sm:flex">
         <button
           onClick={() => onEdit(property)}
           className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
@@ -276,6 +277,24 @@ function SortableRow({
           title="Eliminar"
         >
           <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Mobile actions tucked under title */}
+      <div className="col-span-3 mt-2 flex items-center gap-2 sm:hidden">
+        <button
+          onClick={() => onEdit(property)}
+          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+        >
+          <Edit2 className="h-3 w-3" />
+          Editar
+        </button>
+        <button
+          onClick={() => onDelete(property)}
+          className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors"
+        >
+          <Trash2 className="h-3 w-3" />
+          Eliminar
         </button>
       </div>
     </div>

@@ -75,7 +75,7 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Hero Section */}
       <section
         className="relative min-h-[90vh] md:min-h-[85vh] flex items-center justify-center bg-cover bg-center"
@@ -121,42 +121,52 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white">
-        <div className="container mx-auto px-4">
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(circle at 15% 20%, hsla(var(--foam) / 0.6) 0%, transparent 35%), ' +
+              'radial-gradient(circle at 85% 25%, hsla(var(--sand) / 0.45) 0%, transparent 32%), ' +
+              'radial-gradient(circle at 50% 80%, hsla(var(--ocean-light) / 0.16) 0%, transparent 40%), ' +
+              'linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background)))',
+          }}
+        />
+        <div className="relative container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 group">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <MapPin className="h-8 w-8 text-white" />
+            <div className="bg-card text-card-foreground p-8 rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 border border-border group backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-primary to-ocean-light w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <MapPin className="h-8 w-8 text-primary-foreground" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('landing.features.location.title')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('landing.features.location.description')}</p>
+              <h3 className="text-xl font-bold text-foreground mb-3">{t('landing.features.location.title')}</h3>
+              <p className="text-muted-foreground leading-relaxed">{t('landing.features.location.description')}</p>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 group">
-              <div className="bg-gradient-to-br from-cyan-500 to-teal-500 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <Users className="h-8 w-8 text-white" />
+            <div className="bg-card text-card-foreground p-8 rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 border border-border group backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-secondary to-ocean-light w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Users className="h-8 w-8 text-secondary-foreground" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('landing.features.trusted.title')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('landing.features.trusted.description')}</p>
+              <h3 className="text-xl font-bold text-foreground mb-3">{t('landing.features.trusted.title')}</h3>
+              <p className="text-muted-foreground leading-relaxed">{t('landing.features.trusted.description')}</p>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 group">
-              <div className="bg-gradient-to-br from-emerald-500 to-green-500 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <TrendingUp className="h-8 w-8 text-white" />
+            <div className="bg-card text-card-foreground p-8 rounded-2xl shadow-soft hover:shadow-medium transition-all duration-300 border border-border group backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-emerald-500 to-primary w-16 h-16 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <TrendingUp className="h-8 w-8 text-primary-foreground" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('landing.features.investment.title')}</h3>
-              <p className="text-gray-600 leading-relaxed">{t('landing.features.investment.description')}</p>
+              <h3 className="text-xl font-bold text-foreground mb-3">{t('landing.features.investment.title')}</h3>
+              <p className="text-muted-foreground leading-relaxed">{t('landing.features.investment.description')}</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Featured Properties Section */}
-      <section className="py-16 md:py-24 bg-white">
+      <section className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{t('landing.featured.title')}</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">{t('landing.featured.subtitle')}</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{t('landing.featured.title')}</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t('landing.featured.subtitle')}</p>
           </div>
 
           {loading ? (
@@ -259,7 +269,7 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
               <div className="text-center mt-12">
                 <button
                   onClick={() => onNavigate('/propiedades')}
-                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:shadow-lg hover:shadow-blue-500/25"
+                  className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:shadow-lg hover:shadow-primary/25"
                 >
                   {t('common.viewAll')}
                   <ChevronRight className="h-5 w-5" />
@@ -268,45 +278,54 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
             </>
           ) : (
             <div className="text-center py-16">
-              <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">{t('landing.featured.empty')}</p>
+              <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">{t('landing.featured.empty')}</p>
             </div>
           )}
         </div>
       </section>
 
       {/* About Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-br from-blue-50 via-white to-cyan-50">
-        <div className="container mx-auto px-4">
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(circle at 10% 10%, hsla(var(--foam) / 0.55) 0%, transparent 30%), ' +
+              'radial-gradient(circle at 90% 20%, hsla(var(--sand) / 0.4) 0%, transparent 35%), ' +
+              'linear-gradient(135deg, hsla(var(--ocean-light) / 0.18), hsla(var(--background) / 0.95))',
+          }}
+        />
+        <div className="relative container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">{t('landing.about.title')}</h2>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">{t('landing.about.description')}</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">{t('landing.about.title')}</h2>
+              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">{t('landing.about.description')}</p>
               <ul className="space-y-4">
                 {[t('landing.about.point1'), t('landing.about.point2'), t('landing.about.point3'), t('landing.about.point4')].map((point, index) => (
                   <li key={index} className="flex items-center gap-3">
-                    <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700">{point}</span>
+                    <CheckCircle className="h-6 w-6 text-primary flex-shrink-0" />
+                    <span className="text-foreground">{point}</span>
                   </li>
                 ))}
               </ul>
             </div>
             <div className="relative">
-              <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl">
+              <div className="aspect-square rounded-3xl overflow-hidden shadow-2xl border border-border bg-card">
                 <img
                   src="https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=800"
                   alt="Real Estate"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+              <div className="absolute -bottom-6 -left-6 bg-card p-6 rounded-2xl shadow-medium border border-border">
                 <div className="flex items-center gap-4">
-                  <div className="bg-blue-100 p-3 rounded-xl">
-                    <Star className="h-8 w-8 text-blue-600" />
+                  <div className="bg-primary/15 p-3 rounded-xl">
+                    <Star className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">4.9/5</div>
-                    <div className="text-sm text-gray-500">Client Rating</div>
+                    <div className="text-2xl font-bold text-foreground">4.9/5</div>
+                    <div className="text-sm text-muted-foreground">Client Rating</div>
                   </div>
                 </div>
               </div>
@@ -316,13 +335,13 @@ export function Home({ onNavigate, onUpdateWhatsappMessage }: HomeProps) {
       </section>
 
       {/* CTA Section for Agents */}
-      <section className="py-16 md:py-24 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">{t('landing.cta.title')}</h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">{t('landing.cta.subtitle')}</p>
+      <section className="py-16 md:py-24 bg-gradient-to-r from-ocean-deep via-primary to-secondary">
+        <div className="container mx-auto px-4 text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t('landing.cta.title')}</h2>
+          <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">{t('landing.cta.subtitle')}</p>
           <button
             onClick={() => window.open('https://wa.me/523321831999', '_blank')}
-            className="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-50 transition-all hover:shadow-lg"
+            className="inline-flex items-center gap-2 bg-card text-primary px-8 py-4 rounded-xl font-semibold text-lg hover:bg-card/90 transition-all hover:shadow-medium border border-border"
           >
             {t('landing.cta.button')}
             <ChevronRight className="h-5 w-5" />

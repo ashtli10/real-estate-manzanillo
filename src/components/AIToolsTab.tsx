@@ -95,7 +95,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
   
   // Progress durations in ms (time to go from 1% to 99%)
   const PROGRESS_DURATIONS = {
-    images: 60000,  // 60s target for image generation
+    images: 30000,  // 30s target for image generation (faster bar)
     script: 30000,  // 30s
     video: 130000,  // 2m 10s
   };
@@ -789,6 +789,7 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
     };
 
     const displayProgress = Math.round(progress);
+    const progressWidth = Math.min(progress, 100);
 
     return (
       <div className="text-center py-12">
@@ -808,8 +809,8 @@ export function AIToolsTab({ userId, onNavigateToBilling }: AIToolsTabProps) {
         <div className="max-w-md mx-auto mb-2">
           <div className="h-2 bg-muted/80 border border-border/60 shadow-inner rounded-full overflow-hidden">
             <div 
-              className="h-full bg-primary transition-all duration-100 ease-linear rounded-full"
-              style={{ width: `${displayProgress}%` }}
+              className="h-full bg-primary transition-[width] duration-300 ease-out rounded-full"
+              style={{ width: `${progressWidth}%` }}
             />
           </div>
         </div>

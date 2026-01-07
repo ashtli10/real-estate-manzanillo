@@ -60,8 +60,8 @@ export function InvitePage({ token, onNavigate }: InvitePageProps) {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-500 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-gradient-to-br from-ocean-deep via-primary to-secondary flex items-center justify-center p-4">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-2xl border border-border p-8 max-w-md w-full text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Validando invitación...</p>
         </div>
@@ -72,14 +72,14 @@ export function InvitePage({ token, onNavigate }: InvitePageProps) {
   // Invalid token
   if (error || !tokenData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-500 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+      <div className="min-h-screen bg-gradient-to-br from-ocean-deep via-primary to-secondary flex items-center justify-center p-4">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-2xl border border-border p-8 max-w-md w-full">
           <div className="text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <XCircle className="h-8 w-8 text-red-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Invitación inválida</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold mb-2">Invitación inválida</h2>
+            <p className="text-muted-foreground mb-6">
               {error || 'Este enlace de invitación no es válido o ha expirado.'}
             </p>
             <button
@@ -96,14 +96,14 @@ export function InvitePage({ token, onNavigate }: InvitePageProps) {
 
   // Valid token - show welcome screen
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-500 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-ocean-deep via-primary to-secondary flex items-center justify-center p-4">
+      <div className="bg-card text-card-foreground rounded-2xl shadow-2xl border border-border p-8 max-w-md w-full">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800">¡Bienvenido!</h2>
-          <p className="text-gray-600 mt-2">
+          <h2 className="text-2xl font-bold">¡Bienvenido!</h2>
+          <p className="text-muted-foreground mt-2">
             Has sido invitado a unirte a Habitex
           </p>
         </div>
@@ -111,21 +111,21 @@ export function InvitePage({ token, onNavigate }: InvitePageProps) {
         <div className="space-y-4 mb-8">
           {/* Email info */}
           {tokenData.email && (
-            <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-3 p-4 bg-primary/10 rounded-lg border border-primary/30">
               <Mail className="h-5 w-5 text-blue-600" />
               <div>
-                <p className="text-sm text-gray-600">Email asignado</p>
-                <p className="font-medium text-gray-800">{tokenData.email}</p>
+                <p className="text-sm text-muted-foreground">Email asignado</p>
+                <p className="font-medium text-foreground">{tokenData.email}</p>
               </div>
             </div>
           )}
 
           {/* Trial info */}
-          <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
+          <div className="flex items-center gap-3 p-4 bg-secondary/10 rounded-lg border border-secondary/30">
             <Clock className="h-5 w-5 text-green-600" />
             <div>
-              <p className="text-sm text-gray-600">Período de prueba</p>
-              <p className="font-medium text-gray-800">
+              <p className="text-sm text-muted-foreground">Período de prueba</p>
+              <p className="font-medium text-foreground">
                 {tokenData.trialDays > 0
                   ? `${tokenData.trialDays} días gratis`
                   : 'Pago requerido al registrarse'}
@@ -136,8 +136,8 @@ export function InvitePage({ token, onNavigate }: InvitePageProps) {
 
         {/* Benefits */}
         <div className="mb-8">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Como agente podrás:</h3>
-          <ul className="space-y-2 text-sm text-gray-600">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Como agente podrás:</h3>
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
               <span>Publicar propiedades ilimitadas</span>
@@ -164,7 +164,7 @@ export function InvitePage({ token, onNavigate }: InvitePageProps) {
           Comenzar registro
         </button>
 
-        <p className="text-center text-xs text-gray-500 mt-4">
+        <p className="text-center text-xs text-muted-foreground mt-4">
           Al continuar, aceptas nuestros términos y condiciones
         </p>
       </div>

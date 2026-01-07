@@ -120,8 +120,8 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
   }
@@ -135,14 +135,14 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
 
   if (error || !agent) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
-          <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">{getErrorMessage()}</h1>
-          <p className="text-gray-600 mb-6">{t('errors.tryAgain')}</p>
+          <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">{getErrorMessage()}</h1>
+          <p className="text-muted-foreground mb-6">{t('errors.tryAgain')}</p>
           <button
             onClick={() => onNavigate('/')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             {t('common.back')}
           </button>
@@ -154,7 +154,7 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
   const defaultCover = 'https://images.pexels.com/photos/1268871/pexels-photo-1268871.jpeg?auto=compress&cs=tinysrgb&w=1920';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Cover Image */}
       <div
         className="h-48 md:h-64 lg:h-80 bg-cover bg-center relative"
@@ -168,27 +168,27 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
       <div className="container mx-auto px-4">
         {/* Profile Card - Overlapping */}
         <div className="relative -mt-24 md:-mt-32 mb-8">
-          <div className="bg-white rounded-2xl shadow-xl p-6 md:p-8">
+          <div className="bg-card text-card-foreground rounded-2xl shadow-medium border border-border p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:items-end gap-6">
               {/* Avatar */}
               <div className="flex-shrink-0 -mt-20 md:-mt-24">
                 <img
                   src={agent.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(agent.full_name)}&background=3b82f6&color=fff&size=192`}
                   alt={agent.full_name}
-                  className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover ring-4 ring-white shadow-lg"
+                  className="w-32 h-32 md:w-40 md:h-40 rounded-2xl object-cover ring-4 ring-card shadow-lg"
                 />
               </div>
 
               {/* Info */}
               <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{agent.full_name}</h1>
+                <h1 className="text-2xl md:text-3xl font-bold">{agent.full_name}</h1>
                 {agent.company_name && (
-                  <p className="text-lg text-gray-600 flex items-center gap-2 mt-1">
+                  <p className="text-lg text-muted-foreground flex items-center gap-2 mt-1">
                     <Building2 className="h-5 w-5 text-blue-500" />
                     {agent.company_name}
                   </p>
                 )}
-                <div className="flex flex-wrap items-center gap-4 mt-3 text-gray-500">
+                <div className="flex flex-wrap items-center gap-4 mt-3 text-muted-foreground">
                   {agent.location && (
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
@@ -201,7 +201,7 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
                   </span>
                 </div>
                 {agent.bio && (
-                  <p className="text-gray-600 mt-4 max-w-2xl">{agent.bio}</p>
+                  <p className="text-muted-foreground mt-4 max-w-2xl">{agent.bio}</p>
                 )}
               </div>
 
@@ -217,15 +217,15 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
         <div className="pb-16">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{t('agent.properties')}</h2>
-              <p className="text-gray-600">
+              <h2 className="text-2xl font-bold">{t('agent.properties')}</h2>
+              <p className="text-muted-foreground">
                 {filteredProperties.length} {filteredProperties.length === 1 ? 'property' : 'properties'}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
               {/* Filter Tabs */}
-              <div className="flex bg-gray-100 rounded-xl p-1">
+              <div className="flex bg-muted rounded-xl p-1">
                 {(['all', 'sale', 'rent'] as const).map((type) => (
                   <button
                     key={type}
@@ -236,8 +236,8 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
                           ? 'bg-blue-600 text-white'
                           : type === 'rent'
                           ? 'bg-emerald-600 text-white'
-                          : 'bg-white text-gray-800 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
+                          : 'bg-card text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {type === 'all' ? t('properties.filters.all') : 
@@ -248,11 +248,11 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
               </div>
 
               {/* View Mode Toggle */}
-              <div className="hidden md:flex bg-gray-100 rounded-xl p-1">
+              <div className="hidden md:flex bg-muted rounded-xl p-1">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded-lg transition-all ${
-                    viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
+                    viewMode === 'grid' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground'
                   }`}
                 >
                   <Grid className="h-5 w-5" />
@@ -260,7 +260,7 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
                 <button
                   onClick={() => setViewMode('list')}
                   className={`p-2 rounded-lg transition-all ${
-                    viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500'
+                    viewMode === 'list' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground'
                   }`}
                 >
                   <List className="h-5 w-5" />
@@ -284,9 +284,9 @@ export function AgentProfile({ username, onNavigate, onUpdateWhatsappNumber }: A
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
-              <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg">{t('agent.noProperties')}</p>
+            <div className="text-center py-16 bg-card text-card-foreground rounded-xl shadow-medium border border-border">
+              <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">{t('agent.noProperties')}</p>
             </div>
           )}
         </div>

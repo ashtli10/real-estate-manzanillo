@@ -17,6 +17,47 @@ interface PlacePrediction {
   secondaryText: string;
 }
 
+type ApiStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+// Google Maps API types for the new Places API
+interface GoogleMapsWindow extends Window {
+  google?: {
+    maps?: {
+      importLibrary?: (name: 'places') => Promise<GooglePlacesLibrary>;
+    };
+  };
+}
+
+interface GooglePlacesLibrary {
+  AutocompleteSuggestion: {
+    fetchAutocompleteSuggestions: (
+      request: AutocompleteRequest
+    ) => Promise<{ suggestions: AutocompleteSuggestionResult[] }>;
+  };
+}
+
+interface AutocompleteRequest {
+  input: string;
+  includedRegionCodes?: string[];
+  language?: string;
+  includedPrimaryTypes?: string[];
+}
+
+interface AutocompleteSuggestionResult {
+  placePrediction?: {
+    placeId: string;
+    text: { text: string; toString: () => string };
+    structuredFormat?: {
+      mainText?: { text: string };
+      secondaryText?: { text: string };
+    };
+  };
+}
+
+declare const window: GoogleMapsWindow;
+
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
 export function LocationAutocomplete({
   value,
   onChange,
@@ -29,10 +70,12 @@ export function LocationAutocomplete({
   const [showDropdown, setShowDropdown] = useState(false);
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState(false);
+  const [apiStatus, setApiStatus] = useState<ApiStatus>('idle');
+  const [placesLibrary, setPlacesLibrary] = useState<GooglePlacesLibrary | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
 
   // Sync external value changes
   useEffect(() => {
@@ -44,87 +87,113 @@ export function LocationAutocomplete({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  // Fetch predictions from Google Places API
+  // Load Google Maps Places API
+  useEffect(() => {
+    if (!GOOGLE_MAPS_API_KEY) {
+      setApiStatus('error');
+      return;
+    }
+
+    // Check if script is already loaded
+    const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-maps="true"]');
+    
+    const initPlacesLibrary = async () => {
+      try {
+        if (window.google?.maps?.importLibrary) {
+          const lib = await window.google.maps.importLibrary('places');
+          setPlacesLibrary(lib);
+          setApiStatus('ready');
+        }
+      } catch (error) {
+        console.error('Error loading Places library:', error);
+        setApiStatus('error');
+      }
+    };
+
+    if (existingScript && window.google?.maps?.importLibrary) {
+      initPlacesLibrary();
+      return;
+    }
+
+    if (existingScript) {
+      // Script exists but not fully loaded yet
+      existingScript.addEventListener('load', initPlacesLibrary);
+      return () => existingScript.removeEventListener('load', initPlacesLibrary);
+    }
+
+    // Load the script
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.dataset.googleMaps = 'true';
+    script.onload = () => initPlacesLibrary();
+    script.onerror = () => setApiStatus('error');
+    document.head.appendChild(script);
+    setApiStatus('loading');
+
+    return () => {
+      script.onload = null;
+      script.onerror = null;
+    };
+  }, []);
+
+  // Fetch predictions using google.maps.places.AutocompleteSuggestion
   const fetchPredictions = useCallback(async (input: string) => {
     if (!input.trim()) {
       setPredictions([]);
       return;
     }
 
-    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      console.error('Google Maps API key not found');
-      setApiError(true);
+    if (!placesLibrary?.AutocompleteSuggestion) {
+      console.error('Google Maps Places library not loaded');
       return;
     }
 
+    // Increment request ID to handle race conditions
+    const currentRequestId = ++requestIdRef.current;
     setIsLoading(true);
-    setApiError(false);
 
     try {
-      // Use the Places API (New) Autocomplete endpoint
-      const response = await fetch(
-        'https://places.googleapis.com/v1/places:autocomplete',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Goog-Api-Key': apiKey,
-          },
-          body: JSON.stringify({
-            input: input,
-            // Filter for regions/neighborhoods
-            includedPrimaryTypes: ['(regions)'],
-            // Restrict to Mexico
-            includedRegionCodes: ['mx'],
-            // Language preference
-            languageCode: 'es',
-          }),
-        }
-      );
+      const request: AutocompleteRequest = {
+        input: input,
+        // Restrict to Mexico
+        includedRegionCodes: ['mx'],
+        // Language preference
+        language: 'es',
+      };
 
-      if (!response.ok) {
-        throw new Error('Places API request failed');
-      }
+      const { suggestions } = await placesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
 
-      const data = await response.json();
-      
+      // Check if this request is still the latest
+      if (currentRequestId !== requestIdRef.current) return;
+
       // Parse predictions from response
-      const parsedPredictions: PlacePrediction[] = (data.suggestions || [])
-        .filter((suggestion: { placePrediction?: unknown }) => suggestion.placePrediction)
-        .map((suggestion: { 
-          placePrediction: { 
-            placeId: string; 
-            text: { text: string }; 
-            structuredFormat?: { 
-              mainText?: { text: string }; 
-              secondaryText?: { text: string }; 
-            }; 
-          } 
-        }) => {
-          const pred = suggestion.placePrediction;
+      const parsedPredictions: PlacePrediction[] = suggestions
+        .filter((suggestion) => suggestion.placePrediction)
+        .map((suggestion) => {
+          const pred = suggestion.placePrediction!;
           return {
             placeId: pred.placeId,
-            text: pred.text?.text || '',
+            text: pred.text?.text || pred.text?.toString() || '',
             mainText: pred.structuredFormat?.mainText?.text || pred.text?.text || '',
             secondaryText: pred.structuredFormat?.secondaryText?.text || '',
           };
-        })
-        // Filter results
-        .filter((pred: PlacePrediction) => {
-          // No restriction
-          return true;
         });
 
       setPredictions(parsedPredictions);
     } catch (error) {
       console.error('Error fetching place predictions:', error);
-      setApiError(true);
-      setPredictions([]);
+      // Only set empty if this is still the latest request
+      if (currentRequestId === requestIdRef.current) {
+        setPredictions([]);
+      }
     } finally {
-      setIsLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, []);
+  }, [placesLibrary]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -270,14 +339,14 @@ export function LocationAutocomplete({
           )}
 
           {/* API Error state */}
-          {apiError && !isLoading && (
+          {apiStatus === 'error' && !isLoading && (
             <div className="px-4 py-3 text-sm text-amber-600">
               {t('common.locationSearchError')}
             </div>
           )}
 
           {/* Predictions list */}
-          {!isLoading && !apiError && predictions.map((prediction) => (
+          {!isLoading && apiStatus !== 'error' && predictions.map((prediction) => (
             <button
               key={prediction.placeId}
               onClick={() => handleSelectPrediction(prediction)}
@@ -296,14 +365,14 @@ export function LocationAutocomplete({
           ))}
 
           {/* No results message */}
-          {!isLoading && !apiError && search.trim() && predictions.length === 0 && (
+          {!isLoading && apiStatus !== 'error' && search.trim() && predictions.length === 0 && (
             <div className="px-4 py-3 text-sm text-gray-500">
               {t('properties.noResults')}
             </div>
           )}
 
           {/* Hint when no search */}
-          {!isLoading && !apiError && !search.trim() && (
+          {!isLoading && apiStatus !== 'error' && !search.trim() && (
             <div className="px-4 py-3 text-sm text-gray-500">
               {t('common.typeToSearch')}
             </div>

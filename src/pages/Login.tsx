@@ -70,15 +70,15 @@ export function Login({ onNavigate }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-500 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-ocean-deep via-primary to-secondary flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-2xl border border-border p-8">
           <div className="text-center mb-8">
             <div className="bg-gradient-to-r from-blue-500 to-cyan-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <LogIn className="h-8 w-8 text-white" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-800">Panel de Administración</h2>
-            <p className="text-gray-600 mt-2">Habitex</p>
+            <h2 className="text-3xl font-bold">Panel de Administración</h2>
+            <p className="text-muted-foreground mt-2">Habitex</p>
           </div>
 
           {(error || resetMessage) && (
@@ -102,34 +102,34 @@ export function Login({ onNavigate }: LoginProps) {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Correo electrónico
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
                   placeholder="admin@habitex.mx"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 Contraseña
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
                   placeholder="••••••••"
                 />
               </div>
@@ -147,7 +147,7 @@ export function Login({ onNavigate }: LoginProps) {
               type="button"
               onClick={handleResetPassword}
               disabled={resetLoading}
-              className="w-full text-blue-700 hover:text-blue-800 text-sm font-medium underline-offset-4 hover:underline disabled:opacity-60"
+              className="w-full text-primary hover:text-primary/90 text-sm font-medium underline-offset-4 hover:underline disabled:opacity-60"
             >
               {resetLoading ? 'Enviando enlace...' : '¿Olvidaste tu contraseña?'}
             </button>
@@ -156,7 +156,7 @@ export function Login({ onNavigate }: LoginProps) {
           <div className="mt-6 text-center">
             <button
               onClick={() => onNavigate('/')}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              className="text-primary hover:text-primary/90 text-sm font-medium"
             >
               Volver al inicio
             </button>

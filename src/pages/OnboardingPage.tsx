@@ -402,8 +402,8 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
   // Loading validation
   if (validatingToken) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-500 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-gradient-to-br from-ocean-deep via-primary to-secondary flex items-center justify-center p-4">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-2xl border border-border p-8 max-w-md w-full text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Validando invitación...</p>
         </div>
@@ -447,13 +447,13 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
   // Step 5 - Success
   if (step === 5) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-500 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-gradient-to-br from-ocean-deep via-primary to-secondary flex items-center justify-center p-4">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-2xl border border-border p-8 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <PartyPopper className="h-10 w-10 text-green-600" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">¡Bienvenido!</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-3xl font-bold mb-2">¡Bienvenido!</h2>
+          <p className="text-muted-foreground mb-6">
             Tu cuenta ha sido creada exitosamente
           </p>
 
@@ -474,7 +474,7 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
             </button>
             <button
               onClick={() => onNavigate(`/${formData.username}`)}
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 px-4 rounded-lg font-medium transition-all"
+              className="w-full bg-muted hover:bg-muted/80 text-foreground py-3 px-4 rounded-lg font-medium transition-all border border-border"
             >
               Ver mi perfil público
             </button>
@@ -485,8 +485,8 @@ export function OnboardingPage({ token, onNavigate }: OnboardingPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-500 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-ocean-deep via-primary to-secondary flex items-center justify-center p-4">
+      <div className="bg-card text-card-foreground rounded-2xl shadow-2xl border border-border p-8 max-w-md w-full">
         <StepIndicator />
 
         {/* Error display */}
