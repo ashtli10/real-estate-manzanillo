@@ -281,19 +281,19 @@ function SortableRow({
       </div>
 
       {/* Mobile actions tucked under title */}
-      <div className="col-span-3 mt-2 flex items-center gap-2 sm:hidden">
+      <div className="col-span-3 mt-3 grid grid-cols-2 gap-3 sm:hidden">
         <button
           onClick={() => onEdit(property)}
-          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors"
         >
-          <Edit2 className="h-3 w-3" />
+          <Edit2 className="h-4 w-4" />
           Editar
         </button>
         <button
           onClick={() => onDelete(property)}
-          className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-destructive/10 px-4 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/20 transition-colors"
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="h-4 w-4" />
           Eliminar
         </button>
       </div>

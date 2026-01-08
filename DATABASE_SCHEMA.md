@@ -1,6 +1,6 @@
 # 🗄️ Database Schema Documentation
 
-**Last Edited: 2026-01-06**
+**Last Edited: 2026-01-08**
 
 > **Note:** The `tour_generation_jobs` table has been removed. Run the SQL at the end of this file to drop it from your database.
 
@@ -15,6 +15,9 @@
 - **Replaced on-delete triggers** with scheduled `storage-maintenance` Edge Function
 - **pg_cron runs daily at 3:00 AM UTC** via `run_storage_maintenance()` function
 - **Benefits**: No race conditions with async media processing, simpler architecture, more reliable
+
+### Invitation Token Fix
+- **Fixed** `validate_invitation_token` and `use_invitation_token` search_path to `public` with schema-qualified table access (prevents `42P01` relation errors on invite links)
 
 ### Security Improvements
 - **Fixed infinite recursion in RLS policies**: Created `is_admin()` SECURITY DEFINER function to check admin status without triggering RLS on `user_roles` table
