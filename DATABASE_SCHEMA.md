@@ -303,7 +303,7 @@ Property listings with full details.
 - `characteristics` (JSONB) - Property features
 - `custom_bonuses` (JSONB)
 - `is_featured`, `display_order`
-- `image_count` (INT, DEFAULT 0) - Number of images uploaded (max 50)
+- `image_count` (INT, DEFAULT 0) - Number of images uploaded (max 75)
 - `video_count` (INT, DEFAULT 0) - Number of videos uploaded (max 3)
 
 **RLS Policies:**

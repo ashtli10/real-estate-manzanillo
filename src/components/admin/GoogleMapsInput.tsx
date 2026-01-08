@@ -18,34 +18,46 @@ interface GoogleMapsInputProps {
 
 type ApiStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-// Google Maps API types
+// Google Maps API types (new Places API)
 interface GoogleMapsWindow extends Window {
   google?: {
     maps?: {
-      importLibrary?: (name: 'places') => Promise<{ Place: new (options: { id: string }) => GooglePlace }>;
-      places?: {
-        AutocompleteService: new () => GoogleAutocompleteService;
-        Place?: new (options: { id: string }) => GooglePlace;
-        PlacesServiceStatus?: { OK: string };
-      };
+      importLibrary?: (name: 'places') => Promise<GooglePlacesLibrary>;
     };
   };
 }
 
-interface GoogleAutocompleteService {
-  getPlacePredictions: (
-    request: {
-      input: string;
-      componentRestrictions?: { country: string };
-      locationBias?: { center: { lat: number; lng: number }; radius: number };
-    },
-    callback: (results: GooglePlacePrediction[] | null, status: string) => void
-  ) => void;
+interface GooglePlacesLibrary {
+  Place?: new (options: { id: string }) => GooglePlace;
+  AutocompleteSuggestion?: {
+    fetchAutocompleteSuggestions: (
+      request: AutocompleteRequest
+    ) => Promise<{ suggestions: AutocompleteSuggestionResult[] }>;
+  };
 }
 
-interface GooglePlacePrediction {
-  place_id: string;
+interface AutocompleteRequest {
+  input: string;
+  includedRegionCodes?: string[];
+  language?: string;
+}
+
+interface AutocompleteSuggestionResult {
+  placePrediction?: {
+    placeId: string;
+    text?: { text?: string; toString: () => string };
+    structuredFormat?: {
+      mainText?: { text?: string };
+      secondaryText?: { text?: string };
+    };
+  };
+}
+
+interface PlacePrediction {
+  placeId: string;
   description: string;
+  mainText: string;
+  secondaryText: string;
 }
 
 interface GooglePlace {
@@ -86,10 +98,11 @@ export function GoogleMapsInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [manualMode, setManualMode] = useState(false);
   const [apiStatus, setApiStatus] = useState<ApiStatus>('idle');
-  const [predictions, setPredictions] = useState<GooglePlacePrediction[]>([]);
-  const [autocompleteService, setAutocompleteService] = useState<GoogleAutocompleteService | null>(null);
+  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const [placesLibrary, setPlacesLibrary] = useState<GooglePlacesLibrary | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     setSearch(address);
@@ -114,27 +127,41 @@ export function GoogleMapsInput({
       return;
     }
 
-    if (window.google?.maps?.places) {
-      setApiStatus('ready');
-      return;
-    }
-
     const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-maps="true"]');
-    const handleLoad = () => setApiStatus('ready');
-    const handleError = () => setApiStatus('error');
+
+    const initializeLibrary = async () => {
+      try {
+        if (!window.google?.maps?.importLibrary) {
+          setApiStatus('error');
+          return;
+        }
+
+        const lib = await window.google.maps.importLibrary('places');
+        setPlacesLibrary(lib as GooglePlacesLibrary);
+        setApiStatus('ready');
+      } catch (error) {
+        console.error('Error loading Places library:', error);
+        setApiStatus('error');
+      }
+    };
 
     if (existingScript) {
-      if (window.google?.maps?.places) {
-        setApiStatus('ready');
+      if (window.google?.maps?.importLibrary) {
+        initializeLibrary();
       } else {
+        const handleLoad = () => initializeLibrary();
+        const handleError = () => setApiStatus('error');
+
         existingScript.addEventListener('load', handleLoad);
         existingScript.addEventListener('error', handleError);
+
+        return () => {
+          existingScript.removeEventListener('load', handleLoad);
+          existingScript.removeEventListener('error', handleError);
+        };
       }
 
-      return () => {
-        existingScript.removeEventListener('load', handleLoad);
-        existingScript.removeEventListener('error', handleError);
-      };
+      return;
     }
 
     const script = document.createElement('script');
@@ -142,8 +169,8 @@ export function GoogleMapsInput({
     script.async = true;
     script.defer = true;
     script.dataset.googleMaps = 'true';
-    script.onload = handleLoad;
-    script.onerror = handleError;
+    script.onload = () => initializeLibrary();
+    script.onerror = () => setApiStatus('error');
     document.head.appendChild(script);
     setApiStatus('loading');
 
@@ -153,43 +180,54 @@ export function GoogleMapsInput({
     };
   }, []);
 
-  // Instantiate services once API is ready
-  useEffect(() => {
-    if (apiStatus !== 'ready' || !window.google?.maps?.places) return;
-
-    setAutocompleteService(new window.google.maps.places.AutocompleteService());
-  }, [apiStatus]);
-
   // Fetch predictions when user types
   useEffect(() => {
-    if (!autocompleteService) {
-      setPredictions([]);
-      return;
-    }
-
     if (!search.trim()) {
       setPredictions([]);
       return;
     }
 
-    const handle = window.setTimeout(() => {
-      autocompleteService.getPlacePredictions(
-        {
-          input: search,
-          componentRestrictions: { country: 'mx' },
-        },
-        (results: GooglePlacePrediction[] | null, status: string) => {
-          if (status === 'OK' && results) {
-            setPredictions(results);
-          } else {
-            setPredictions([]);
-          }
-        }
-      );
-    }, 200);
+    if (!placesLibrary?.AutocompleteSuggestion) {
+      setPredictions([]);
+      return;
+    }
 
-    return () => window.clearTimeout(handle);
-  }, [search, autocompleteService]);
+    const requestId = ++requestIdRef.current;
+
+    const handle = window.setTimeout(async () => {
+      try {
+        const { suggestions } = await placesLibrary.AutocompleteSuggestion!.fetchAutocompleteSuggestions({
+          input: search,
+          includedRegionCodes: ['mx'],
+          language: 'es',
+        });
+
+        if (requestId !== requestIdRef.current) return;
+
+        const parsed = suggestions
+          .map((suggestion) => suggestion.placePrediction)
+          .filter(Boolean)
+          .map((prediction) => ({
+            placeId: prediction!.placeId,
+            description: prediction!.text?.text || prediction!.text?.toString() || '',
+            mainText: prediction!.structuredFormat?.mainText?.text || prediction!.text?.text || '',
+            secondaryText: prediction!.structuredFormat?.secondaryText?.text || '',
+          }))
+          .filter((prediction) => prediction.description || prediction.mainText);
+
+        setPredictions(parsed);
+      } catch (error) {
+        if (requestId === requestIdRef.current) {
+          setPredictions([]);
+        }
+        console.error('Error fetching place predictions:', error);
+      }
+    }, 250);
+
+    return () => {
+      window.clearTimeout(handle);
+    };
+  }, [search, placesLibrary]);
 
   const parseAddressComponents = (components: Array<GoogleAddressComponent | GoogleAddressComponentV2>) => {
     const findComponent = (types: string[]) => {
@@ -229,12 +267,11 @@ export function GoogleMapsInput({
     if (!window.google?.maps) return null;
 
     try {
-      // Prefer importLibrary (new API), fallback to direct Place constructor if present
-      const placesLib = window.google.maps.importLibrary
+      const placesLib = placesLibrary || (window.google.maps.importLibrary
         ? await window.google.maps.importLibrary('places')
-        : null;
+        : null);
 
-      const PlaceCtor = placesLib?.Place || window.google.maps.places?.Place;
+      const PlaceCtor = placesLib?.Place;
       if (!PlaceCtor) return null;
 
       const place = new PlaceCtor({ id: placeId }) as GooglePlace;
@@ -249,12 +286,12 @@ export function GoogleMapsInput({
     }
   };
 
-  const selectPrediction = async (prediction: GooglePlacePrediction) => {
-    const place = await fetchPlaceDetails(prediction.place_id);
+  const selectPrediction = async (prediction: PlacePrediction) => {
+    const place = await fetchPlaceDetails(prediction.placeId);
     if (!place) return;
 
     const formattedAddress =
-      place.formattedAddress || place.displayName?.text || prediction.description;
+      place.formattedAddress || place.displayName?.text || prediction.description || prediction.mainText;
     const geometry = place.location;
     const latValue = geometry ? geometry.lat() : null;
     const lngValue = geometry ? geometry.lng() : null;
@@ -317,13 +354,18 @@ export function GoogleMapsInput({
           <div className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto bg-card rounded-lg shadow-strong border border-border">
             {predictions.map((prediction) => (
               <button
-                key={prediction.place_id}
+                key={prediction.placeId}
                 type="button"
                 onClick={() => selectPrediction(prediction)}
                 className="w-full text-left px-4 py-3 text-sm hover:bg-muted transition-colors flex items-center gap-2"
               >
                 <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-                <span className="text-foreground">{prediction.description}</span>
+                <div className="flex flex-col text-left">
+                  <span className="text-foreground">{prediction.mainText || prediction.description}</span>
+                  {prediction.secondaryText && (
+                    <span className="text-xs text-muted-foreground">{prediction.secondaryText}</span>
+                  )}
+                </div>
               </button>
             ))}
           </div>

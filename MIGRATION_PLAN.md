@@ -1,7 +1,7 @@
 # 🚀 Complete Platform Migration Plan
 
 **Created: January 5, 2026**  
-**Last Updated: January 6, 2026**  
+**Last Updated: January 8, 2026**  
 **Status: ✅ COMPLETE - All Phases Done**
 
 ---
@@ -144,7 +144,7 @@ habitex/
 │       │       │   ├── 002.jpg
 │       │       │   ├── 002.medium.jpg
 │       │       │   ├── 002.thumb.jpg
-│       │       │   └── ...                 # Up to 50 images
+│       │       │   └── ...                 # Up to 75 images
 │       │       │
 │       │       └── videos/
 │       │           ├── 001.mp4             # Original video
@@ -191,7 +191,7 @@ habitex/
 
 | Resource | Limit | Size Estimate |
 |----------|-------|---------------|
-| Images per property | 50 max | ~65MB with variants |
+| Images per property | 75 max | ~98MB with variants |
 | Videos per property | 3 max | ~81MB with assets |
 | Image file size | 5MB max | - |
 | Video file size | 50MB max | - |

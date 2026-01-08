@@ -872,7 +872,7 @@ CREATE TABLE IF NOT EXISTS "public"."properties" (
 ALTER TABLE "public"."properties" OWNER TO "postgres";
 
 
-COMMENT ON COLUMN "public"."properties"."image_count" IS 'Number of images uploaded for this property (max 50)';
+COMMENT ON COLUMN "public"."properties"."image_count" IS 'Number of images uploaded for this property (max 75)';
 
 
 

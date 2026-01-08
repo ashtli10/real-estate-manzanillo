@@ -35,7 +35,7 @@ interface ImageUploadProps {
   userId?: string;
 }
 
-export function ImageUpload({ images, onChange, maxImages = 50, propertyId, userId }: ImageUploadProps) {
+export function ImageUpload({ images, onChange, maxImages = STORAGE_LIMITS.MAX_IMAGES_PER_PROPERTY, propertyId, userId }: ImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});

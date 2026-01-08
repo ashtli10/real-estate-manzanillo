@@ -495,7 +495,7 @@ export function isValidVideoType(file: File): boolean {
  * Storage limits from MIGRATION_PLAN.md
  */
 export const STORAGE_LIMITS = {
-  MAX_IMAGES_PER_PROPERTY: 50,
+  MAX_IMAGES_PER_PROPERTY: 75,
   MAX_VIDEOS_PER_PROPERTY: 3,
   MAX_IMAGE_SIZE_MB: 5,
   MAX_VIDEO_SIZE_MB: 50,
